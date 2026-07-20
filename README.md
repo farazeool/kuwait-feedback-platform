@@ -2,7 +2,7 @@
 
 A multi-tenant customer feedback platform for businesses in Kuwait. Organizations manage multiple locations, publish QR-linked surveys, collect anonymous customer responses, and analyze ratings and trends within strict role and tenant boundaries.
 
-## Milestone 5 analytics and operations
+## Milestone 6 administration foundation
 
 The repository currently provides:
 
@@ -29,6 +29,13 @@ The repository currently provides:
 - Alert acknowledgement, assignment, resolution, dismissal, and reopening workflows
 - Response review status, internal tags, assignees, and private notes
 - Streamed, audited UTF-8 CSV exports with formula-injection protection and row limits
+- Permission-scoped team directory, invitation history, role/location assignment, deactivation, removal, and guarded ownership transfer
+- Rate-limited, digest-only invitations with resend/revocation, email-matched single-use acceptance, and bilingual transactional templates
+- Provider-independent server email delivery with safe preview mode, local Mailpit SMTP capture, and future SMTP support
+- Organization, location, branding, profile, password, session, and guarded account-deactivation settings
+- A private tenant-scoped branding bucket limited to verified PNG/JPEG/WebP files of at most 2 MiB
+- English/Arabic message catalogs with key-parity tests, RTL navigation, and Kuwait-local formatting
+- A read-only `platform_admin` operational area that excludes customer answer text
 
 ## Local setup
 
@@ -41,6 +48,8 @@ npm run dev
 ```
 
 Replace the placeholder Supabase values in `.env.local` with credentials from a local or non-production project. Never commit `.env.local`.
+
+Invitation delivery defaults to `EMAIL_DELIVERY_MODE=preview`, which records a captured delivery without sending or logging the token. For local mailbox inspection, set the mode to `smtp` and use the local Supabase Mailpit SMTP endpoint from `supabase/config.toml`; open Mailpit through the URL reported by `supabase status`. Production delivery requires an approved SMTP provider and server-only credentials.
 
 ## Quality checks
 
@@ -62,7 +71,7 @@ Individual commands are available as `npm run lint`, `npm run typecheck`, and `n
 
 ## Environment status
 
-The repository is linked locally to an isolated free hosted Supabase development project. Its credentials remain in ignored `.env.local`; local demo seed data was not uploaded. No Vercel deployment or production Supabase project exists.
+The repository is linked locally to an isolated free hosted Supabase development project. Its credentials remain in ignored `.env.local`; local demo seed data was not uploaded. The private GitHub repository protects `main` by requiring pull requests while blocking force pushes and branch deletion; administrator bypass remains enabled for the current solo development workflow, and status checks are not required until stable CI exists. No Vercel deployment or production Supabase project exists.
 
 ## Local database
 

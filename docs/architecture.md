@@ -180,7 +180,19 @@ Password sign-in, sign-out, recovery, reset, email verification, and PKCE callba
 
 The first-organization workflow calls `create_organization_with_first_location`. This `SECURITY DEFINER` function accepts no role input, verifies the caller has an active profile and no active membership, and atomically creates the organization, owner membership, first location, and trigger-backed audit records. A unique slug constraint makes duplicate creation fail without partial writes.
 
-Invitation preparation is restricted to organization owners/admins through `prepare_organization_invitation`. It returns a random token once and stores only its SHA-256 digest. Invitations expire, are revocable and single-use, never allow `platform_admin` or owner assignment, and carry explicit organization/location scope. Acceptance matches the authenticated email and copies the server-selected role/scope; the user cannot submit a role. No real email is sent yet. A future delivery adapter will send the one-time token immediately after preparation using an approved provider, without logging or persisting plaintext tokens.
+Invitation preparation is restricted to organization owners/admins through `prepare_organization_invitation_v2`. It returns a 256-bit random token once and stores only its SHA-256 digest. Invitations expire, are revocable and single-use, never allow `platform_admin` or owner assignment, and carry explicit organization/location scope. Resend revokes the old record before minting a new token. Acceptance locks the invitation, matches the authenticated email, and copies only the stored role/scope; the recipient cannot submit authorization fields.
+
+The email boundary is a server-only provider interface with bilingual HTML and plain-text templates. Preview mode suppresses external delivery and records `captured`; local SMTP can deliver into Supabase Mailpit. A future approved SMTP provider can be configured entirely through server environment variables. Tokens are passed from the invitation RPC directly into a single delivery attempt and never written to application logs, audit metadata, source files, or another database column.
+
+## 15. Team, settings, branding, and platform operations
+
+Tenant team changes cross server actions into guarded database functions. Organization admins can manage only non-owner tenant roles; users cannot edit themselves; the final active owner is protected by a trigger; and ownership changes use a dedicated transaction that promotes the target and demotes the current owner with one audited event. Location-scoped roles always receive explicit active location rows.
+
+Organization and location settings retain UUID identity and historical response links. Slug uniqueness is enforced atomically; slug changes require a sign-in within 30 minutes. Locations with history are archived rather than deleted. Account deactivation archives profiles and memberships while retaining audit and feedback history, and is denied to an active owner until transfer. Full erasure remains a reviewed retention workflow.
+
+Branding objects live in the private `organization-branding` bucket. Storage policy derives the tenant UUID from a collision-resistant path, calls the same permission helpers as relational data, and accepts only PNG, JPEG, or WebP metadata up to 2 MiB. The server verifies file magic bytes before upload. Public surveys, invitations, dashboard identity, and print/QR pages receive short-lived signed URLs; database public responses expose no bucket credentials.
+
+`/platform` is independently role-checked for `platform_admin` and exposes only organization status and operational counts plus redacted audit metadata. It deliberately omits survey answers, response text, tokens, fingerprints, and mutation controls. Billing and broad support impersonation are deferred.
 
 ## 14. Analytics, workflow, and exports
 

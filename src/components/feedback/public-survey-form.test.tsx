@@ -9,7 +9,7 @@ const survey = {
   description: { en: null, ar: null },
   thank_you: { en: "Thank you", ar: "شكراً" },
   default_locale: "en" as const,
-  organization: { name: { en: "Demo", ar: "تجريبي" } },
+  organization: { name: { en: "Demo", ar: "تجريبي" }, branding: { primary_color: "#006c5b", accent_color: "#d5a742", logo_path: null, logo_url: null, header_style: "solid", footer: { en: null, ar: null } } },
   location: { name: { en: "Salmiya", ar: "السالمية" } },
   questions: [{ id: "50000000-0000-4000-8000-000000000001", type: "text" as const, position: 1, prompt: { en: "Comment", ar: "تعليق" }, help_text: { en: null, ar: null }, required: false, rating_min: null, rating_max: null, allow_multiple: false, text_max_length: 100, options: [] }],
 };

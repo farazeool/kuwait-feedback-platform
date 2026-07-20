@@ -188,7 +188,7 @@ select is(
 select lives_ok(
   $$
     insert into invitation_result
-    select * from public.prepare_organization_invitation(
+    select * from public.prepare_organization_invitation_v2(
       (select id from public.organizations where slug = 'atomic-test-organization'),
       'invited-manager@demo.kuwait-feedback.test',
       'location_manager',
@@ -198,7 +198,9 @@ select lives_ok(
         join public.organizations o on o.id = l.organization_id
         where o.slug = 'atomic-test-organization'
       )],
-      interval '1 day'
+      interval '1 day',
+      'Welcome to the demo team',
+      'en'
     )
   $$,
   'owners can prepare a location-scoped invitation'
@@ -395,16 +397,18 @@ select is_empty(
 
 select throws_ok(
   $$
-    select * from public.prepare_organization_invitation(
+    select * from public.prepare_organization_invitation_v2(
       '20000000-0000-4000-8000-000000000001',
       'forbidden@demo.kuwait-feedback.test',
       'platform_admin',
       array[]::uuid[],
-      interval '1 day'
+      interval '1 day',
+      null,
+      'en'
     )
   $$,
   '42501',
-  'Organization administrator access required',
+  'Invitation unavailable',
   'analysts cannot prepare or promote through invitations'
 );
 

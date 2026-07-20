@@ -163,6 +163,41 @@ export type Database = {
           },
         ]
       }
+      invitation_rate_limits: {
+        Row: {
+          action: string
+          email_hash: string
+          expires_at: string
+          organization_id: string
+          request_count: number
+          window_started_at: string
+        }
+        Insert: {
+          action: string
+          email_hash: string
+          expires_at: string
+          organization_id: string
+          request_count?: number
+          window_started_at: string
+        }
+        Update: {
+          action?: string
+          email_hash?: string
+          expires_at?: string
+          organization_id?: string
+          request_count?: number
+          window_started_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitation_rate_limits_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       location_memberships: {
         Row: {
           created_at: string
@@ -214,11 +249,15 @@ export type Database = {
           area: string
           created_at: string
           created_by: string | null
+          email: string | null
           governorate: string
           id: string
+          inherits_timezone: boolean
           name_ar: string
           name_en: string
+          opening_hours: Json
           organization_id: string
+          phone: string | null
           slug: string
           status: Database["public"]["Enums"]["entity_status"]
           timezone: string
@@ -230,11 +269,15 @@ export type Database = {
           area?: string
           created_at?: string
           created_by?: string | null
+          email?: string | null
           governorate?: string
           id?: string
+          inherits_timezone?: boolean
           name_ar: string
           name_en: string
+          opening_hours?: Json
           organization_id: string
+          phone?: string | null
           slug: string
           status?: Database["public"]["Enums"]["entity_status"]
           timezone?: string
@@ -246,11 +289,15 @@ export type Database = {
           area?: string
           created_at?: string
           created_by?: string | null
+          email?: string | null
           governorate?: string
           id?: string
+          inherits_timezone?: boolean
           name_ar?: string
           name_en?: string
+          opening_hours?: Json
           organization_id?: string
+          phone?: string | null
           slug?: string
           status?: Database["public"]["Enums"]["entity_status"]
           timezone?: string
@@ -307,14 +354,21 @@ export type Database = {
           accepted_at: string | null
           accepted_by: string | null
           created_at: string
+          delivery_attempts: number
+          delivery_error_code: string | null
+          delivery_status: Database["public"]["Enums"]["invitation_delivery_status"]
           email: string
           expires_at: string
           id: string
           invited_by: string
+          last_delivery_at: string | null
+          locale: Database["public"]["Enums"]["locale_code"]
           organization_id: string
+          personal_message: string | null
           revoked_at: string | null
           role: Database["public"]["Enums"]["app_role"]
           scope: Database["public"]["Enums"]["membership_scope"]
+          superseded_by: string | null
           token_hash: string
           updated_at: string
         }
@@ -322,14 +376,21 @@ export type Database = {
           accepted_at?: string | null
           accepted_by?: string | null
           created_at?: string
+          delivery_attempts?: number
+          delivery_error_code?: string | null
+          delivery_status?: Database["public"]["Enums"]["invitation_delivery_status"]
           email: string
           expires_at: string
           id?: string
           invited_by: string
+          last_delivery_at?: string | null
+          locale?: Database["public"]["Enums"]["locale_code"]
           organization_id: string
+          personal_message?: string | null
           revoked_at?: string | null
           role: Database["public"]["Enums"]["app_role"]
           scope: Database["public"]["Enums"]["membership_scope"]
+          superseded_by?: string | null
           token_hash: string
           updated_at?: string
         }
@@ -337,14 +398,21 @@ export type Database = {
           accepted_at?: string | null
           accepted_by?: string | null
           created_at?: string
+          delivery_attempts?: number
+          delivery_error_code?: string | null
+          delivery_status?: Database["public"]["Enums"]["invitation_delivery_status"]
           email?: string
           expires_at?: string
           id?: string
           invited_by?: string
+          last_delivery_at?: string | null
+          locale?: Database["public"]["Enums"]["locale_code"]
           organization_id?: string
+          personal_message?: string | null
           revoked_at?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           scope?: Database["public"]["Enums"]["membership_scope"]
+          superseded_by?: string | null
           token_hash?: string
           updated_at?: string
         }
@@ -354,6 +422,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_invitations_superseded_by_fkey"
+            columns: ["superseded_by"]
+            isOneToOne: false
+            referencedRelation: "organization_invitations"
             referencedColumns: ["id"]
           },
         ]
@@ -404,43 +479,100 @@ export type Database = {
       }
       organizations: {
         Row: {
+          accent_color: string
           business_category: string
           created_at: string
           created_by: string | null
+          dark_logo_path: string | null
+          date_format: string
+          default_locale: Database["public"]["Enums"]["locale_code"]
+          default_thank_you_ar: string | null
+          default_thank_you_en: string | null
+          description_ar: string | null
+          description_en: string | null
+          email: string | null
+          footer_text_ar: string | null
+          footer_text_en: string | null
+          icon_logo_path: string | null
           id: string
+          logo_path: string | null
           name_ar: string
           name_en: string
+          number_format: string
           phone: string | null
+          primary_color: string
           slug: string
           status: Database["public"]["Enums"]["entity_status"]
+          support_email: string | null
+          support_phone: string | null
+          survey_header_style: string
           timezone: string
           updated_at: string
+          website: string | null
         }
         Insert: {
+          accent_color?: string
           business_category?: string
           created_at?: string
           created_by?: string | null
+          dark_logo_path?: string | null
+          date_format?: string
+          default_locale?: Database["public"]["Enums"]["locale_code"]
+          default_thank_you_ar?: string | null
+          default_thank_you_en?: string | null
+          description_ar?: string | null
+          description_en?: string | null
+          email?: string | null
+          footer_text_ar?: string | null
+          footer_text_en?: string | null
+          icon_logo_path?: string | null
           id?: string
+          logo_path?: string | null
           name_ar: string
           name_en: string
+          number_format?: string
           phone?: string | null
+          primary_color?: string
           slug: string
           status?: Database["public"]["Enums"]["entity_status"]
+          support_email?: string | null
+          support_phone?: string | null
+          survey_header_style?: string
           timezone?: string
           updated_at?: string
+          website?: string | null
         }
         Update: {
+          accent_color?: string
           business_category?: string
           created_at?: string
           created_by?: string | null
+          dark_logo_path?: string | null
+          date_format?: string
+          default_locale?: Database["public"]["Enums"]["locale_code"]
+          default_thank_you_ar?: string | null
+          default_thank_you_en?: string | null
+          description_ar?: string | null
+          description_en?: string | null
+          email?: string | null
+          footer_text_ar?: string | null
+          footer_text_en?: string | null
+          icon_logo_path?: string | null
           id?: string
+          logo_path?: string | null
           name_ar?: string
           name_en?: string
+          number_format?: string
           phone?: string | null
+          primary_color?: string
           slug?: string
           status?: Database["public"]["Enums"]["entity_status"]
+          support_email?: string | null
+          support_phone?: string | null
+          survey_header_style?: string
           timezone?: string
           updated_at?: string
+          website?: string | null
         }
         Relationships: []
       }
@@ -981,6 +1113,10 @@ export type Database = {
       }
       can_read_profile: { Args: { p_profile_id: string }; Returns: boolean }
       can_read_survey: { Args: { p_survey_id: string }; Returns: boolean }
+      consume_invitation_rate_limit: {
+        Args: { p_action: string; p_email: string; p_organization_id: string }
+        Returns: undefined
+      }
       consume_public_submission_rate_limit: {
         Args: {
           p_fingerprint_hash: string
@@ -989,6 +1125,24 @@ export type Database = {
           p_window_seconds?: number
         }
         Returns: boolean
+      }
+      create_location_v2: {
+        Args: {
+          p_address_ar: string
+          p_address_en: string
+          p_area: string
+          p_email: string
+          p_governorate: string
+          p_inherits_timezone: boolean
+          p_name_ar: string
+          p_name_en: string
+          p_opening_hours: Json
+          p_organization_id: string
+          p_phone: string
+          p_slug: string
+          p_timezone?: string
+        }
+        Returns: string
       }
       create_organization_with_first_location: {
         Args: {
@@ -1010,6 +1164,7 @@ export type Database = {
           organization_id: string
         }[]
       }
+      deactivate_own_account: { Args: never; Returns: undefined }
       duplicate_survey_group: { Args: { p_survey_id: string }; Returns: string }
       get_analytics_overview: {
         Args: {
@@ -1025,6 +1180,8 @@ export type Database = {
         }
         Returns: Json
       }
+      get_invitation_public: { Args: { p_token: string }; Returns: Json }
+      get_platform_overview: { Args: never; Returns: Json }
       get_public_survey: { Args: { p_public_slug: string }; Returns: Json }
       get_survey_question_analytics: {
         Args: {
@@ -1037,6 +1194,21 @@ export type Database = {
         Returns: Json
       }
       is_platform_admin: { Args: never; Returns: boolean }
+      list_team_invitations: {
+        Args: { p_organization_id: string }
+        Returns: Json
+      }
+      list_team_members: {
+        Args: {
+          p_location_id?: string
+          p_organization_id: string
+          p_page?: number
+          p_page_size?: number
+          p_role?: Database["public"]["Enums"]["app_role"]
+          p_search?: string
+        }
+        Returns: Json
+      }
       organization_role: {
         Args: { p_organization_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -1055,6 +1227,22 @@ export type Database = {
           invitation_token: string
         }[]
       }
+      prepare_organization_invitation_v2: {
+        Args: {
+          p_email: string
+          p_expires_in?: string
+          p_locale?: Database["public"]["Enums"]["locale_code"]
+          p_location_ids?: string[]
+          p_organization_id: string
+          p_personal_message?: string
+          p_role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: {
+          expires_at: string
+          invitation_id: string
+          invitation_token: string
+        }[]
+      }
       record_data_export: {
         Args: {
           p_export_type: string
@@ -1062,6 +1250,34 @@ export type Database = {
           p_organization_id: string
         }
         Returns: undefined
+      }
+      record_invitation_acceptance_failure: {
+        Args: { p_reason: string; p_token: string }
+        Returns: undefined
+      }
+      record_invitation_delivery: {
+        Args: {
+          p_error_code?: string
+          p_invitation_id: string
+          p_status: Database["public"]["Enums"]["invitation_delivery_status"]
+        }
+        Returns: undefined
+      }
+      remove_organization_member: {
+        Args: { p_membership_id: string }
+        Returns: undefined
+      }
+      resend_organization_invitation: {
+        Args: { p_invitation_id: string }
+        Returns: {
+          expires_at: string
+          invitation_id: string
+          invitation_token: string
+          invited_email: string
+          invited_locale: Database["public"]["Enums"]["locale_code"]
+          invited_role: Database["public"]["Enums"]["app_role"]
+          personal_message: string
+        }[]
       }
       revoke_organization_invitation: {
         Args: { p_invitation_id: string }
@@ -1102,6 +1318,10 @@ export type Database = {
         }
         Returns: string
       }
+      transfer_organization_ownership: {
+        Args: { p_organization_id: string; p_target_membership_id: string }
+        Returns: undefined
+      }
       transition_survey_group: {
         Args: {
           p_status: Database["public"]["Enums"]["survey_status"]
@@ -1115,6 +1335,77 @@ export type Database = {
           p_assigned_to?: string
           p_resolution_note?: string
           p_status: Database["public"]["Enums"]["alert_status"]
+        }
+        Returns: undefined
+      }
+      update_location_v2: {
+        Args: {
+          p_address_ar: string
+          p_address_en: string
+          p_area: string
+          p_email: string
+          p_governorate: string
+          p_inherits_timezone: boolean
+          p_location_id: string
+          p_name_ar: string
+          p_name_en: string
+          p_opening_hours: Json
+          p_phone: string
+          p_slug: string
+          p_status: Database["public"]["Enums"]["entity_status"]
+          p_timezone: string
+        }
+        Returns: undefined
+      }
+      update_organization_branding: {
+        Args: {
+          p_accent_color: string
+          p_dark_logo_path: string
+          p_default_thank_you_ar: string
+          p_default_thank_you_en: string
+          p_footer_text_ar: string
+          p_footer_text_en: string
+          p_icon_logo_path: string
+          p_logo_path: string
+          p_organization_id: string
+          p_primary_color: string
+          p_survey_header_style: string
+        }
+        Returns: undefined
+      }
+      update_organization_member: {
+        Args: {
+          p_location_ids?: string[]
+          p_membership_id: string
+          p_role: Database["public"]["Enums"]["app_role"]
+          p_status?: Database["public"]["Enums"]["entity_status"]
+        }
+        Returns: undefined
+      }
+      update_organization_settings: {
+        Args: {
+          p_business_category: string
+          p_date_format: string
+          p_default_locale: Database["public"]["Enums"]["locale_code"]
+          p_description_ar: string
+          p_description_en: string
+          p_email: string
+          p_name_ar: string
+          p_name_en: string
+          p_number_format: string
+          p_organization_id: string
+          p_phone: string
+          p_slug: string
+          p_support_email: string
+          p_support_phone: string
+          p_website: string
+        }
+        Returns: undefined
+      }
+      update_own_profile: {
+        Args: {
+          p_display_name: string
+          p_locale: Database["public"]["Enums"]["locale_code"]
         }
         Returns: undefined
       }
@@ -1142,6 +1433,7 @@ export type Database = {
         | "location_manager"
         | "analyst"
       entity_status: "active" | "archived"
+      invitation_delivery_status: "pending" | "captured" | "sent" | "failed"
       locale_code: "en" | "ar"
       membership_scope: "organization" | "locations"
       question_type: "rating" | "multiple_choice" | "text"
@@ -1296,6 +1588,7 @@ export const Constants = {
         "analyst",
       ],
       entity_status: ["active", "archived"],
+      invitation_delivery_status: ["pending", "captured", "sent", "failed"],
       locale_code: ["en", "ar"],
       membership_scope: ["organization", "locations"],
       question_type: ["rating", "multiple_choice", "text"],

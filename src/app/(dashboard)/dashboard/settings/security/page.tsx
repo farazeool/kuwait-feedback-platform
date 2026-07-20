@@ -1,0 +1,5 @@
+import { requestPasswordReset } from "@/features/auth/actions";
+import { requireOrganizationManagementContext } from "@/lib/auth/context";
+import { getMessages } from "@/lib/i18n/messages";
+
+export default async function SecuritySettingsPage() { const context = await requireOrganizationManagementContext(); const m = getMessages(context.profile.locale); return <div className="grid gap-7"><h1 className="text-3xl font-bold">{m["settings.security"]}</h1><section className="rounded-3xl border border-border bg-white p-6"><h2 className="text-xl font-bold">Recent authentication</h2><p className="mt-2 text-muted">Sensitive slug changes require authentication within the last 30 minutes. Role and ownership changes use separate guarded database operations.</p><form action={requestPasswordReset} className="mt-5"><input type="hidden" name="email" value={context.user.email ?? ""} /><button className="rounded-xl border border-border px-4 py-2 font-bold">{m["auth.resetPassword"]}</button></form></section></div>; }

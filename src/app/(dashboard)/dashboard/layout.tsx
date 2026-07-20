@@ -19,13 +19,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div dir={isArabic ? "rtl" : "ltr"} lang={context.profile.locale} className="min-h-screen lg:ps-64 print:ps-0">
-      <DashboardSidebar role={role} />
+      <DashboardSidebar role={role} locale={context.profile.locale} />
       <div className="min-w-0">
         <DashboardTopbar
           displayName={context.profile.displayName}
           organizationName={organizationName}
           locationName={locationName}
           role={role}
+          locale={context.profile.locale}
+          logoUrl={context.organization?.logoUrl ?? null}
         />
         <main className="px-5 py-8 sm:px-8 print:p-0">{children}</main>
       </div>

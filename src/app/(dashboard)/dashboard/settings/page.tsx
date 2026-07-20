@@ -1,3 +1,10 @@
-import { EmptyState } from "@/components/dashboard/empty-state";
+import Link from "next/link";
 import { requireOrganizationManagementContext } from "@/lib/auth/context";
-export default async function SettingsPage() { await requireOrganizationManagementContext(); return <div className="grid gap-7"><h1 className="text-3xl font-bold">Settings</h1><EmptyState title="Organization settings" description="The secure shell is ready for organization profile and localization settings in a future milestone." /></div>; }
+import { getMessages } from "@/lib/i18n/messages";
+
+export default async function SettingsPage() {
+  const context = await requireOrganizationManagementContext();
+  const messages = getMessages(context.profile.locale);
+  const cards = [["organization", "settings.organization"], ["branding", "settings.branding"], ["security", "settings.security"]] as const;
+  return <div className="grid gap-7"><h1 className="text-3xl font-bold">{messages["settings.title"]}</h1><div className="grid gap-4 md:grid-cols-3">{cards.map(([href, key]) => <Link key={href} className="rounded-3xl border border-border bg-white p-6 text-xl font-bold text-brand" href={`/dashboard/settings/${href}`}>{messages[key]}</Link>)}</div></div>;
+}

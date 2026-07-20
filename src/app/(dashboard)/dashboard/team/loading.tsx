@@ -1,0 +1,1 @@
+export default function TeamLoading() { return <div aria-label="Loading team" className="grid animate-pulse gap-5"><div className="h-10 w-52 rounded bg-surface" /><div className="h-72 rounded-3xl bg-surface" /></div>; }

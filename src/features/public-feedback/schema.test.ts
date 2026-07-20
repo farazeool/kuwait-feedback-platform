@@ -16,7 +16,7 @@ const survey = publicSurveySchema.parse({
   description: { en: null, ar: null },
   thank_you: { en: "Thank you", ar: "شكراً" },
   default_locale: "en",
-  organization: { name: { en: "Demo Co", ar: "شركة تجريبية" } },
+  organization: { name: { en: "Demo Co", ar: "شركة تجريبية" }, branding: { primary_color: "#006c5b", accent_color: "#d5a742", logo_path: null, header_style: "solid", footer: { en: null, ar: null } } },
   location: { name: { en: "Salmiya", ar: "السالمية" } },
   questions: [
     { id: ratingId, type: "rating", position: 1, prompt: { en: "Rate us", ar: "قيّمنا" }, help_text: { en: null, ar: null }, required: true, rating_min: 1, rating_max: 5, allow_multiple: false, text_max_length: null, options: [] },

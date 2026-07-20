@@ -31,7 +31,17 @@ export const publicSurveySchema = z.object({
   description: localizedSchema,
   thank_you: localizedSchema,
   default_locale: z.enum(["en", "ar"]),
-  organization: z.object({ name: localizedSchema }),
+  organization: z.object({
+    name: localizedSchema,
+    branding: z.object({
+      primary_color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+      accent_color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+      logo_path: z.string().nullable(),
+      logo_url: z.string().url().nullable().optional(),
+      header_style: z.string(),
+      footer: localizedSchema,
+    }),
+  }),
   location: z.object({ name: localizedSchema }),
   questions: z.array(publicQuestionSchema).min(1).max(50),
 });

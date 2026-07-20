@@ -29,7 +29,7 @@ export async function refreshSupabaseSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const protectedPath = request.nextUrl.pathname.startsWith("/dashboard");
+  const protectedPath = request.nextUrl.pathname.startsWith("/dashboard") || request.nextUrl.pathname.startsWith("/platform");
   if (protectedPath && !user) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";

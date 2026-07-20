@@ -184,13 +184,16 @@ export async function getSurveyDistribution(surveyId: string) {
   const [{ data: members }, { data: locations }, { data: organization }] = await Promise.all([
     supabase.from("surveys").select("id, location_id, public_slug, status").eq("survey_group_id", survey.survey_group_id),
     supabase.from("locations").select("id, name_en, name_ar").eq("organization_id", survey.organization_id),
-    supabase.from("organizations").select("name_en, name_ar").eq("id", survey.organization_id).single(),
+    supabase.from("organizations").select("name_en, name_ar, primary_color, accent_color, logo_path, footer_text_en, footer_text_ar").eq("id", survey.organization_id).single(),
   ]);
+  const { data: signedLogo } = organization?.logo_path
+    ? await supabase.storage.from("organization-branding").createSignedUrl(organization.logo_path, 3600)
+    : { data: null };
   const locationById = new Map((locations ?? []).map((location) => [location.id, location]));
   return {
     titleEn: survey.title_en,
     titleAr: survey.title_ar,
-    organization,
+    organization: organization ? { ...organization, logo_url: signedLogo?.signedUrl ?? null } : null,
     members: (members ?? []).map((member) => ({ ...member, location: locationById.get(member.location_id) ?? null })),
   };
 }

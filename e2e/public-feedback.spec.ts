@@ -22,11 +22,18 @@ test("submits one valid anonymous response through the protected endpoint", asyn
 test("protects dashboard, export, and local QR routes", async ({ page, request }) => {
   await page.goto("/dashboard/surveys");
   await expect(page).toHaveURL(/\/login/);
-  await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
 
   const target = encodeURIComponent(`http://127.0.0.1:3100${publicPath}`);
   const response = await request.get(`/api/qr?format=svg&value=${target}`);
   expect(response.status()).toBe(401);
   const exportResponse = await request.get("/api/exports/responses?preset=7d");
   expect(exportResponse.status()).toBe(401);
+});
+
+test("renders the invitation-compatible account flow in Arabic RTL", async ({ page }) => {
+  await page.goto("/signup?lang=ar&next=%2Finvite%2Fabcdef");
+  await expect(page.getByRole("heading", { name: "إنشاء حساب" })).toBeVisible();
+  await expect(page.locator("main")).toHaveAttribute("dir", "rtl");
+  await expect(page.getByLabel("البريد الإلكتروني")).toBeVisible();
 });

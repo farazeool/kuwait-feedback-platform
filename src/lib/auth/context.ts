@@ -26,6 +26,8 @@ export type AppAccessContext = {
     nameEn: string;
     nameAr: string;
     slug: string;
+    logoUrl: string | null;
+    primaryColor: string;
   } | null;
   locations: Array<{
     id: string;
@@ -66,7 +68,7 @@ export async function getAppAccessContext(): Promise<AppAccessContext | null> {
     const [{ data: organizationRow }, { data: locationRows }] = await Promise.all([
       supabase
         .from("organizations")
-        .select("id, name_en, name_ar, slug")
+        .select("id, name_en, name_ar, slug, logo_path, primary_color")
         .eq("id", membership.organization_id)
         .maybeSingle(),
       supabase
@@ -78,11 +80,16 @@ export async function getAppAccessContext(): Promise<AppAccessContext | null> {
     ]);
 
     if (organizationRow) {
+      const { data: signedLogo } = organizationRow.logo_path
+        ? await supabase.storage.from("organization-branding").createSignedUrl(organizationRow.logo_path, 3600)
+        : { data: null };
       organization = {
         id: organizationRow.id,
         nameEn: organizationRow.name_en,
         nameAr: organizationRow.name_ar,
         slug: organizationRow.slug,
+        logoUrl: signedLogo?.signedUrl ?? null,
+        primaryColor: organizationRow.primary_color,
       };
     }
     locations = (locationRows ?? []).map((location) => ({
@@ -95,17 +102,22 @@ export async function getAppAccessContext(): Promise<AppAccessContext | null> {
   } else if (profile?.platform_role === "platform_admin") {
     const { data: organizationRow } = await supabase
       .from("organizations")
-      .select("id, name_en, name_ar, slug")
+      .select("id, name_en, name_ar, slug, logo_path, primary_color")
       .eq("status", "active")
       .order("created_at")
       .limit(1)
       .maybeSingle();
     if (organizationRow) {
+      const { data: signedLogo } = organizationRow.logo_path
+        ? await supabase.storage.from("organization-branding").createSignedUrl(organizationRow.logo_path, 3600)
+        : { data: null };
       organization = {
         id: organizationRow.id,
         nameEn: organizationRow.name_en,
         nameAr: organizationRow.name_ar,
         slug: organizationRow.slug,
+        logoUrl: signedLogo?.signedUrl ?? null,
+        primaryColor: organizationRow.primary_color,
       };
     }
   }
@@ -156,5 +168,11 @@ export async function requireOrganizationManagementContext() {
   if (!role || !["platform_admin", "organization_owner", "organization_admin"].includes(role)) {
     redirect("/dashboard");
   }
+  return context;
+}
+
+export async function requirePlatformAdminContext() {
+  const context = await requireAppAccessContext();
+  if (context.profile.platformRole !== "platform_admin") redirect("/dashboard");
   return context;
 }

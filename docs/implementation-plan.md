@@ -114,6 +114,22 @@ Each milestone must end with linting, type checking, unit tests, and a productio
 
 **Exit criteria:** protected CI is green, staging acceptance passes, and production launch has explicit authorization.
 
+## Requested Milestone 6 — Team, settings, localization, and platform administration
+
+**Status:** Complete locally; hosted migration and GitHub branch-protection status are recorded in the milestone handoff.
+
+- Deliver permission-scoped team listing, invitation history, guarded role/location changes, deactivation/removal, and atomic ownership transfer.
+- Deliver digest-only rate-limited invitation creation/resend/revoke/acceptance with bilingual provider-independent email templates and local capture.
+- Add organization, location, branding, account profile/security, session, and guarded deactivation settings.
+- Add a private tenant-scoped branding bucket with magic-byte/type/size validation and signed public presentation.
+- Add English/Arabic catalog parity checks, RTL shell behavior, and Kuwait-local formatting.
+- Add read-only platform organization counts and redacted audit visibility for database-verified platform administrators.
+- Keep billing, production mail credentials, full erasure automation, and broad platform mutations deferred pending policy/provider decisions.
+
+**Exit criteria:** local PostgreSQL 17 rebuild, pgTAP/RLS/storage/invitation tests, application tests, browser checks, lint, types, build, audit, and secret scans pass without production or demo-data mutation.
+
+**Branch protection:** GitHub `main` now requires a pull request and disallows force pushes and branch deletion. Administrator enforcement is intentionally off so the existing solo checkpoint workflow remains usable. No status context is required because the repository does not yet have a stable GitHub Actions pipeline; add required checks with Milestone 8 CI.
+
 ## Deferred decisions requiring evidence or product input
 
 - Notification channels and delivery provider.

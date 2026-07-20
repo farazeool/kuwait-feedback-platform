@@ -1,0 +1,4 @@
+import { getPlatformAudit } from "@/features/platform/server";
+import { getMessages } from "@/lib/i18n/messages";
+
+export default async function PlatformAuditPage() { const result = await getPlatformAudit(); const m = getMessages(result.context.profile.locale); return <div className="grid gap-7"><h1 className="text-3xl font-bold">{m["platform.audit"]}</h1><div className="grid gap-3">{result.audit.map((event) => <article key={event.id} className="rounded-2xl border border-border bg-white p-5"><p className="font-bold">{event.action} · {event.table_name}</p><p className="mt-1 text-sm text-muted">{new Date(event.created_at).toLocaleString(result.context.profile.locale === "ar" ? "ar-KW" : "en-KW", { timeZone: "Asia/Kuwait" })}</p></article>)}{!result.audit.length ? <p>{m["common.empty"]}</p> : null}</div></div>; }

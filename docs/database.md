@@ -82,9 +82,34 @@ Atomic onboarding is audited by the existing organization, membership, and locat
 
 `create_organization_with_first_location` is the only self-service tenant bootstrap operation. It verifies `auth.uid()`, an active profile, and the absence of active memberships. It does not accept a role, so the caller can receive only the initial `organization_owner` role. Organization, membership, and first location creation share one PostgreSQL transaction.
 
-`prepare_organization_invitation` permits only `organization_admin`, `location_manager`, and `analyst`. Location managers require at least one active location. Analysts may be organization-wide or explicitly location-scoped. `accept_organization_invitation` locks the invitation, verifies hash, expiry, revocation, single-use state, and authenticated email, then creates memberships from trusted stored values. `revoke_organization_invitation` is owner/admin-only. Email delivery is deferred; when implemented, the raw token must be passed directly to the approved email provider and never written to logs or another table.
+`prepare_organization_invitation_v2` permits only `organization_admin`, `location_manager`, and `analyst`. Location managers require at least one active location. Analysts may be organization-wide or explicitly location-scoped. The function rejects an existing member or duplicate open invitation and uses a digest-only hourly rate bucket. `resend_organization_invitation` locks and revokes the old invitation before returning a new one-time token plus the trusted email/template fields. `accept_organization_invitation` locks the invitation, verifies hash, expiry, revocation, single-use state, and authenticated email, then creates memberships from trusted stored values. `revoke_organization_invitation` is owner/admin-only.
 
-Authenticated clients have no direct read or write privileges on invitation tables, including token digests. Owner/admin workflows use only the narrowly granted preparation, acceptance, and revocation functions. A future invitation list must use a sanitized function or view that omits `token_hash`.
+Authenticated clients have no direct read or write privileges on invitation tables, including token digests. Owner/admin workflows use only narrowly granted functions. `list_team_invitations` returns delivery and lifecycle metadata but omits token hashes. Invitation creation, resend, revoke, acceptance, delivery state, and non-sensitive failed acceptance events are audited without email bodies or tokens.
+
+## Team role and ownership matrix
+
+| Operation | Owner | Organization admin | Location manager | Analyst |
+| --- | --- | --- | --- | --- |
+| View organization team | Yes | Yes | Assigned/relevant only | Read-only |
+| Invite admin/manager/analyst | Yes | Yes | No | No |
+| Change non-owner role/scope | Yes | Yes | No | No |
+| Transfer ownership | Yes, dedicated operation | No | No | No |
+| Manage organization settings/branding | Yes | Yes | No | No |
+| Manage locations | Yes | Yes | Assigned view only | Read-only |
+
+No tenant operation can create `platform_admin`. The final active owner trigger rejects update/delete outside `transfer_organization_ownership`, and self-role mutation is rejected before any write.
+
+## Settings, location lifecycle, and storage
+
+The administration migration extends organizations with contact, locale/format, support, and branding fields; locations with operational contact, opening-hours JSON, active state, and timezone inheritance; and invitations with locale, personal message, delivery status, and supersession. `update_organization_settings` audits changes through the administrative trigger and checks recent authentication for a slug change. Unique organization and per-organization location slugs remain database constraints.
+
+The private `organization-branding` bucket allows only tenant-authorized reads/writes. Object names are `<organization UUID>/<random UUID>.<approved extension>`, metadata MIME must be PNG/JPEG/WebP, and size must be 1–2,097,152 bytes. Application validation additionally checks magic bytes, so renaming an SVG cannot bypass the policy. Replacing a logo updates the relational reference before removing the previous object; failed uploads are cleaned up when possible.
+
+## Account and platform lifecycle
+
+`update_own_profile` can change only display name and locale. `deactivate_own_account` archives the profile and memberships and refuses active owners; it never deletes historical responses. Password and session operations remain Supabase Auth operations. Data erasure, legal retention, and ownerless-tenant handling require a reviewed support process before production.
+
+`get_platform_overview` is executable only by a database-verified platform administrator. It returns per-organization member/location/survey/response/storage-object counts and status but no answers or customer text. The platform audit UI selects only actor, target table, action, tenant, and timestamp.
 
 ## Local seed data
 

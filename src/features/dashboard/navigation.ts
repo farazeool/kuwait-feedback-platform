@@ -1,26 +1,29 @@
 import type { Database } from "@/types/database";
+import type { MessageKey } from "@/lib/i18n/messages";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
 export const DASHBOARD_NAVIGATION = [
-  { href: "/dashboard", label: "Overview", roles: "all" },
-  { href: "/dashboard/locations", label: "Locations", roles: "all" },
-  { href: "/dashboard/surveys", label: "Surveys", roles: "all" },
-  { href: "/dashboard/responses", label: "Responses", roles: "all" },
-  { href: "/dashboard/alerts", label: "Alerts", roles: "all" },
+  { href: "/dashboard", label: "nav.overview", roles: "all" },
+  { href: "/dashboard/locations", label: "nav.locations", roles: "all" },
+  { href: "/dashboard/surveys", label: "nav.surveys", roles: "all" },
+  { href: "/dashboard/responses", label: "nav.responses", roles: "all" },
+  { href: "/dashboard/alerts", label: "nav.alerts", roles: "all" },
   {
     href: "/dashboard/team",
-    label: "Team",
-    roles: ["platform_admin", "organization_owner", "organization_admin"],
+    label: "nav.team",
+    roles: "all",
   },
   {
     href: "/dashboard/settings",
-    label: "Settings",
+    label: "nav.settings",
     roles: ["platform_admin", "organization_owner", "organization_admin"],
   },
+  { href: "/dashboard/account", label: "nav.account", roles: "all" },
+  { href: "/platform", label: "nav.platform", roles: ["platform_admin"] },
 ] as const satisfies ReadonlyArray<{
   href: string;
-  label: string;
+  label: MessageKey;
   roles: "all" | readonly AppRole[];
 }>;
 
