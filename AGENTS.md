@@ -17,6 +17,9 @@ These instructions apply to the entire repository and should remain durable as t
 - `npm test` — Vitest once.
 - `npm run check` — lint, typecheck, and tests.
 - `npm run build` — production Next.js build.
+- `npm run db:reset` — rebuild the official local Supabase database from migrations and seed data.
+- `npm run db:test` — run Supabase SQL policy tests.
+- `npm run db:verify:native` — validate migrations and RLS using repository-scoped native PostgreSQL when Docker is unavailable.
 
 Run `npm run check` after each meaningful milestone. Run `npm run build` before declaring a milestone complete when application or configuration code changed.
 
@@ -56,4 +59,4 @@ Run `npm run check` after each meaningful milestone. Run `npm run build` before 
 - Keep commits focused. Inspect the diff and run the relevant checks before committing.
 - Keep broad integration/foundation tests in `tests`; colocate focused unit tests with the feature or utility they cover.
 
-See `docs/architecture.md` for system design and `docs/implementation-plan.md` for sequencing and completion criteria.
+See `docs/architecture.md` for system design, `docs/database.md` for schema and RLS details, and `docs/implementation-plan.md` for sequencing and completion criteria.

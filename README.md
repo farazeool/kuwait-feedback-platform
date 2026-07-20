@@ -39,9 +39,14 @@ Individual commands are available as `npm run lint`, `npm run typecheck`, and `n
 ## Documentation
 
 - [Architecture](docs/architecture.md)
+- [Database foundation](docs/database.md)
 - [Implementation plan](docs/implementation-plan.md)
 - [Repository agent instructions](AGENTS.md)
 
 ## Safety status
 
-Milestone 1 does not connect the application to a production database and does not deploy to Vercel. Cloud mutations require explicit approval.
+Milestone 2 remains local-only: no hosted Supabase project is linked, and nothing is deployed to Vercel. Cloud mutations require explicit approval.
+
+## Local database
+
+The Supabase foundation is migration-driven and does not require a hosted project. With Docker available, use `npm run db:start`, `npm run db:reset`, `npm run db:lint`, `npm run db:test`, and `npm run db:types`. A repository-scoped native PostgreSQL fallback is available as `npm run db:verify:native`.

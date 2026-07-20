@@ -21,14 +21,16 @@ Each milestone must end with linting, type checking, unit tests, and a productio
 
 ## Milestone 2 — Local database tenancy and RLS
 
-- Add Supabase local development configuration.
-- Create migrations for profiles, organizations, locations, memberships, location assignments, and platform roles.
+**Status:** Complete locally. Official Docker-backed Supabase lint/type generation remains an environment follow-up; the repository-scoped PostgreSQL reset and policy suite pass.
+
+- Add Supabase local development configuration and reproducible reset scripts.
+- Create migrations for profiles, organizations, locations, organization/location memberships, surveys, responses, alerts, audit logs, and subscriptions.
 - Add enums/constraints for the five platform roles and active/inactive lifecycle states.
 - Enable and force RLS on every tenant table.
 - Add helper functions and least-privilege policies for each role.
 - Add seed fixtures only for local test identities and synthetic tenants.
-- Generate TypeScript database types.
-- Add SQL tests proving allowed access and cross-tenant denial.
+- Add a checked-in Supabase-compatible TypeScript database contract and official regeneration script.
+- Add SQL tests proving allowed access, anonymous submission validation, self-promotion prevention, and cross-tenant denial.
 
 **Exit criteria:** migrations rebuild a local database from zero; policy tests demonstrate isolation for every role.
 

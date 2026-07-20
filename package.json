@@ -10,7 +10,14 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "npm run lint && npm run typecheck && npm run test"
+    "check": "npm run lint && npm run typecheck && npm run test",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:lint": "supabase db lint --local --level warning",
+    "db:test": "supabase test db",
+    "db:types": "supabase gen types --lang typescript --local > src/types/database.ts",
+    "db:verify:native": "sh scripts/verify-local-database.sh"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.3",
@@ -27,6 +34,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "supabase": "^2.109.1",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.10"
