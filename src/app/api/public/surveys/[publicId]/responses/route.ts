@@ -15,7 +15,9 @@ import {
   readSubmissionBody,
 } from "@/features/public-feedback/security";
 import { getServerEnv } from "@/lib/env/server";
+import { logEvent } from "@/lib/observability/logger";
 import { createSupabaseAnonymousClient } from "@/lib/supabase/anonymous";
+import { BotProtectionError, verifyPublicSubmissionBotChallenge } from "@/features/bot-protection/server";
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ publicId: string }> }) {
   const { publicId } = await params;
@@ -45,6 +47,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   if (!isRealisticCompletionTime(parsed.data.startedAt, Date.now())) return genericError(400);
 
+  try {
+    await verifyPublicSubmissionBotChallenge(parsed.data.botToken);
+  } catch (error) {
+    logEvent("public_feedback_bot_rejected", { publicId, reason: error instanceof BotProtectionError ? "verification" : "unavailable" });
+    return genericError(503);
+  }
+
   const survey = await getPublicSurvey(publicId);
   if (!survey || !validateAnswersForSurvey(survey, parsed.data)) return genericError(400);
 
@@ -64,11 +73,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   });
 
   if (error) {
-    console.info(JSON.stringify({ event: "public_feedback_rejected", publicId, reason: error.code === "P0001" ? "rate_limit" : "database_validation" }));
+    logEvent("public_feedback_rejected", { publicId, reason: error.code === "P0001" ? "rate_limit" : "database_validation" });
     return genericError(error.code === "P0001" ? 429 : 400);
   }
   const result = data as { duplicate?: boolean } | null;
-  console.info(JSON.stringify({ event: "public_feedback_accepted", publicId, duplicate: Boolean(result?.duplicate) }));
+  logEvent("public_feedback_accepted", { publicId, duplicate: Boolean(result?.duplicate) });
   return NextResponse.json({ ok: true, duplicate: Boolean(result?.duplicate) }, { status: result?.duplicate ? 200 : 201 });
 }
 

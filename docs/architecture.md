@@ -162,7 +162,11 @@ Backups, recovery objectives, data retention, and Kuwaiti privacy/legal requirem
 
 Environments remain isolated: local, preview, staging, and production use separate Supabase projects and credentials. Vercel preview deployments may connect only to disposable or staging resources. Database migrations run as an explicit reviewed release step, never automatically against production from an untrusted preview.
 
-No deployment or production mutation occurs without user approval. Secrets live in environment managers, not Git. GitHub CI will run lint, type checking, tests, and build before merge.
+No deployment or production mutation occurs without user approval. Secrets live in environment managers, not Git. `APP_ENV` and the server-only `SUPABASE_PROJECT_ENVIRONMENT` marker must agree: local permits only local URLs, while preview and production require isolated non-local HTTPS credentials. The runtime refuses localhost production URLs, preview credentials marked as production, production bot-protection bypass, and disabled production bot protection.
+
+GitHub CI runs dependency installation, ESLint, type checking, Vitest, localization parity, secret and browser/server-boundary scans, migration ordering validation, production build, and high-severity dependency audit. `/api/health/live` and `/api/health/ready` are deliberately minimal, no-store JSON endpoints; readiness reports only a generic unavailable state when required runtime configuration cannot be parsed. Production headers include CSP, anti-framing, `nosniff`, strict referrer/permissions policy, and HSTS only in production.
+
+Public-submission bot verification is a server-only provider interface. Local disabled mode is a controlled development bypass; preview and production fail closed. Structured logs redact secrets, cookies, authorization data, invitation tokens, answer text, internal notes, raw IPs, and fingerprints. See [deployment preparation](deployment.md) for the environment matrix and release workflow.
 
 ## 12. Initial architecture decisions
 

@@ -21,7 +21,10 @@
     "db:test:performance": "psql postgresql://postgres:postgres@127.0.0.1:54322/postgres --file=supabase/tests/analytics_performance.sql",
     "db:types": "supabase gen types --lang typescript --local > src/types/database.ts",
     "db:verify:native": "sh scripts/verify-local-database.sh",
-    "security:secrets": "sh scripts/scan-secrets.sh"
+    "db:validate:migrations": "sh scripts/validate-migration-order.sh",
+    "security:secrets": "sh scripts/scan-secrets.sh",
+    "security:client-boundary": "vitest run src/lib/security/client-boundary.test.ts",
+    "test:localization": "vitest run src/lib/i18n/messages.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.3",

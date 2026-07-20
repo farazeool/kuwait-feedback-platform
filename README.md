@@ -67,6 +67,7 @@ Individual commands are available as `npm run lint`, `npm run typecheck`, and `n
 - [Architecture](docs/architecture.md)
 - [Database foundation](docs/database.md)
 - [Implementation plan](docs/implementation-plan.md)
+- [Deployment preparation](docs/deployment.md)
 - [Repository agent instructions](AGENTS.md)
 
 ## Environment status

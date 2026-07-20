@@ -91,13 +91,13 @@ Each milestone must end with linting, type checking, unit tests, and a productio
 
 ## Milestone 7 — Alerts, auditing, and operational hardening
 
-**Status:** Alert and response workflow foundation complete; external delivery and launch hardening remain deferred.
+**Status:** Production-hardening foundation delivered on the Milestone 7 feature branch; external delivery and launch approval remain deferred.
 
 - Add configurable low-score rules and idempotent alert events.
 - Add permission-scoped alert assignment/lifecycle actions and response review states, tags, assignees, private notes, and audit events.
 - Integrate approved notification channels in a non-production environment.
 - Complete append-only audit coverage and administrator audit viewer.
-- Add security headers, CSP, dependency review, and abuse monitoring.
+- Add security headers, CSP, dependency review, CI, environment isolation assertions, provider-independent bot protection, and abuse monitoring foundations.
 - Define retention, backup, recovery, and incident procedures.
 - Run accessibility, performance, tenant isolation, and threat-model reviews.
 

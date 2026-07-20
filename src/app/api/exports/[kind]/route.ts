@@ -5,6 +5,7 @@ import { analyticsOverviewSchema, exportFiltersSchema } from "@/features/analyti
 import { CSV_BOM, csvLine, safeExportFilename } from "@/features/exports/csv";
 import { getAppAccessContext } from "@/lib/auth/context";
 import { formatKuwaitDateTime } from "@/lib/datetime/kuwait";
+import { logError } from "@/lib/observability/logger";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -174,7 +175,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         }
         controller.close();
       } catch (error) {
-        console.error(JSON.stringify({ event: "csv_export_failed", kind, reason: error instanceof Error ? error.name : "unknown" }));
+        logError("csv_export_failed", { kind, reason: error instanceof Error ? error.name : "unknown" });
         controller.error(new Error("Export failed"));
       }
     },
