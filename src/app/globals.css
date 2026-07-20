@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f5f7f4;
+  --foreground: #17211b;
+  --surface: #ffffff;
+  --muted: #66736b;
+  --brand: #0f6b4d;
+  --brand-dark: #084c37;
+  --border: #dce4df;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-muted: var(--muted);
+  --color-brand: var(--brand);
+  --color-brand-dark: var(--brand-dark);
+  --color-border: var(--border);
+  --font-sans: Arial, "Noto Sans Arabic", sans-serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, "Noto Sans Arabic", sans-serif;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--brand) 22%, transparent);
+}
