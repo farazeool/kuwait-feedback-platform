@@ -76,18 +76,25 @@ Each milestone must end with linting, type checking, unit tests, and a productio
 
 ## Milestone 6 — Dashboard and analytics
 
+**Status:** Complete as the analytics portion of the requested Milestone 5 delivery.
+
 - Add organization/location filters and permission-scoped data queries.
 - Implement response totals, average ratings, distributions, and time trends.
 - Add branch comparison and drill-down views.
 - Add safe text-feedback browsing with pagination and export authorization.
 - Test Kuwait-local day/week boundaries and Arabic number/date formatting.
 - Measure query plans and add indexes before considering rollups.
+- Add accessible chart summaries, survey question analytics, normalized mixed-scale comparisons, and minimum-sample safeguards.
+- Add streamed and audited response, answer, survey, location, and alert CSV exports.
 
 **Exit criteria:** every dashboard metric matches controlled fixtures and respects role/location scope.
 
 ## Milestone 7 — Alerts, auditing, and operational hardening
 
+**Status:** Alert and response workflow foundation complete; external delivery and launch hardening remain deferred.
+
 - Add configurable low-score rules and idempotent alert events.
+- Add permission-scoped alert assignment/lifecycle actions and response review states, tags, assignees, private notes, and audit events.
 - Integrate approved notification channels in a non-production environment.
 - Complete append-only audit coverage and administrator audit viewer.
 - Add security headers, CSP, dependency review, and abuse monitoring.

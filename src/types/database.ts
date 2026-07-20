@@ -39,12 +39,15 @@ export type Database = {
           acknowledged_at: string | null
           acknowledged_by: string | null
           alert_type: string
+          assigned_to: string | null
           created_at: string
+          dismissed_at: string | null
           id: string
           location_id: string
           message: string | null
           organization_id: string
           rating_value: number | null
+          resolution_note: string | null
           resolved_at: string | null
           response_id: string | null
           status: Database["public"]["Enums"]["alert_status"]
@@ -55,12 +58,15 @@ export type Database = {
           acknowledged_at?: string | null
           acknowledged_by?: string | null
           alert_type: string
+          assigned_to?: string | null
           created_at?: string
+          dismissed_at?: string | null
           id?: string
           location_id: string
           message?: string | null
           organization_id: string
           rating_value?: number | null
+          resolution_note?: string | null
           resolved_at?: string | null
           response_id?: string | null
           status?: Database["public"]["Enums"]["alert_status"]
@@ -71,12 +77,15 @@ export type Database = {
           acknowledged_at?: string | null
           acknowledged_by?: string | null
           alert_type?: string
+          assigned_to?: string | null
           created_at?: string
+          dismissed_at?: string | null
           id?: string
           location_id?: string
           message?: string | null
           organization_id?: string
           rating_value?: number | null
+          resolution_note?: string | null
           resolved_at?: string | null
           response_id?: string | null
           status?: Database["public"]["Enums"]["alert_status"]
@@ -503,6 +512,48 @@ export type Database = {
           },
         ]
       }
+      response_internal_notes: {
+        Row: {
+          author_id: string | null
+          created_at: string
+          id: string
+          note: string
+          organization_id: string
+          response_id: string
+        }
+        Insert: {
+          author_id?: string | null
+          created_at?: string
+          id?: string
+          note: string
+          organization_id: string
+          response_id: string
+        }
+        Update: {
+          author_id?: string | null
+          created_at?: string
+          id?: string
+          note?: string
+          organization_id?: string
+          response_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "response_internal_notes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "response_internal_notes_response_id_fkey"
+            columns: ["response_id"]
+            isOneToOne: false
+            referencedRelation: "survey_responses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
           canceled_at: string | null
@@ -767,37 +818,55 @@ export type Database = {
       }
       survey_responses: {
         Row: {
+          assigned_to: string | null
           created_at: string
           id: string
           idempotency_key: string | null
+          internal_tags: string[]
           locale: Database["public"]["Enums"]["locale_code"]
           location_id: string
           organization_id: string
           overall_rating: number | null
+          resolved_at: string | null
+          reviewed_at: string | null
           submitted_at: string
           survey_id: string
+          updated_at: string
+          workflow_status: Database["public"]["Enums"]["response_workflow_status"]
         }
         Insert: {
+          assigned_to?: string | null
           created_at?: string
           id?: string
           idempotency_key?: string | null
+          internal_tags?: string[]
           locale: Database["public"]["Enums"]["locale_code"]
           location_id: string
           organization_id: string
           overall_rating?: number | null
+          resolved_at?: string | null
+          reviewed_at?: string | null
           submitted_at?: string
           survey_id: string
+          updated_at?: string
+          workflow_status?: Database["public"]["Enums"]["response_workflow_status"]
         }
         Update: {
+          assigned_to?: string | null
           created_at?: string
           id?: string
           idempotency_key?: string | null
+          internal_tags?: string[]
           locale?: Database["public"]["Enums"]["locale_code"]
           location_id?: string
           organization_id?: string
           overall_rating?: number | null
+          resolved_at?: string | null
+          reviewed_at?: string | null
           submitted_at?: string
           survey_id?: string
+          updated_at?: string
+          workflow_status?: Database["public"]["Enums"]["response_workflow_status"]
         }
         Relationships: [
           {
@@ -886,6 +955,16 @@ export type Database = {
         Args: { p_token: string }
         Returns: string
       }
+      assert_analytics_scope: {
+        Args: {
+          p_end_at: string
+          p_location_id?: string
+          p_organization_id: string
+          p_start_at: string
+          p_survey_id?: string
+        }
+        Returns: undefined
+      }
       can_access_location: { Args: { p_location_id: string }; Returns: boolean }
       can_access_response: { Args: { p_response_id: string }; Returns: boolean }
       can_manage_alert: { Args: { p_alert_id: string }; Returns: boolean }
@@ -894,6 +973,7 @@ export type Database = {
         Args: { p_organization_id: string }
         Returns: boolean
       }
+      can_manage_response: { Args: { p_response_id: string }; Returns: boolean }
       can_manage_survey: { Args: { p_survey_id: string }; Returns: boolean }
       can_read_organization: {
         Args: { p_organization_id: string }
@@ -931,7 +1011,31 @@ export type Database = {
         }[]
       }
       duplicate_survey_group: { Args: { p_survey_id: string }; Returns: string }
+      get_analytics_overview: {
+        Args: {
+          p_alert_status?: Database["public"]["Enums"]["alert_status"]
+          p_bucket?: string
+          p_end_at: string
+          p_location_id?: string
+          p_organization_id: string
+          p_rating_max?: number
+          p_rating_min?: number
+          p_start_at: string
+          p_survey_id?: string
+        }
+        Returns: Json
+      }
       get_public_survey: { Args: { p_public_slug: string }; Returns: Json }
+      get_survey_question_analytics: {
+        Args: {
+          p_end_at: string
+          p_start_at: string
+          p_survey_id: string
+          p_text_limit?: number
+          p_text_offset?: number
+        }
+        Returns: Json
+      }
       is_platform_admin: { Args: never; Returns: boolean }
       organization_role: {
         Args: { p_organization_id: string }
@@ -950,6 +1054,14 @@ export type Database = {
           invitation_id: string
           invitation_token: string
         }[]
+      }
+      record_data_export: {
+        Args: {
+          p_export_type: string
+          p_filters?: Json
+          p_organization_id: string
+        }
+        Returns: undefined
       }
       revoke_organization_invitation: {
         Args: { p_invitation_id: string }
@@ -997,9 +1109,32 @@ export type Database = {
         }
         Returns: undefined
       }
+      update_alert_workflow: {
+        Args: {
+          p_alert_id: string
+          p_assigned_to?: string
+          p_resolution_note?: string
+          p_status: Database["public"]["Enums"]["alert_status"]
+        }
+        Returns: undefined
+      }
+      update_response_workflow: {
+        Args: {
+          p_assigned_to?: string
+          p_note?: string
+          p_response_id: string
+          p_status: Database["public"]["Enums"]["response_workflow_status"]
+          p_tags?: string[]
+        }
+        Returns: undefined
+      }
+      user_can_access_location: {
+        Args: { p_location_id: string; p_user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      alert_status: "open" | "acknowledged" | "resolved"
+      alert_status: "open" | "acknowledged" | "resolved" | "dismissed"
       app_role:
         | "platform_admin"
         | "organization_owner"
@@ -1010,6 +1145,11 @@ export type Database = {
       locale_code: "en" | "ar"
       membership_scope: "organization" | "locations"
       question_type: "rating" | "multiple_choice" | "text"
+      response_workflow_status:
+        | "unread"
+        | "reviewed"
+        | "action_required"
+        | "resolved"
       subscription_status:
         | "trialing"
         | "active"
@@ -1147,7 +1287,7 @@ export const Constants = {
   },
   public: {
     Enums: {
-      alert_status: ["open", "acknowledged", "resolved"],
+      alert_status: ["open", "acknowledged", "resolved", "dismissed"],
       app_role: [
         "platform_admin",
         "organization_owner",
@@ -1159,6 +1299,12 @@ export const Constants = {
       locale_code: ["en", "ar"],
       membership_scope: ["organization", "locations"],
       question_type: ["rating", "multiple_choice", "text"],
+      response_workflow_status: [
+        "unread",
+        "reviewed",
+        "action_required",
+        "resolved",
+      ],
       subscription_status: [
         "trialing",
         "active",

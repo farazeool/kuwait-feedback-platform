@@ -19,7 +19,7 @@ test("submits one valid anonymous response through the protected endpoint", asyn
   await expect(page.getByRole("heading", { name: "Thank you for your feedback" })).toBeVisible();
 });
 
-test("protects dashboard routes and the local QR endpoint", async ({ page, request }) => {
+test("protects dashboard, export, and local QR routes", async ({ page, request }) => {
   await page.goto("/dashboard/surveys");
   await expect(page).toHaveURL(/\/login/);
   await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
@@ -27,4 +27,6 @@ test("protects dashboard routes and the local QR endpoint", async ({ page, reque
   const target = encodeURIComponent(`http://127.0.0.1:3100${publicPath}`);
   const response = await request.get(`/api/qr?format=svg&value=${target}`);
   expect(response.status()).toBe(401);
+  const exportResponse = await request.get("/api/exports/responses?preset=7d");
+  expect(exportResponse.status()).toBe(401);
 });

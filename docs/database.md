@@ -2,7 +2,7 @@
 
 ## Scope
 
-Milestones 2–4 define the PostgreSQL tenancy, survey authoring/lifecycle, protected response, rate-limit, alert, subscription, audit, onboarding, and invitation foundation. The schema is validated against the official local Supabase PostgreSQL 17 stack and applied to an isolated free hosted development project. Production remains unlinked and untouched.
+Milestones 2–5 define the PostgreSQL tenancy, survey authoring/lifecycle, protected response, rate-limit, analytics, operational workflow, alert, subscription, audit, onboarding, and invitation foundation. The schema is validated against the official local Supabase PostgreSQL 17 stack and applied to an isolated free hosted development project. Production remains unlinked and untouched.
 
 The source of truth is the ordered SQL in `supabase/migrations`. `supabase/seed.sql` contains synthetic local fixtures only.
 
@@ -19,6 +19,7 @@ The source of truth is the ordered SQL in `supabase/migrations`. `supabase/seed.
 - `survey_responses` capture an immutable submission scope and optional idempotency key.
 - `survey_answers` store rating/text answers. `survey_answer_choices` is the normalized join for selected options.
 - `alerts` belong to an organization/location and may reference the response that triggered them.
+- `response_internal_notes` contains manager-only response notes. Notes are scope-protected, are never returned by public survey functions, and are not copied into audit logs.
 - `subscriptions` are one-to-one with organizations. Provider credentials are never stored.
 - `audit_logs` are append-only records for administrative changes.
 - `organization_invitations` stores invitation metadata and SHA-256 token digests; it never stores plaintext tokens.
@@ -34,7 +35,7 @@ All primary keys are UUIDs. Timestamps are `timestamptz` values stored in UTC. O
 | `platform_admin` | All organizations | All locations | Full platform administration |
 | `organization_owner` | Own memberships | All organization locations | Organization, membership, location, survey, alert, and response-retention management |
 | `organization_admin` | Own memberships | All organization locations | Same operational management, but cannot grant/modify owner roles |
-| `location_manager` | Organization identity only | Explicit `location_memberships` only | Alert acknowledgement; business data remains read-only in this foundation |
+| `location_manager` | Organization identity only | Explicit `location_memberships` only | Alert and response workflow updates within assigned locations |
 | `analyst` | Organization-wide when assigned there | Explicit locations when location-assigned | Read-only |
 
 Users cannot update their own membership role. Owner memberships are not editable through ordinary tenant policies. Platform elevation exists only in `profiles.platform_role` and self-profile policies require it to remain null.
@@ -138,3 +139,25 @@ That command creates `.local-postgres` inside the repository, applies every migr
 ## Hosted development environment
 
 The hosted project is an isolated free development environment in `ap-south-1`. Its ignored local link state lives under `supabase/.temp`; credentials live only in ignored `.env.local`. Migrations were applied without `supabase/seed.sql`, and hosted verification confirms zero organizations, responses, and invitations. Never run local seed data against staging or production-like environments without a specific review.
+
+## Analytics definitions and authorization
+
+`get_analytics_overview` supplies response totals, normalized average, five-band distribution, response and low-score trends, survey/location comparisons, alert metrics, and recent responses. `get_survey_question_analytics` supplies scale-native rating average/median/distribution/trend, single-choice option counts and percentages, and bounded text-answer pages. Both functions call `assert_analytics_scope`; the maximum interval is 366 days and all tenant/location checks use the same RLS permission helpers as detail screens.
+
+Overall cross-survey ratings are normalized to 0–100 from each survey's valid rating bounds. A normalized low score is at or below 40. Question screens retain the original values and scale. NPS is intentionally absent until a survey explicitly defines an eligible 0–10 recommendation question. Date filters convert Kuwait calendar midnights into UTC instants, query the half-open `[start, end)` interval, and bucket back through `Asia/Kuwait`.
+
+Location comparisons show averages only with their counts. Ranking requires five current responses; improvement/decline also needs five responses in the immediately preceding equal-length range. This threshold prevents labels on tiny samples but is not a statistical-significance test.
+
+`update_alert_workflow` implements assignment, acknowledgement, resolution, dismissal, and reopening. `update_response_workflow` implements review status, deduplicated internal tags, assignment, and private notes. Direct ordinary updates are revoked. The functions authorize owners/admins organization-wide, location managers only at assigned locations, and deny analyst mutations. Specialized triggers record action and non-sensitive state metadata in `audit_logs`; answer and internal-note text are excluded.
+
+Exports first call `record_data_export`, then read only through the authenticated RLS client. The application streams at most 10,000 output rows within a maximum 366-day interval. CSV cells are always quoted, formula-leading values are prefixed safely, Arabic is encoded as UTF-8 with a BOM, and UTC plus Kuwait-local timestamps are included. Export code omits UUIDs where unnecessary and never selects secrets, tokens, authentication metadata, raw addresses, fingerprints, or rate-limit state.
+
+## Indexing and scale assumptions
+
+The analytics migration adds organization/date, location/date, survey/date, rating, workflow, assignee, tag, answer-value, option, alert-status, and note indexes. `supabase/tests/analytics_performance.sql` runs representative `EXPLAIN (ANALYZE, BUFFERS)` queries after each local reset.
+
+- At 1,000 responses, bounded live aggregation and ordinary pagination are expected to be sufficient.
+- At 10,000 responses, index usage and stable server-side pagination are required; exports remain streamed.
+- At 100,000 responses, measure production-like plans and consider asynchronous exports and tenant-keyed daily rollups. Do not add global or cross-tenant caches.
+
+Any future server cache key must include user authorization scope, organization, permitted locations, selected survey, date window, rating range, and alert/workflow filters. Cache invalidation must never widen scope.

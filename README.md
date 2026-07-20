@@ -2,7 +2,7 @@
 
 A multi-tenant customer feedback platform for businesses in Kuwait. Organizations manage multiple locations, publish QR-linked surveys, collect anonymous customer responses, and analyze ratings and trends within strict role and tenant boundaries.
 
-## Milestone 4 foundation
+## Milestone 5 analytics and operations
 
 The repository currently provides:
 
@@ -23,6 +23,12 @@ The repository currently provides:
 - Mobile-first anonymous English/Arabic feedback with atomic validation and idempotency
 - Database-backed hashed rate-limit buckets and privacy-safe rejection logging
 - Permission-scoped response inbox with Kuwait-local timestamps
+- Permission-scoped analytics with bounded Kuwait-local date ranges
+- Normalized mixed-scale rating summaries, trends, distributions, and branch/survey comparisons
+- Accessible low-JavaScript charts and question-level survey analytics
+- Alert acknowledgement, assignment, resolution, dismissal, and reopening workflows
+- Response review status, internal tags, assignees, and private notes
+- Streamed, audited UTF-8 CSV exports with formula-injection protection and row limits
 
 ## Local setup
 
@@ -42,6 +48,7 @@ Replace the placeholder Supabase values in `.env.local` with credentials from a 
 npm run check
 npm run build
 npm run test:e2e
+npm run db:test:performance
 ```
 
 Individual commands are available as `npm run lint`, `npm run typecheck`, and `npm test`.

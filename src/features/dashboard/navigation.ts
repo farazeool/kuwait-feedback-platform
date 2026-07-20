@@ -7,6 +7,7 @@ export const DASHBOARD_NAVIGATION = [
   { href: "/dashboard/locations", label: "Locations", roles: "all" },
   { href: "/dashboard/surveys", label: "Surveys", roles: "all" },
   { href: "/dashboard/responses", label: "Responses", roles: "all" },
+  { href: "/dashboard/alerts", label: "Alerts", roles: "all" },
   {
     href: "/dashboard/team",
     label: "Team",
