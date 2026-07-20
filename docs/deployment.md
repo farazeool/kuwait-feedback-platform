@@ -29,3 +29,13 @@ Application events are structured JSON. The logger redacts secret-like fields, c
 ## Bot-protection interface
 
 Public submission uses a server-only, provider-independent verification interface. Local development can use the disabled-provider bypass; it is denied in preview and production. A future provider adapter must receive its credential only from a server-side environment variable, enforce the built-in timeout, and return a generic failure on timeout or provider errors. No provider account or client SDK is required for this foundation.
+
+The included Turnstile adapter is server-only and verifies the provider response with a short timeout. `BOT_PROTECTION_SITE_KEY` is the only browser-safe bot value; `BOT_PROTECTION_SECRET_KEY` must remain server-only. Hosted environments require an expected hostname and action. Production refuses disabled protection, any bypass, or incomplete bot configuration. The browser challenge widget remains deliberately unconfigured until the provider supplies an approved site key.
+
+## Email readiness
+
+Local preview mode captures invitation delivery without sending it. SMTP mode requires server-only `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM_EMAIL`, and `SMTP_FROM_NAME`; it uses bounded connection/socket timeouts and never logs recipient content, templates, or invitation tokens. Production rejects preview delivery mode. No production email is active until an approved provider credential bundle is placed in the production environment manager.
+
+An operator may run `ALLOW_EMAIL_TEST_SEND=true npm run email:send-test -- recipient@example.test` only after intentionally configuring SMTP. It sends one simple delivery check to the supplied recipient and never runs automatically in CI or application flows.
+
+See [operations and recovery](operations.md) for migration, backup, retention, incident, and capacity procedures.

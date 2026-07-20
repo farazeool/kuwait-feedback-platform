@@ -1,11 +1,11 @@
-export type BotProtectionContext = { action: string; requestId?: string };
+export type BotProtectionContext = { action: string; expectedHostname?: string; requestId?: string };
 export type BotProtectionProvider = {
-  verify: (token: string, context: BotProtectionContext, signal: AbortSignal) => Promise<{ accepted: boolean }>;
+  verify: (token: string, context: BotProtectionContext, signal: AbortSignal) => Promise<{ accepted: boolean; hostname?: string; action?: string }>;
 };
 
 export type BotProtectionConfig = {
   environment: "local" | "preview" | "production";
-  provider: "disabled" | "external";
+  provider: "disabled" | "turnstile";
   bypass: boolean;
   timeoutMs?: number;
 };
@@ -32,7 +32,9 @@ export async function verifyBotChallenge(
   const timeout = setTimeout(() => controller.abort(), config.timeoutMs ?? 2_500);
   try {
     const result = await provider.verify(token, context, controller.signal);
-    if (!result.accepted) throw new BotProtectionError("Bot challenge was rejected.");
+    if (!result.accepted || (context.expectedHostname && result.hostname !== context.expectedHostname) || (context.action && result.action && result.action !== context.action)) {
+      throw new BotProtectionError("Bot challenge was rejected.");
+    }
     return { bypassed: false };
   } catch (error) {
     if (error instanceof BotProtectionError) throw error;

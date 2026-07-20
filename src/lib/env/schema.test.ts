@@ -49,8 +49,25 @@ describe("environment validation", () => {
       SUPABASE_PROJECT_ENVIRONMENT: "production",
       NEXT_PUBLIC_APP_URL: "https://app.example.test",
       NEXT_PUBLIC_SUPABASE_URL: "https://production.supabase.co",
-      BOT_PROTECTION_PROVIDER: "external",
-      BOT_PROTECTION_BYPASS: "true",
+      SUPABASE_PROJECT_REF: "abcdefghijklmnopqrst",
+      BOT_PROTECTION_PROVIDER: "turnstile",
+      BOT_PROTECTION_SITE_KEY: "site-key",
+      BOT_PROTECTION_SECRET_KEY: "secret-key",
+      BOT_PROTECTION_EXPECTED_HOSTNAME: "app.example.test",
+      BOT_PROTECTION_LOCAL_BYPASS: "true",
+      EMAIL_DELIVERY_MODE: "smtp",
+      SMTP_USERNAME: "smtp-user",
+      SMTP_PASSWORD: "smtp-password",
     })).toThrow(/bypass/);
+  });
+
+  it("requires isolated hosted project metadata and critical production services", () => {
+    expect(() => parseServerEnv({
+      ...validServerEnv,
+      APP_ENV: "production",
+      SUPABASE_PROJECT_ENVIRONMENT: "production",
+      NEXT_PUBLIC_APP_URL: "https://app.example.test",
+      NEXT_PUBLIC_SUPABASE_URL: "https://prod.supabase.co",
+    })).toThrow(/project reference/);
   });
 });

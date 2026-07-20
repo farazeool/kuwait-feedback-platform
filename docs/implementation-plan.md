@@ -98,7 +98,7 @@ Each milestone must end with linting, type checking, unit tests, and a productio
 - Integrate approved notification channels in a non-production environment.
 - Complete append-only audit coverage and administrator audit viewer.
 - Add security headers, CSP, dependency review, CI, environment isolation assertions, provider-independent bot protection, and abuse monitoring foundations.
-- Define retention, backup, recovery, and incident procedures.
+- Define retention, backup, recovery, capacity, and incident procedures in `docs/operations.md`.
 - Run accessibility, performance, tenant isolation, and threat-model reviews.
 
 **Exit criteria:** alerts are deduplicated, admin mutations are traceable, and launch readiness findings are resolved or explicitly accepted.

@@ -10,11 +10,14 @@ describe("production security headers", () => {
     expect(headers["Referrer-Policy"]).toBe("strict-origin-when-cross-origin");
     expect(headers["Permissions-Policy"]).toContain("camera=()");
     expect(headers["X-Frame-Options"]).toBe("DENY");
+    expect(headers["Cross-Origin-Opener-Policy"]).toBe("same-origin");
+    expect(headers["Content-Security-Policy"]).toContain("unsafe-eval");
     expect(headers["Strict-Transport-Security"]).toBeUndefined();
   });
 
   it("sets HSTS only in production", () => {
     const headers = Object.fromEntries(buildSecurityHeaders("production").map(({ key, value }) => [key, value]));
     expect(headers["Strict-Transport-Security"]).toContain("includeSubDomains");
+    expect(headers["Content-Security-Policy"]).not.toContain("unsafe-eval");
   });
 });

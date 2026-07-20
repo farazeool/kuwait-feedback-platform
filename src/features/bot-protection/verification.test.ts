@@ -14,11 +14,16 @@ describe("bot protection verification", () => {
   });
 
   it("uses an injected provider without exposing provider details", async () => {
-    await expect(verifyBotChallenge("token", { action: "test" }, { environment: "preview", provider: "external", bypass: false }, external)).resolves.toEqual({ bypassed: false });
+    await expect(verifyBotChallenge("token", { action: "test" }, { environment: "preview", provider: "turnstile", bypass: false }, external)).resolves.toEqual({ bypassed: false });
   });
 
   it("returns a generic failure after a provider timeout", async () => {
     const hanging = { verify: vi.fn((_token: string, _context: unknown, signal: AbortSignal) => new Promise<{ accepted: boolean }>((_resolve, reject) => signal.addEventListener("abort", () => reject(new Error("timeout"))))) };
-    await expect(verifyBotChallenge("token", { action: "test" }, { environment: "preview", provider: "external", bypass: false, timeoutMs: 1 }, hanging)).rejects.toThrow("unavailable");
+    await expect(verifyBotChallenge("token", { action: "test" }, { environment: "preview", provider: "turnstile", bypass: false, timeoutMs: 1 }, hanging)).rejects.toThrow("unavailable");
+  });
+
+  it("rejects a valid-looking token returned for another hostname or action", async () => {
+    const wrongScope = { verify: vi.fn().mockResolvedValue({ accepted: true, hostname: "wrong.example.test", action: "other" }) };
+    await expect(verifyBotChallenge("token", { action: "submit", expectedHostname: "app.example.test" }, { environment: "production", provider: "turnstile", bypass: false }, wrongScope)).rejects.toBeInstanceOf(BotProtectionError);
   });
 });
