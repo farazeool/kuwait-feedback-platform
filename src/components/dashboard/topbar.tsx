@@ -12,7 +12,7 @@ export function DashboardTopbar({
   role: string;
 }) {
   return (
-    <header className="flex min-h-20 flex-wrap items-center justify-between gap-4 border-b border-border bg-white px-5 py-4 sm:px-8">
+    <header className="flex min-h-20 flex-wrap items-center justify-between gap-4 border-b border-border bg-white px-5 py-4 print:hidden sm:px-8">
       <div>
         <p className="font-bold">{organizationName}</p>
         <p className="text-sm text-muted">{locationName}</p>

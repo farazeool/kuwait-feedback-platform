@@ -1,0 +1,8 @@
+import { getResponseDetail } from "@/features/responses/server";
+import { formatKuwaitDateTime } from "@/lib/datetime/kuwait";
+
+export default async function ResponseDetailPage({ params }: { params: Promise<{ responseId: string }> }) {
+  const { responseId } = await params;
+  const detail = await getResponseDetail(responseId);
+  return <div className="grid gap-7"><header><p className="text-sm font-bold text-brand">Anonymous response</p><h1 className="mt-2 text-3xl font-bold">{detail.survey?.title_en}</h1><p className="mt-2 text-muted">{detail.organization?.name_en} · {detail.location?.name_en} · {formatKuwaitDateTime(detail.response.submitted_at)}</p></header><section className="grid gap-4 rounded-3xl border border-border bg-white p-6 sm:grid-cols-3"><div><p className="text-sm text-muted">Overall rating</p><p className="mt-2 text-2xl font-bold">{detail.response.overall_rating ?? "—"}</p></div><div><p className="text-sm text-muted">Locale</p><p className="mt-2 font-bold">{detail.response.locale.toUpperCase()}</p></div><div><p className="text-sm text-muted">Alert</p><p className="mt-2 font-bold">{detail.alerts[0] ? `${detail.alerts[0].alert_type} · ${detail.alerts[0].status}` : "None"}</p></div></section><section className="grid gap-4">{detail.answers.map((item) => <article key={item.question.id} className="rounded-2xl border border-border bg-white p-5"><h2 className="font-bold">{item.question.prompt_en}</h2><p className="mt-1 text-sm text-muted" dir="rtl">{item.question.prompt_ar}</p><div className="mt-4 whitespace-pre-wrap break-words text-foreground">{(item.rating ?? item.text ?? item.choices.map((choice) => choice?.label_en).join(", ")) || "No answer"}</div></article>)}</section></div>;
+}

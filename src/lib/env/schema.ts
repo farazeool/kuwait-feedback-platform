@@ -8,6 +8,7 @@ export const publicEnvSchema = z.object({
 
 export const serverEnvSchema = publicEnvSchema.extend({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
+  SUBMISSION_FINGERPRINT_SECRET: z.string().min(32),
   APP_TIME_ZONE: z.literal("Asia/Kuwait").default("Asia/Kuwait"),
 });
 

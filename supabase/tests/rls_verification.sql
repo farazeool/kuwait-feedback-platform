@@ -259,7 +259,7 @@ begin
 end;
 $$;
 
-select public.submit_public_survey_response(
+select public.submit_protected_survey_response(
   'demo-salmiya-customer-satisfaction-2026',
   'en',
   '[
@@ -272,13 +272,14 @@ select public.submit_public_survey_response(
       "option_ids":["60000000-0000-4000-8000-000000000001"]
     }
   ]'::jsonb,
-  'policy-test-idempotency-0001'
+  'policy-test-idempotency-0001',
+  repeat('a', 64)
 );
 
 do $$
 begin
   begin
-    perform public.submit_public_survey_response(
+    perform public.submit_protected_survey_response(
       'demo-salmiya-customer-satisfaction-2026',
       'en',
       '[
@@ -291,7 +292,8 @@ begin
           "option_ids":["60000000-0000-4000-8000-000000000001"]
         }
       ]'::jsonb,
-      'policy-test-invalid-0001'
+      'policy-test-invalid-0001',
+      repeat('b', 64)
     );
     raise exception 'Invalid public rating unexpectedly succeeded';
   exception

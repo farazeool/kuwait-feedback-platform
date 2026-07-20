@@ -1,53 +1,86 @@
 import { z } from "zod";
 
-export const localizedTextSchema = z.object({
-  en: z.string().trim().min(1).max(500),
-  ar: z.string().trim().min(1).max(500),
+const optionalLocalizedText = z.string().trim().max(500).default("");
+
+const optionSchema = z.object({
+  id: z.string().min(1).max(100),
+  labelEn: z.string().trim().min(1).max(300),
+  labelAr: z.string().trim().max(300).default(""),
 });
 
-const questionBaseSchema = z.object({
-  id: z.string().uuid(),
-  label: localizedTextSchema,
+const questionBase = z.object({
+  id: z.string().min(1).max(100),
+  labelEn: z.string().trim().min(1).max(500),
+  labelAr: optionalLocalizedText,
+  helpTextEn: optionalLocalizedText,
+  helpTextAr: optionalLocalizedText,
   required: z.boolean().default(false),
 });
 
-const ratingQuestionSchema = questionBaseSchema
+const ratingQuestionSchema = questionBase
   .extend({
     type: z.literal("rating"),
-    minimum: z.number().int().min(0).max(9),
-    maximum: z.number().int().min(1).max(10),
+    ratingMin: z.number().int().min(0).max(9),
+    ratingMax: z.number().int().min(1).max(10),
   })
-  .refine(({ minimum, maximum }) => maximum > minimum, {
-    message: "Rating maximum must be greater than minimum",
-    path: ["maximum"],
+  .refine((question) => question.ratingMax > question.ratingMin, {
+    message: "Rating maximum must be greater than the minimum",
+    path: ["ratingMax"],
   });
 
-const choiceOptionSchema = z.object({
-  id: z.string().uuid(),
-  label: localizedTextSchema,
-});
-
-const multipleChoiceQuestionSchema = questionBaseSchema.extend({
+const multipleChoiceQuestionSchema = questionBase.extend({
   type: z.literal("multiple_choice"),
-  allowMultiple: z.boolean().default(false),
-  options: z.array(choiceOptionSchema).min(2).max(20),
+  options: z.array(optionSchema).min(2).max(20),
 });
 
-const textQuestionSchema = questionBaseSchema.extend({
+const textQuestionSchema = questionBase.extend({
   type: z.literal("text"),
-  maximumLength: z.number().int().min(1).max(4000).default(1000),
+  textMaxLength: z.number().int().min(1).max(4000),
 });
 
-export const surveyQuestionSchema = z.discriminatedUnion("type", [
+export const surveyBuilderQuestionSchema = z.discriminatedUnion("type", [
   ratingQuestionSchema,
   multipleChoiceQuestionSchema,
   textQuestionSchema,
 ]);
 
-export const surveyDefinitionSchema = z.object({
-  title: localizedTextSchema,
-  questions: z.array(surveyQuestionSchema).min(1).max(50),
+export const surveyDraftSchema = z.object({
+  surveyId: z.string().uuid().nullable().default(null),
+  titleEn: z.string().trim().min(1).max(200),
+  titleAr: z.string().trim().max(200).default(""),
+  descriptionEn: z.string().trim().max(1000).default(""),
+  descriptionAr: z.string().trim().max(1000).default(""),
+  thankYouEn: z.string().trim().max(500).default(""),
+  thankYouAr: z.string().trim().max(500).default(""),
+  defaultLocale: z.enum(["en", "ar"]).default("en"),
+  locationIds: z.array(z.string().uuid()).min(1).max(20),
+  questions: z.array(surveyBuilderQuestionSchema).max(50),
 });
 
-export type SurveyDefinition = z.infer<typeof surveyDefinitionSchema>;
-export type SurveyQuestion = z.infer<typeof surveyQuestionSchema>;
+export const surveyPublicationSchema = surveyDraftSchema.extend({
+  questions: z.array(surveyBuilderQuestionSchema).min(1).max(50),
+});
+
+export type SurveyDraft = z.infer<typeof surveyDraftSchema>;
+export type SurveyBuilderQuestion = z.infer<typeof surveyBuilderQuestionSchema>;
+
+export function toDatabaseQuestions(questions: SurveyBuilderQuestion[]) {
+  return questions.map((question) => ({
+    type: question.type,
+    label_en: question.labelEn,
+    label_ar: question.labelAr,
+    help_text_en: question.helpTextEn,
+    help_text_ar: question.helpTextAr,
+    required: question.required,
+    rating_min: question.type === "rating" ? question.ratingMin : null,
+    rating_max: question.type === "rating" ? question.ratingMax : null,
+    text_max_length: question.type === "text" ? question.textMaxLength : null,
+    options:
+      question.type === "multiple_choice"
+        ? question.options.map((option) => ({
+            label_en: option.labelEn,
+            label_ar: option.labelAr,
+          }))
+        : [],
+  }));
+}

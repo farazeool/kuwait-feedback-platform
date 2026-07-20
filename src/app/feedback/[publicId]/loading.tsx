@@ -1,0 +1,1 @@
+export default function FeedbackLoading() { return <main role="status" className="mx-auto grid min-h-screen w-full max-w-2xl animate-pulse gap-5 px-4 py-8"><div className="h-48 rounded-3xl bg-border" /><div className="h-40 rounded-3xl bg-border" /><div className="h-40 rounded-3xl bg-border" /></main>; }

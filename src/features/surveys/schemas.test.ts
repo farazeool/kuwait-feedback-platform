@@ -1,42 +1,35 @@
 import { describe, expect, it } from "vitest";
 
-import { surveyDefinitionSchema } from "./schemas";
+import { surveyDraftSchema, surveyPublicationSchema, toDatabaseQuestions } from "./schemas";
 
-const questionId = "11111111-1111-4111-8111-111111111111";
+const validDraft = {
+  surveyId: null,
+  titleEn: "Customer satisfaction",
+  titleAr: "رضا العملاء",
+  descriptionEn: "Tell us about your visit",
+  descriptionAr: "أخبرنا عن زيارتك",
+  thankYouEn: "Thank you",
+  thankYouAr: "شكراً",
+  defaultLocale: "en",
+  locationIds: ["30000000-0000-4000-8000-000000000001"],
+  questions: [{ id: "q1", type: "rating", labelEn: "Rate us", labelAr: "قيّمنا", helpTextEn: "", helpTextAr: "", required: true, ratingMin: 1, ratingMax: 5 }],
+};
 
-describe("surveyDefinitionSchema", () => {
-  it("accepts a bilingual rating survey", () => {
-    const result = surveyDefinitionSchema.parse({
-      title: { en: "Visit feedback", ar: "تقييم الزيارة" },
-      questions: [
-        {
-          id: questionId,
-          type: "rating",
-          label: { en: "How was your visit?", ar: "كيف كانت زيارتك؟" },
-          required: true,
-          minimum: 1,
-          maximum: 5,
-        },
-      ],
-    });
-
-    expect(result.questions).toHaveLength(1);
+describe("survey builder validation", () => {
+  it("accepts a valid publishable bilingual survey", () => {
+    expect(surveyPublicationSchema.safeParse(validDraft).success).toBe(true);
   });
 
-  it("rejects a rating range with no usable interval", () => {
-    const result = surveyDefinitionSchema.safeParse({
-      title: { en: "Visit feedback", ar: "تقييم الزيارة" },
-      questions: [
-        {
-          id: questionId,
-          type: "rating",
-          label: { en: "Rating", ar: "التقييم" },
-          minimum: 5,
-          maximum: 5,
-        },
-      ],
-    });
+  it("allows an empty but otherwise valid draft", () => {
+    expect(surveyDraftSchema.safeParse({ ...validDraft, questions: [] }).success).toBe(true);
+  });
 
-    expect(result.success).toBe(false);
+  it("rejects invalid rating bounds and incomplete choice options", () => {
+    expect(surveyDraftSchema.safeParse({ ...validDraft, questions: [{ ...validDraft.questions[0], ratingMin: 5, ratingMax: 5 }] }).success).toBe(false);
+    expect(surveyDraftSchema.safeParse({ ...validDraft, questions: [{ id: "q2", type: "multiple_choice", labelEn: "Choose", labelAr: "", helpTextEn: "", helpTextAr: "", required: false, options: [{ id: "o1", labelEn: "One", labelAr: "" }] }] }).success).toBe(false);
+  });
+
+  it("maps builder questions to the trusted RPC payload", () => {
+    expect(toDatabaseQuestions(surveyPublicationSchema.parse(validDraft).questions)[0]).toMatchObject({ type: "rating", rating_min: 1, rating_max: 5 });
   });
 });

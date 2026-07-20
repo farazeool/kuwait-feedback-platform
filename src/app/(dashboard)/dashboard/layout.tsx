@@ -18,7 +18,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     : "All permitted locations";
 
   return (
-    <div dir={isArabic ? "rtl" : "ltr"} lang={context.profile.locale} className="min-h-screen lg:ps-64">
+    <div dir={isArabic ? "rtl" : "ltr"} lang={context.profile.locale} className="min-h-screen lg:ps-64 print:ps-0">
       <DashboardSidebar role={role} />
       <div className="min-w-0">
         <DashboardTopbar
@@ -27,7 +27,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           locationName={locationName}
           role={role}
         />
-        <main className="px-5 py-8 sm:px-8">{children}</main>
+        <main className="px-5 py-8 sm:px-8 print:p-0">{children}</main>
       </div>
     </div>
   );

@@ -1,0 +1,1 @@
+export default function ResponseLoading() { return <div role="status" className="grid animate-pulse gap-5"><div className="h-10 w-52 rounded-xl bg-border" /><div className="h-20 rounded-2xl bg-border" /><div className="h-72 rounded-2xl bg-border" /></div>; }

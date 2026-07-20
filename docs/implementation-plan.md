@@ -50,6 +50,8 @@ Each milestone must end with linting, type checking, unit tests, and a productio
 
 ## Milestone 4 — Survey authoring, publishing, and QR links
 
+**Status:** Complete. The migration passed the full local PostgreSQL 17 verification suite before being applied without seed data to the isolated hosted development project.
+
 - Migrate survey, version, question, option, and location-survey entities.
 - Build an accessible bilingual survey editor for rating, multiple-choice, and text questions.
 - Validate drafts with shared Zod schemas.
@@ -60,6 +62,8 @@ Each milestone must end with linting, type checking, unit tests, and a productio
 **Exit criteria:** a manager can create and publish a bilingual location survey without mutating historical versions.
 
 ## Milestone 5 — Public response collection
+
+**Status:** Core collection and the permission-scoped basic response inbox were delivered with Milestone 4. Full analytics/export remains in Milestone 6.
 
 - Build locale-aware, RTL-safe public survey rendering.
 - Add server-side schema/version validation and atomic response writes.

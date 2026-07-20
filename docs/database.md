@@ -2,7 +2,7 @@
 
 ## Scope
 
-Milestones 2 and 3 define the PostgreSQL tenancy, survey, response, alert, subscription, audit, onboarding, and invitation foundation. The schema is validated against the official local Supabase PostgreSQL 17 stack and applied to an isolated free hosted development project. Production remains unlinked and untouched.
+Milestones 2–4 define the PostgreSQL tenancy, survey authoring/lifecycle, protected response, rate-limit, alert, subscription, audit, onboarding, and invitation foundation. The schema is validated against the official local Supabase PostgreSQL 17 stack and applied to an isolated free hosted development project. Production remains unlinked and untouched.
 
 The source of truth is the ordered SQL in `supabase/migrations`. `supabase/seed.sql` contains synthetic local fixtures only.
 
@@ -13,7 +13,7 @@ The source of truth is the ordered SQL in `supabase/migrations`. `supabase/seed.
 - `organization_memberships` joins users to organizations with owner, admin, location-manager, or analyst roles and an explicit `organization`/`locations` scope.
 - `locations` belong to organizations. Composite foreign keys ensure records cannot claim a location from another organization.
 - `location_memberships` explicitly grants a location manager or location-scoped analyst access to a location.
-- `surveys` belong to one organization and one location and expose a random, non-sequential public slug.
+- `surveys` belong to one organization and one location, expose a random non-sequential public slug, and use `survey_group_id` to atomically coordinate the same draft across locations.
 - `survey_questions` belong to surveys and enforce rating, multiple-choice, or text-specific shapes.
 - `survey_question_options` normalize choices for multiple-choice questions.
 - `survey_responses` capture an immutable submission scope and optional idempotency key.
@@ -23,6 +23,7 @@ The source of truth is the ordered SQL in `supabase/migrations`. `supabase/seed.
 - `audit_logs` are append-only records for administrative changes.
 - `organization_invitations` stores invitation metadata and SHA-256 token digests; it never stores plaintext tokens.
 - `organization_invitation_locations` records explicit locations for location-scoped invitations.
+- `public_submission_rate_limits` stores only SHA-256 fingerprint bytes, short time buckets, counts, and expiry timestamps. It has no ordinary or anonymous grants.
 
 All primary keys are UUIDs. Timestamps are `timestamptz` values stored in UTC. Organization and location timezones are constrained to `Asia/Kuwait` for this product.
 
@@ -56,16 +57,19 @@ Important helpers include:
 
 Ordinary authenticated users receive table privileges only where a matching RLS policy exists. Audit logs have read policies but no update/delete grants, plus defensive triggers that reject mutation.
 
+## Survey lifecycle and historical integrity
+
+`save_survey_draft` is the trusted authenticated authoring boundary. It checks organization management permission, validates 1–20 organization locations and up to 50 questions, and synchronizes all group members in one transaction. Direct authenticated question/option mutations are revoked. `transition_survey_group` requires a location, a question, English labels, valid rating bounds, and at least two active options for every multiple-choice question before activation. Archiving immediately removes the group from public lookup without deleting responses; restoration runs the same publication validation.
+
+Answered question and option triggers reject update/delete operations. An active survey with responses must be duplicated with `duplicate_survey_group`; the new draft receives new survey, question, option, and public identifiers while the original response graph remains unchanged.
+
 ## Anonymous survey safety
 
-The `anon` role receives no direct table privileges. It can execute only two narrow functions:
+The `anon` role receives no direct table privileges. It can execute `get_public_survey(slug)`, which returns only active bilingual public structure and organization/location names without internal tenant IDs. Final writes use `submit_protected_survey_response`; the formerly exposed lower-level submission function is revoked from anonymous and authenticated clients.
 
-- `get_public_survey(slug)` returns the active bilingual location name, survey copy, active questions, and active options. It omits organization IDs, memberships, responses, and internal metadata.
-- `submit_public_survey_response(slug, locale, answers, idempotency_key)` validates the active organization/location/survey, required questions, question ownership, value type/range, option ownership, text length, duplicate questions, and idempotency before atomically writing the response and answers.
+The protected function validates fingerprint shape, consumes a five-request/15-minute per-survey bucket, honors idempotency before counting a retry, and then delegates required-question, ownership, type/range, choice-membership, text-length, duplicate-question, and atomic response/answer validation. Anonymous clients cannot list, update, or delete responses or inspect rate buckets.
 
-Both functions set an empty `search_path`; the submission function is the only anonymous write boundary. Anonymous clients cannot list, update, or delete responses.
-
-Application/edge rate limiting, body-size limits, and bot challenges are still required before production exposure. The database function enforces data validity and tenant scope but is not an IP rate limiter.
+The Next.js boundary additionally enforces JSON content type, a 64 KiB actual/declared body cap, 50 answers, Zod validation, a honeypot, realistic completion time, and an HMAC request fingerprint. Logs include only event category, public slug, decision class, and duplicate status—never raw addresses or answer text. Production bot challenge/WAF integration remains deferred and requires an approved provider.
 
 ## Audit behavior
 
@@ -116,9 +120,12 @@ npm run db:lint
 npm run db:test
 npm run db:test:authorization
 npm run db:types
+npm run test:e2e
 ```
 
 Stop the stack with `npm run db:stop`.
+
+The Playwright server reads the disposable local stack status, injects only its URL and anonymous key, and tests the mobile bilingual survey, protected anonymous submission, dashboard redirect, and same-origin local QR generation. Local seed identities remain synthetic/passwordless; no demo credentials are sent to the hosted development project.
 
 The repository also provides a native PostgreSQL fallback for environments where Docker is unavailable:
 

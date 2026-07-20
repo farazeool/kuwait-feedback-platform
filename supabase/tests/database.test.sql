@@ -55,7 +55,7 @@ select is(
   'anonymous survey RPC returns the published question structure'
 );
 select ok(
-  public.submit_public_survey_response(
+  public.submit_protected_survey_response(
     'demo-salmiya-customer-satisfaction-2026',
     'en',
     '[
@@ -68,13 +68,14 @@ select ok(
         "option_ids":["60000000-0000-4000-8000-000000000001"]
       }
     ]'::jsonb,
-    'pgtap-anonymous-0001'
-  ) is not null,
+    'pgtap-anonymous-0001',
+    repeat('a', 64)
+  ) ->> 'response_id' is not null,
   'anonymous users can submit a valid response through the narrow RPC'
 );
 select throws_ok(
   $$
-    select public.submit_public_survey_response(
+    select public.submit_protected_survey_response(
       'demo-salmiya-customer-satisfaction-2026',
       'en',
       '[
@@ -87,7 +88,8 @@ select throws_ok(
           "option_ids":["60000000-0000-4000-8000-000000000001"]
         }
       ]'::jsonb,
-      'pgtap-invalid-0001'
+      'pgtap-invalid-0001',
+      repeat('b', 64)
     )
   $$,
   '23514',

@@ -465,6 +465,44 @@ export type Database = {
         }
         Relationships: []
       }
+      public_submission_rate_limits: {
+        Row: {
+          created_at: string
+          expires_at: string
+          fingerprint_hash: string
+          request_count: number
+          survey_id: string
+          updated_at: string
+          window_started_at: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          fingerprint_hash: string
+          request_count?: number
+          survey_id: string
+          updated_at?: string
+          window_started_at: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          fingerprint_hash?: string
+          request_count?: number
+          survey_id?: string
+          updated_at?: string
+          window_started_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "public_submission_rate_limits_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "surveys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
           canceled_at: string | null
@@ -663,6 +701,8 @@ export type Database = {
         Row: {
           allow_multiple: boolean
           created_at: string
+          help_text_ar: string | null
+          help_text_en: string | null
           id: string
           is_required: boolean
           organization_id: string
@@ -680,6 +720,8 @@ export type Database = {
         Insert: {
           allow_multiple?: boolean
           created_at?: string
+          help_text_ar?: string | null
+          help_text_en?: string | null
           id?: string
           is_required?: boolean
           organization_id: string
@@ -697,6 +739,8 @@ export type Database = {
         Update: {
           allow_multiple?: boolean
           created_at?: string
+          help_text_ar?: string | null
+          help_text_en?: string | null
           id?: string
           is_required?: boolean
           organization_id?: string
@@ -778,6 +822,9 @@ export type Database = {
           public_slug: string
           published_at: string | null
           status: Database["public"]["Enums"]["survey_status"]
+          survey_group_id: string
+          thank_you_ar: string | null
+          thank_you_en: string | null
           title_ar: string
           title_en: string
           updated_at: string
@@ -794,6 +841,9 @@ export type Database = {
           public_slug?: string
           published_at?: string | null
           status?: Database["public"]["Enums"]["survey_status"]
+          survey_group_id?: string
+          thank_you_ar?: string | null
+          thank_you_en?: string | null
           title_ar: string
           title_en: string
           updated_at?: string
@@ -810,6 +860,9 @@ export type Database = {
           public_slug?: string
           published_at?: string | null
           status?: Database["public"]["Enums"]["survey_status"]
+          survey_group_id?: string
+          thank_you_ar?: string | null
+          thank_you_en?: string | null
           title_ar?: string
           title_en?: string
           updated_at?: string
@@ -848,6 +901,15 @@ export type Database = {
       }
       can_read_profile: { Args: { p_profile_id: string }; Returns: boolean }
       can_read_survey: { Args: { p_survey_id: string }; Returns: boolean }
+      consume_public_submission_rate_limit: {
+        Args: {
+          p_fingerprint_hash: string
+          p_limit?: number
+          p_public_slug: string
+          p_window_seconds?: number
+        }
+        Returns: boolean
+      }
       create_organization_with_first_location: {
         Args: {
           p_address: string
@@ -868,6 +930,7 @@ export type Database = {
           organization_id: string
         }[]
       }
+      duplicate_survey_group: { Args: { p_survey_id: string }; Returns: string }
       get_public_survey: { Args: { p_public_slug: string }; Returns: Json }
       is_platform_admin: { Args: never; Returns: boolean }
       organization_role: {
@@ -892,6 +955,32 @@ export type Database = {
         Args: { p_invitation_id: string }
         Returns: undefined
       }
+      save_survey_draft: {
+        Args: {
+          p_default_locale: Database["public"]["Enums"]["locale_code"]
+          p_description_ar: string
+          p_description_en: string
+          p_location_ids: string[]
+          p_organization_id: string
+          p_questions: Json
+          p_survey_id: string
+          p_thank_you_ar: string
+          p_thank_you_en: string
+          p_title_ar: string
+          p_title_en: string
+        }
+        Returns: string
+      }
+      submit_protected_survey_response: {
+        Args: {
+          p_answers: Json
+          p_fingerprint_hash: string
+          p_idempotency_key: string
+          p_locale: Database["public"]["Enums"]["locale_code"]
+          p_public_slug: string
+        }
+        Returns: Json
+      }
       submit_public_survey_response: {
         Args: {
           p_answers: Json
@@ -900,6 +989,13 @@ export type Database = {
           p_public_slug: string
         }
         Returns: string
+      }
+      transition_survey_group: {
+        Args: {
+          p_status: Database["public"]["Enums"]["survey_status"]
+          p_survey_id: string
+        }
+        Returns: undefined
       }
     }
     Enums: {

@@ -8,6 +8,11 @@ const validPublicEnv = {
   NEXT_PUBLIC_APP_URL: "http://localhost:3000",
 };
 
+const validServerEnv = {
+  ...validPublicEnv,
+  SUBMISSION_FINGERPRINT_SECRET: "test-fingerprint-secret-at-least-32-characters",
+};
+
 describe("environment validation", () => {
   it("accepts browser-safe configuration", () => {
     expect(parsePublicEnv(validPublicEnv)).toEqual(validPublicEnv);
@@ -20,6 +25,6 @@ describe("environment validation", () => {
   });
 
   it("defaults server-side reporting to Kuwait time", () => {
-    expect(parseServerEnv(validPublicEnv).APP_TIME_ZONE).toBe("Asia/Kuwait");
+    expect(parseServerEnv(validServerEnv).APP_TIME_ZONE).toBe("Asia/Kuwait");
   });
 });

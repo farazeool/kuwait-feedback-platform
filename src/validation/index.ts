@@ -1,9 +1,9 @@
 export {
-  localizedTextSchema,
-  surveyDefinitionSchema,
-  surveyQuestionSchema,
-  type SurveyDefinition,
-  type SurveyQuestion,
+  surveyBuilderQuestionSchema,
+  surveyDraftSchema,
+  surveyPublicationSchema,
+  type SurveyDraft,
+  type SurveyBuilderQuestion,
 } from "@/features/surveys/schemas";
 
 export {

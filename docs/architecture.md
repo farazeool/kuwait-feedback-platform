@@ -19,7 +19,7 @@ The Next.js application is the user-facing web tier and server-side application 
 
 There are three main request paths:
 
-- **Public survey path:** a customer opens a signed, non-sequential location survey slug, reads the published survey snapshot, and submits validated answers through a rate-limited server endpoint.
+- **Public survey path:** a customer opens a random, non-sequential location survey slug, reads the published survey snapshot, and submits validated answers through a rate-limited server endpoint.
 - **Manager path:** an authenticated user accesses dashboard and management routes. Supabase Auth identifies the user; RLS independently filters every database operation.
 - **Platform operations path:** a platform administrator performs exceptional cross-tenant operations through explicitly protected server-side actions, with an audit event for every material mutation.
 
@@ -65,13 +65,12 @@ All identifiers use UUIDs. All timestamps use `timestamptz` and are stored in UT
 
 ### Survey authoring and publishing
 
-- `surveys`: belongs to an organization; lifecycle status and default locale.
-- `survey_versions`: immutable published definitions plus mutable drafts; version number and publication metadata.
-- `survey_questions`: ordered question definitions for rating, multiple-choice, and text types.
-- `survey_question_options`: ordered choices for multiple-choice questions.
-- `location_surveys`: maps a survey to a location and owns the public slug/QR destination, activation window, and status.
+- `surveys`: one location-specific public survey, with bilingual copy, lifecycle status, a random public slug, and a shared `survey_group_id`.
+- `survey_questions`: ordered rating, multiple-choice, and text definitions cloned into each location member of a survey group.
+- `survey_question_options`: ordered bilingual single-choice options.
+- `survey_responses` and `survey_answers`: immutable submissions tied to the exact location survey and question identifiers shown to the customer.
 
-A response always references the immutable survey version displayed to the customer. Editing a survey creates a new version so historical answers remain interpretable.
+`save_survey_draft` atomically synchronizes a draft group across selected locations. `transition_survey_group` validates and publishes or archives every member together. Once any group member has responses, question/option mutation triggers reject destructive structure changes; managers duplicate the group into a new draft instead. This keeps historical answers interpretable without a separate version table.
 
 ### Responses and operations
 
@@ -94,7 +93,7 @@ Supabase Auth handles manager sessions. Customers submitting public feedback rem
 | Organization settings | Yes | Yes | Yes | No | Read only |
 | Membership and roles | Yes | Yes | Yes, below owner | No | No |
 | Location management | Yes | Yes | Yes | Assigned only | Read assigned |
-| Survey authoring/publishing | Yes | Yes | Yes | Assigned, if granted | Read only |
+| Survey authoring/publishing | Yes | Yes | Yes | Assigned/read only | Read only |
 | Response dashboard | Yes | All org | All org | Assigned only | Assigned/read only |
 | Raw response export | Explicit, audited | Yes | Configurable | No by default | Configurable |
 
@@ -116,15 +115,23 @@ Every migration that introduces a table must introduce its RLS posture and suppo
 
 ## 7. Anonymous submission and abuse controls
 
-The public URL uses a cryptographically random slug and does not imply authorization to any other record. A submission endpoint performs:
+The public URL uses a cryptographically random slug and does not imply authorization to any other record. `get_public_survey` returns only published bilingual structure and branding. The application submission endpoint performs:
 
 1. Origin, method, body-size, and content-type checks.
-2. IP/network rate limiting with hashed or short-lived identifiers.
+2. HMAC hashing of a short-lived request fingerprint and database-backed per-survey rate limiting; raw IP addresses are never persisted.
 3. Optional invisible challenge escalation after risk thresholds.
 4. Zod validation against the exact published survey version.
 5. Server-side enforcement of required questions, answer types, and option membership.
 6. An atomic database transaction for response and answers.
 7. Idempotency protection against accidental resubmission.
+
+The final write uses `submit_protected_survey_response`, which consumes the rate bucket and delegates exact answer validation plus atomic persistence to the trusted database operation. Expired rate buckets are automatically removed on subsequent requests. The anonymous role cannot query the bucket table or any response table.
+
+The current local/free design is deliberately dependency-free but is not a complete bot-defense perimeter: a caller that bypasses the Next.js endpoint can rotate client-supplied fingerprint hashes. Production should add an edge/WAF control such as Cloudflare Turnstile or an equivalent approved challenge while retaining database validation and idempotency.
+
+## 7.1 Public distribution and QR codes
+
+Every active survey/location member has a URL built from `NEXT_PUBLIC_APP_URL`; localhost is never hardcoded in application logic. The authenticated distribution page displays status and bilingual business context, supports copy and print, and downloads SVG/PNG QR assets. QR images are generated locally by the server, and the QR route accepts only same-origin `/feedback/` targets, so survey URLs are not disclosed to an external image service.
 
 Logs must not retain free-text feedback, raw authentication tokens, or full IP addresses. Retention and deletion requirements should be confirmed before production launch.
 

@@ -6,7 +6,7 @@ import {
   SUPPORTED_LOCALES,
 } from "@/lib/config/platform";
 import type { PlatformRole, SupportedLocale } from "@/types/platform";
-import { surveyDefinitionSchema } from "@/validation";
+import { surveyDraftSchema } from "@/validation";
 
 describe("project foundation", () => {
   it("defines the supported locales and Kuwait timezone", () => {
@@ -29,6 +29,6 @@ describe("project foundation", () => {
   });
 
   it("exposes feature validation through the validation boundary", () => {
-    expect(surveyDefinitionSchema.safeParse({}).success).toBe(false);
+    expect(surveyDraftSchema.safeParse({}).success).toBe(false);
   });
 });
