@@ -1,8 +1,8 @@
-# Local Database Foundation
+# Supabase Database Foundation
 
 ## Scope
 
-Milestone 2 defines the complete local PostgreSQL tenancy, survey, response, alert, subscription, and audit foundation. It does not link to or modify a hosted Supabase project.
+Milestones 2 and 3 define the PostgreSQL tenancy, survey, response, alert, subscription, audit, onboarding, and invitation foundation. The schema is validated against the official local Supabase PostgreSQL 17 stack and applied to an isolated free hosted development project. Production remains unlinked and untouched.
 
 The source of truth is the ordered SQL in `supabase/migrations`. `supabase/seed.sql` contains synthetic local fixtures only.
 
@@ -10,7 +10,7 @@ The source of truth is the ordered SQL in `supabase/migrations`. `supabase/seed.
 
 - `profiles` extends `auth.users`. The optional `platform_role` can contain only `platform_admin`.
 - `organizations` are tenant roots.
-- `organization_memberships` joins users to organizations with owner, admin, location-manager, or analyst roles.
+- `organization_memberships` joins users to organizations with owner, admin, location-manager, or analyst roles and an explicit `organization`/`locations` scope.
 - `locations` belong to organizations. Composite foreign keys ensure records cannot claim a location from another organization.
 - `location_memberships` explicitly grants a location manager or location-scoped analyst access to a location.
 - `surveys` belong to one organization and one location and expose a random, non-sequential public slug.
@@ -21,6 +21,8 @@ The source of truth is the ordered SQL in `supabase/migrations`. `supabase/seed.
 - `alerts` belong to an organization/location and may reference the response that triggered them.
 - `subscriptions` are one-to-one with organizations. Provider credentials are never stored.
 - `audit_logs` are append-only records for administrative changes.
+- `organization_invitations` stores invitation metadata and SHA-256 token digests; it never stores plaintext tokens.
+- `organization_invitation_locations` records explicit locations for location-scoped invitations.
 
 All primary keys are UUIDs. Timestamps are `timestamptz` values stored in UTC. Organization and location timezones are constrained to `Asia/Kuwait` for this product.
 
@@ -35,6 +37,8 @@ All primary keys are UUIDs. Timestamps are `timestamptz` values stored in UTC. O
 | `analyst` | Organization-wide when assigned there | Explicit locations when location-assigned | Read-only |
 
 Users cannot update their own membership role. Owner memberships are not editable through ordinary tenant policies. Platform elevation exists only in `profiles.platform_role` and self-profile policies require it to remain null.
+
+Organization-wide analysts have `scope = organization`. Location-scoped analysts and every location manager have `scope = locations` plus explicit `location_memberships`. The permission helpers check both layers so a location-scoped membership cannot become organization-wide merely because the tenant membership exists.
 
 ## RLS behavior
 
@@ -66,6 +70,16 @@ Application/edge rate limiting, body-size limits, and bot challenges are still r
 ## Audit behavior
 
 Administrative mutations to organizations, memberships, locations, surveys, questions, options, alerts, subscriptions, and response deletion create audit records. Logs capture actor, database role, action, table, record, organization, optional request ID, and redacted before/after data. Subscription provider identifiers and arbitrary metadata are excluded; survey response free text is never copied into audit logs.
+
+Atomic onboarding is audited by the existing organization, membership, and location triggers. Invitation preparation, acceptance, and revocation write redacted audit events directly; neither plaintext tokens nor token digests are copied into audit rows.
+
+## Trusted onboarding and invitations
+
+`create_organization_with_first_location` is the only self-service tenant bootstrap operation. It verifies `auth.uid()`, an active profile, and the absence of active memberships. It does not accept a role, so the caller can receive only the initial `organization_owner` role. Organization, membership, and first location creation share one PostgreSQL transaction.
+
+`prepare_organization_invitation` permits only `organization_admin`, `location_manager`, and `analyst`. Location managers require at least one active location. Analysts may be organization-wide or explicitly location-scoped. `accept_organization_invitation` locks the invitation, verifies hash, expiry, revocation, single-use state, and authenticated email, then creates memberships from trusted stored values. `revoke_organization_invitation` is owner/admin-only. Email delivery is deferred; when implemented, the raw token must be passed directly to the approved email provider and never written to logs or another table.
+
+Authenticated clients have no direct read or write privileges on invitation tables, including token digests. Owner/admin workflows use only the narrowly granted preparation, acceptance, and revocation functions. A future invitation list must use a sanitized function or view that omits `token_hash`.
 
 ## Local seed data
 
@@ -100,15 +114,20 @@ npm run db:start
 npm run db:reset
 npm run db:lint
 npm run db:test
+npm run db:test:authorization
 npm run db:types
 ```
 
 Stop the stack with `npm run db:stop`.
 
-This workstation currently has native PostgreSQL but no Docker CLI. The repository therefore also provides:
+The repository also provides a native PostgreSQL fallback for environments where Docker is unavailable:
 
 ```bash
 npm run db:verify:native
 ```
 
-That command creates `.local-postgres` inside the repository, applies every migration from zero, loads the seed, executes `supabase/tests/rls_verification.sql`, attempts available Supabase lint/type tooling, and stops the database. It never contacts a hosted Supabase project. Official Supabase lint/type generation still requires the Docker-backed stack or its bundled extensions; the checked-in generated-style `src/types/database.ts` keeps application code typed until then.
+That command creates `.local-postgres` inside the repository, applies every migration from zero, loads the seed, executes `supabase/tests/rls_verification.sql`, attempts available Supabase lint/type tooling, and stops the database. It never contacts a hosted Supabase project. The checked-in `src/types/database.ts` is now generated by the official local Supabase CLI.
+
+## Hosted development environment
+
+The hosted project is an isolated free development environment in `ap-south-1`. Its ignored local link state lives under `supabase/.temp`; credentials live only in ignored `.env.local`. Migrations were applied without `supabase/seed.sql`, and hosted verification confirms zero organizations, responses, and invitations. Never run local seed data against staging or production-like environments without a specific review.

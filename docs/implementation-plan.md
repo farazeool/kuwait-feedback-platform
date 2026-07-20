@@ -21,7 +21,7 @@ Each milestone must end with linting, type checking, unit tests, and a productio
 
 ## Milestone 2 — Local database tenancy and RLS
 
-**Status:** Complete locally. Official Docker-backed Supabase lint/type generation remains an environment follow-up; the repository-scoped PostgreSQL reset and policy suite pass.
+**Status:** Complete. Official Docker-backed PostgreSQL 17 reset, lint, pgTAP, direct authorization tests, and generated types pass.
 
 - Add Supabase local development configuration and reproducible reset scripts.
 - Create migrations for profiles, organizations, locations, organization/location memberships, surveys, responses, alerts, audit logs, and subscriptions.
@@ -36,9 +36,12 @@ Each milestone must end with linting, type checking, unit tests, and a productio
 
 ## Milestone 3 — Authentication and organization management
 
+**Status:** Complete.
+
 - Implement Supabase SSR session refresh and protected dashboard routing.
 - Build sign-in, sign-out, invitation acceptance, and recovery flows.
-- Build organization creation, settings, membership, role, and location management.
+- Build atomic first-organization/first-location creation and the protected management shell.
+- Add secure invitation preparation/acceptance/revocation foundations; defer real email delivery and advanced team UI.
 - Enforce authorization in server actions and RLS.
 - Add ownership-transfer safeguards and audit events.
 - Add English/Arabic messages and locale-aware navigation shell.

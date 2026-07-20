@@ -35,6 +35,8 @@ src/
   lib/
     config/             stable platform constants
     env/                Zod-validated environment access
+    auth/               server-only identity, access context, route decisions
+    datetime/           Kuwait-local presentation helpers
     supabase/           browser/server database client factories
   types/                shared TypeScript-only contracts
   validation/           cross-cutting validation export boundary
@@ -45,6 +47,8 @@ tests/                  broad integration and foundation tests
 ```
 
 Server Components are the default. Client Components are restricted to interactive islands such as survey editors and chart controls. Feature modules own their schemas, data access, application services, and tests; route files coordinate those modules rather than becoming business-logic containers.
+
+The Next.js 16 `proxy.ts` refreshes Supabase sessions and performs only the coarse unauthenticated dashboard redirect. Server layouts verify the user with Supabase Auth, load role/membership context from RLS-protected tables, and redirect users without membership to onboarding. UI navigation is role-aware, but it is not an authorization boundary; protected pages, database grants, and RLS enforce access independently.
 
 ## 4. Proposed data model
 
@@ -162,3 +166,11 @@ No deployment or production mutation occurs without user approval. Secrets live 
 - Use a server-controlled public submission boundary instead of general anonymous table inserts.
 - Start analytics with indexed live queries; introduce rollups only from measured need.
 - Keep external integrations behind application services so providers can change without changing domain rules.
+
+## 13. Authentication, onboarding, and invitations
+
+Password sign-in, sign-out, recovery, reset, email verification, and PKCE callback handling use `@supabase/ssr`. Ordinary requests use only the public key. The service-role key is parsed only by the server environment module and is not imported by client modules or used to bypass tenant RLS.
+
+The first-organization workflow calls `create_organization_with_first_location`. This `SECURITY DEFINER` function accepts no role input, verifies the caller has an active profile and no active membership, and atomically creates the organization, owner membership, first location, and trigger-backed audit records. A unique slug constraint makes duplicate creation fail without partial writes.
+
+Invitation preparation is restricted to organization owners/admins through `prepare_organization_invitation`. It returns a random token once and stores only its SHA-256 digest. Invitations expire, are revocable and single-use, never allow `platform_admin` or owner assignment, and carry explicit organization/location scope. Acceptance matches the authenticated email and copies the server-selected role/scope; the user cannot submit a role. No real email is sent yet. A future delivery adapter will send the one-time token immediately after preparation using an approved provider, without logging or persisting plaintext tokens.

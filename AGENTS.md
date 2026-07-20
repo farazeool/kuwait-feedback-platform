@@ -19,6 +19,7 @@ These instructions apply to the entire repository and should remain durable as t
 - `npm run build` — production Next.js build.
 - `npm run db:reset` — rebuild the official local Supabase database from migrations and seed data.
 - `npm run db:test` — run Supabase SQL policy tests.
+- `npm run db:test:authorization` — run comprehensive RLS and anonymous RPC assertions against official local Supabase.
 - `npm run db:verify:native` — validate migrations and RLS using repository-scoped native PostgreSQL when Docker is unavailable.
 
 Run `npm run check` after each meaningful milestone. Run `npm run build` before declaring a milestone complete when application or configuration code changed.

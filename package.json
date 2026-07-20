@@ -15,9 +15,11 @@
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
     "db:lint": "supabase db lint --local --level warning",
-    "db:test": "supabase test db",
+    "db:test": "supabase test db supabase/tests/database.test.sql",
+    "db:test:authorization": "psql postgresql://postgres:postgres@127.0.0.1:54322/postgres --set=ON_ERROR_STOP=1 --file=supabase/tests/rls_verification.sql",
     "db:types": "supabase gen types --lang typescript --local > src/types/database.ts",
-    "db:verify:native": "sh scripts/verify-local-database.sh"
+    "db:verify:native": "sh scripts/verify-local-database.sh",
+    "security:secrets": "sh scripts/scan-secrets.sh"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.3",

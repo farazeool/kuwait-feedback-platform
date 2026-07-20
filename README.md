@@ -2,7 +2,7 @@
 
 A multi-tenant customer feedback platform for businesses in Kuwait. Organizations manage multiple locations, publish QR-linked surveys, collect anonymous customer responses, and analyze ratings and trends within strict role and tenant boundaries.
 
-## Milestone 1 foundation
+## Milestone 3 foundation
 
 The repository currently provides:
 
@@ -14,6 +14,10 @@ The repository currently provides:
 - English/Arabic and RTL-aware UI foundations
 - Architecture, security, and phased implementation documentation
 - A migrations-only database workflow under `supabase/migrations`
+- Supabase SSR authentication, recovery, verification callbacks, and protected routes
+- Atomic organization/first-location onboarding with audit coverage
+- Role-aware, English/Arabic and RTL-ready dashboard shell
+- Hashed, expiring, single-use invitation backend foundations
 
 ## Local setup
 
@@ -43,10 +47,10 @@ Individual commands are available as `npm run lint`, `npm run typecheck`, and `n
 - [Implementation plan](docs/implementation-plan.md)
 - [Repository agent instructions](AGENTS.md)
 
-## Safety status
+## Environment status
 
-Milestone 2 remains local-only: no hosted Supabase project is linked, and nothing is deployed to Vercel. Cloud mutations require explicit approval.
+The repository is linked locally to an isolated free hosted Supabase development project. Its credentials remain in ignored `.env.local`; local demo seed data was not uploaded. No Vercel deployment or production Supabase project exists.
 
 ## Local database
 
-The Supabase foundation is migration-driven and does not require a hosted project. With Docker available, use `npm run db:start`, `npm run db:reset`, `npm run db:lint`, `npm run db:test`, and `npm run db:types`. A repository-scoped native PostgreSQL fallback is available as `npm run db:verify:native`.
+The Supabase foundation is migration-driven. With Docker available, use `npm run db:start`, `npm run db:reset`, `npm run db:lint`, `npm run db:test`, `npm run db:test:authorization`, and `npm run db:types`. A repository-scoped native PostgreSQL fallback is available as `npm run db:verify:native`.

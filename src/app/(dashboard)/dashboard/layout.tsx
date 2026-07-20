@@ -1,0 +1,34 @@
+import { DashboardSidebar } from "@/components/dashboard/sidebar";
+import { DashboardTopbar } from "@/components/dashboard/topbar";
+import { requireAppAccessContext } from "@/lib/auth/context";
+
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const context = await requireAppAccessContext();
+  const role = context.profile.platformRole ?? context.membership?.role ?? "analyst";
+  const isArabic = context.profile.locale === "ar";
+  const organizationName = context.organization
+    ? isArabic
+      ? context.organization.nameAr
+      : context.organization.nameEn
+    : "Platform administration";
+  const locationName = context.locations[0]
+    ? isArabic
+      ? context.locations[0].nameAr
+      : context.locations[0].nameEn
+    : "All permitted locations";
+
+  return (
+    <div dir={isArabic ? "rtl" : "ltr"} lang={context.profile.locale} className="min-h-screen lg:ps-64">
+      <DashboardSidebar role={role} />
+      <div className="min-w-0">
+        <DashboardTopbar
+          displayName={context.profile.displayName}
+          organizationName={organizationName}
+          locationName={locationName}
+          role={role}
+        />
+        <main className="px-5 py-8 sm:px-8">{children}</main>
+      </div>
+    </div>
+  );
+}

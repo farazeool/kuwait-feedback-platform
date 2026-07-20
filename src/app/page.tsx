@@ -8,7 +8,7 @@ export default function Home() {
         <div className="mx-auto grid w-full max-w-6xl gap-12 px-6 py-20 lg:grid-cols-[1.35fr_0.65fr] lg:px-8 lg:py-28">
           <div>
             <span className="inline-flex rounded-full border border-border bg-background px-3 py-1 text-sm font-semibold text-brand">
-              Milestone 1 foundation
+              Milestone 3 foundation
             </span>
             <h1 className="mt-6 max-w-3xl text-4xl font-bold tracking-tight text-foreground sm:text-6xl">
               Better feedback for every location.
@@ -31,10 +31,10 @@ export default function Home() {
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-100">
               Platform status
             </p>
-            <p className="mt-4 text-2xl font-bold">Foundation ready</p>
+            <p className="mt-4 text-2xl font-bold">Secure workspace ready</p>
             <p className="mt-3 leading-7 text-emerald-50">
-              Application structure, validation, quality gates, and security
-              architecture are established for feature delivery.
+              Authentication, atomic onboarding, tenant isolation, and the
+              role-aware dashboard shell are ready for feature delivery.
             </p>
           </aside>
         </div>

@@ -141,6 +141,7 @@ insert into public.organization_memberships (
   organization_id,
   user_id,
   role,
+  scope,
   created_by
 ) values
   (
@@ -148,6 +149,7 @@ insert into public.organization_memberships (
     '20000000-0000-4000-8000-000000000001',
     '10000000-0000-4000-8000-000000000001',
     'organization_owner',
+    'organization',
     '10000000-0000-4000-8000-000000000005'
   ),
   (
@@ -155,6 +157,7 @@ insert into public.organization_memberships (
     '20000000-0000-4000-8000-000000000001',
     '10000000-0000-4000-8000-000000000002',
     'organization_admin',
+    'organization',
     '10000000-0000-4000-8000-000000000001'
   ),
   (
@@ -162,6 +165,7 @@ insert into public.organization_memberships (
     '20000000-0000-4000-8000-000000000001',
     '10000000-0000-4000-8000-000000000003',
     'location_manager',
+    'locations',
     '10000000-0000-4000-8000-000000000001'
   ),
   (
@@ -169,6 +173,7 @@ insert into public.organization_memberships (
     '20000000-0000-4000-8000-000000000001',
     '10000000-0000-4000-8000-000000000004',
     'analyst',
+    'organization',
     '10000000-0000-4000-8000-000000000001'
   );
 
