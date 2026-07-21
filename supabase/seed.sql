@@ -1,5 +1,5 @@
--- Local-only synthetic data. These identities have no passwords and cannot be
--- used outside a disposable local Supabase environment.
+-- Local-only synthetic data. Demo password for every account is "Test1234!".
+-- These identities are for a disposable local Supabase environment only.
 
 insert into auth.users (
   instance_id,
@@ -8,6 +8,14 @@ insert into auth.users (
   role,
   email,
   email_confirmed_at,
+  encrypted_password,
+  confirmation_token,
+  recovery_token,
+  email_change_token_new,
+  email_change_token_current,
+  email_change,
+  phone_change_token,
+  reauthentication_token,
   raw_app_meta_data,
   raw_user_meta_data,
   created_at,
@@ -20,6 +28,8 @@ insert into auth.users (
     'authenticated',
     'owner@demo.kuwait-feedback.test',
     timezone('utc', now()),
+    crypt('Test1234!', gen_salt('bf')),
+    '', '', '', '', '', '', '',
     '{"provider":"email","providers":["email"]}',
     '{"display_name":"Demo Organization Owner","preferred_locale":"en"}',
     timezone('utc', now()),
@@ -32,6 +42,8 @@ insert into auth.users (
     'authenticated',
     'admin@demo.kuwait-feedback.test',
     timezone('utc', now()),
+    crypt('Test1234!', gen_salt('bf')),
+    '', '', '', '', '', '', '',
     '{"provider":"email","providers":["email"]}',
     '{"display_name":"Demo Organization Admin","preferred_locale":"ar"}',
     timezone('utc', now()),
@@ -44,6 +56,8 @@ insert into auth.users (
     'authenticated',
     'manager@demo.kuwait-feedback.test',
     timezone('utc', now()),
+    crypt('Test1234!', gen_salt('bf')),
+    '', '', '', '', '', '', '',
     '{"provider":"email","providers":["email"]}',
     '{"display_name":"Demo Salmiya Manager","preferred_locale":"en"}',
     timezone('utc', now()),
@@ -56,6 +70,8 @@ insert into auth.users (
     'authenticated',
     'analyst@demo.kuwait-feedback.test',
     timezone('utc', now()),
+    crypt('Test1234!', gen_salt('bf')),
+    '', '', '', '', '', '', '',
     '{"provider":"email","providers":["email"]}',
     '{"display_name":"Demo Feedback Analyst","preferred_locale":"ar"}',
     timezone('utc', now()),
@@ -68,6 +84,8 @@ insert into auth.users (
     'authenticated',
     'platform-admin@demo.kuwait-feedback.test',
     timezone('utc', now()),
+    crypt('Test1234!', gen_salt('bf')),
+    '', '', '', '', '', '', '',
     '{"provider":"email","providers":["email"]}',
     '{"display_name":"Demo Platform Admin","preferred_locale":"en"}',
     timezone('utc', now()),
@@ -75,6 +93,14 @@ insert into auth.users (
   )
 on conflict (id) do update set
   email = excluded.email,
+  encrypted_password = excluded.encrypted_password,
+  confirmation_token = excluded.confirmation_token,
+  recovery_token = excluded.recovery_token,
+  email_change_token_new = excluded.email_change_token_new,
+  email_change_token_current = excluded.email_change_token_current,
+  email_change = excluded.email_change,
+  phone_change_token = excluded.phone_change_token,
+  reauthentication_token = excluded.reauthentication_token,
   raw_app_meta_data = excluded.raw_app_meta_data,
   raw_user_meta_data = excluded.raw_user_meta_data,
   updated_at = excluded.updated_at;
