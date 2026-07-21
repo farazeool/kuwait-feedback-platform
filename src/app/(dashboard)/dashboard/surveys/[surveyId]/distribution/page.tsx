@@ -10,17 +10,17 @@ export default async function DistributionPage({ params }: { params: Promise<{ s
   const { surveyId } = await params;
   const [distribution, env] = await Promise.all([getSurveyDistribution(surveyId), Promise.resolve(getServerEnv())]);
   return (
-    <div className="grid gap-7 print:bg-white">
+    <div className="grid gap-6 print:bg-white">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-4">
           {distribution.organization?.logo_url ? (
             <img src={distribution.organization.logo_url} alt="" className="max-h-16 max-w-40 object-contain" />
           ) : null}
           <div>
-            <p style={{ color: distribution.organization?.primary_color }} className="text-sm font-bold">
+            <p style={{ color: distribution.organization?.primary_color }} className="text-xs font-semibold uppercase tracking-wide">
               QR distribution · توزيع رمز QR
             </p>
-            <h1 className="mt-2 text-3xl font-bold">{distribution.titleEn}</h1>
+            <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground">{distribution.titleEn}</h1>
             {distribution.titleAr ? (
               <p dir="rtl" className="text-muted">
                 {distribution.titleAr}

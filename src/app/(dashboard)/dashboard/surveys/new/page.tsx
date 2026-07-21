@@ -35,10 +35,10 @@ export default async function NewSurveyPage({
   // Template gallery: shown until a valid template (or "scratch") is chosen.
   if (!template) {
     return (
-      <div className="grid gap-7">
+      <div className="grid gap-6">
         <header>
-          <p className="text-sm font-bold text-brand">New survey · استبيان جديد</p>
-          <h1 className="mt-2 text-3xl font-bold">Start from a template</h1>
+          <p className="text-xs font-semibold uppercase tracking-wide text-brand">New survey · استبيان جديد</p>
+          <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground">Start from a template</h1>
           <p className="mt-2 text-muted">
             Pick a bilingual starter and edit everything afterwards, or start from scratch.
             اختر قالباً ثنائي اللغة ثم عدّله بالكامل، أو ابدأ من الصفر.
@@ -49,7 +49,7 @@ export default async function NewSurveyPage({
             <Link
               key={templateSummary.id}
               href={`/dashboard/surveys/new?template=${templateSummary.id}`}
-              className="grid gap-2 rounded-3xl border border-border bg-white p-6 transition hover:border-brand"
+              className="grid gap-2 rounded-xl border border-border bg-white p-6 transition hover:border-brand"
             >
               <h2 className="text-lg font-bold">{templateSummary.nameEn}</h2>
               <p dir="rtl" className="text-sm font-semibold text-muted">{templateSummary.nameAr}</p>
@@ -60,7 +60,7 @@ export default async function NewSurveyPage({
         </div>
         <Link
           href="/dashboard/surveys/new?template=scratch"
-          className="justify-self-start rounded-xl border border-border bg-white px-5 py-3 font-semibold hover:border-brand"
+          className="justify-self-start rounded-lg border border-border bg-white px-5 py-3 font-medium hover:border-brand"
         >
           Start from scratch · ابدأ من الصفر
         </Link>
@@ -74,13 +74,13 @@ export default async function NewSurveyPage({
       : blankDraft(locationIds);
 
   return (
-    <div className="grid gap-7">
+    <div className="grid gap-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-sm font-bold text-brand">New draft</p>
-          <h1 className="mt-2 text-3xl font-bold">Build a survey</h1>
+          <p className="text-xs font-semibold uppercase tracking-wide text-brand">New draft</p>
+          <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground">Build a survey</h1>
         </div>
-        <Link href="/dashboard/surveys/new" className="rounded-xl border border-border bg-white px-4 py-2 text-sm font-semibold">
+        <Link href="/dashboard/surveys/new" className="rounded-lg border border-border bg-white px-4 py-2 text-sm font-medium">
           ← Choose a different template
         </Link>
       </header>
