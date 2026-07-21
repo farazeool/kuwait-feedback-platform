@@ -3,6 +3,7 @@ import Link from "next/link";
 import { AccessibleBarChart } from "@/components/analytics/bar-chart";
 import { AnalyticsFilters } from "@/components/analytics/analytics-filters";
 import { MetricCard } from "@/components/analytics/metric-card";
+import { PilotChecklist } from "@/components/dashboard/pilot-checklist";
 import { getAnalyticsDashboard } from "@/features/analytics/server";
 import { formatKuwaitDateTime } from "@/lib/datetime/kuwait";
 
@@ -17,6 +18,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const query = new URLSearchParams(Object.entries(raw).filter((entry): entry is [string, string] => Boolean(entry[1]))).toString();
   return (
     <div className="grid gap-7">
+      <PilotChecklist />
       <header className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-sm font-bold text-brand">Business intelligence</p><h1 className="mt-2 text-3xl font-bold tracking-tight">Feedback overview</h1><p className="mt-2 text-muted">{result.range.from} – {result.range.to} · Asia/Kuwait</p></div><a className="rounded-xl border border-border bg-white px-4 py-2 text-sm font-bold" href={`/api/exports/responses?${query}`}>Export responses CSV</a></header>
       <AnalyticsFilters values={{ ...raw, ...result.filters }} organizations={result.organizations} locations={result.locations} surveys={result.surveys} />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
