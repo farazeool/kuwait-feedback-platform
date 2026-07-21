@@ -2,7 +2,8 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { randomUUID } from "node:crypto";
 
 import type { PublicSurvey, SubmissionPayload } from "@/features/public-feedback/schema";
 
@@ -14,17 +15,36 @@ interface PublicSurveyFormProps {
   idempotencyKey: string;
   touchpointToken?: string;
   channel?: "qr" | "kiosk" | "web";
+  autoReset?: boolean;
 }
 
-export function PublicSurveyForm({ survey, startedAt, idempotencyKey, touchpointToken, channel: propChannel }: PublicSurveyFormProps) {
+export function PublicSurveyForm({ survey, startedAt, idempotencyKey: initialIdempotencyKey, touchpointToken, channel: propChannel, autoReset }: PublicSurveyFormProps) {
   const channel = propChannel ?? (touchpointToken ? "qr" : "web");
   const [locale, setLocale] = useState<"en" | "ar">(survey.default_locale);
   const [answers, setAnswers] = useState<AnswerState>({});
   const [state, setState] = useState<"idle" | "submitting" | "success" | "duplicate" | "error">("idle");
   const [validationError, setValidationError] = useState("");
+  const [currentIdempotencyKey, setCurrentIdempotencyKey] = useState(initialIdempotencyKey);
+  const [currentStartedAt, setCurrentStartedAt] = useState(startedAt);
+  const resetTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
   const isArabic = locale === "ar";
   const branding = survey.organization.branding;
   const pick = (value: { en: string | null; ar: string | null }) => isArabic ? value.ar || value.en || "" : value.en || "";
+
+  const resetForm = useCallback(() => {
+    setAnswers({});
+    setValidationError("");
+    setState("idle");
+    setCurrentIdempotencyKey(randomUUID());
+    setCurrentStartedAt(Date.now());
+  }, []);
+
+  useEffect(() => {
+    if (autoReset && (state === "success" || state === "duplicate")) {
+      resetTimerRef.current = setTimeout(resetForm, 4000);
+      return () => { if (resetTimerRef.current) clearTimeout(resetTimerRef.current); };
+    }
+  }, [autoReset, state, resetForm]);
 
   if (state === "success" || state === "duplicate") {
     return <main dir={isArabic ? "rtl" : "ltr"} lang={locale} className="grid min-h-screen place-items-center bg-background px-5"><section style={{ borderTopColor: branding.primary_color }} className="w-full max-w-md rounded-xl border border-border bg-white p-6 text-center sm:p-8">{branding.logo_url ? <img alt={pick(survey.organization.name)} src={branding.logo_url} className="mx-auto mb-4 max-h-16 max-w-40 object-contain" /> : null}<div style={{ color: branding.primary_color, backgroundColor: `${branding.accent_color}20` }} className="mx-auto grid size-12 place-items-center rounded-full text-xl">✓</div><h1 className="mt-4 text-xl font-bold tracking-tight text-foreground">{pick(survey.thank_you) || (isArabic ? "شكراً لملاحظاتك" : "Thank you for your feedback")}</h1>{state === "duplicate" ? <p className="mt-2 text-sm text-muted">{isArabic ? "تم استلام هذه الإجابة مسبقاً." : "This response was already received."}</p> : null}{pick(branding.footer) ? <p className="mt-5 border-t border-border pt-3 text-sm text-muted">{pick(branding.footer)}</p> : null}</section></main>;
@@ -65,7 +85,7 @@ export function PublicSurveyForm({ survey, startedAt, idempotencyKey, touchpoint
     }
     setState("submitting");
     try {
-      const body: Record<string, unknown> = { locale, answers: payloadAnswers, idempotencyKey, startedAt, website: String(form.get("website") ?? "") };
+      const body: Record<string, unknown> = { locale, answers: payloadAnswers, idempotencyKey: currentIdempotencyKey, startedAt: currentStartedAt, website: String(form.get("website") ?? "") };
       if (touchpointToken) body.touchpointToken = touchpointToken;
       if (channel !== "web" && !touchpointToken) body.channel = channel;
       const response = await fetch(`/api/public/surveys/${encodeURIComponent(survey.public_slug)}/responses`, {
