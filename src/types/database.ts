@@ -1627,6 +1627,7 @@ export type Database = {
           p_organization_id: string
           p_questions: Json
           p_survey_id: string
+          p_survey_type?: Database["public"]["Enums"]["survey_type"]
           p_thank_you_ar: string
           p_thank_you_en: string
           p_title_ar: string

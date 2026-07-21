@@ -70,6 +70,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     p_answers: toDatabaseAnswers(parsed.data),
     p_idempotency_key: parsed.data.idempotencyKey,
     p_fingerprint_hash: fingerprint,
+    p_channel: parsed.data.channel ?? "web",
+    p_touchpoint_token: parsed.data.touchpointToken ?? undefined,
   });
 
   if (error) {

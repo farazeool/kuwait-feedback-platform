@@ -6,6 +6,7 @@ const optionSchema = z.object({
   id: z.string().min(1).max(100),
   labelEn: z.string().trim().min(1).max(300),
   labelAr: z.string().trim().max(300).default(""),
+  concernCategoryId: z.string().uuid().nullable().optional(),
 });
 
 const questionBase = z.object({
@@ -22,6 +23,7 @@ const ratingQuestionSchema = questionBase
     type: z.literal("rating"),
     ratingMin: z.number().int().min(0).max(9),
     ratingMax: z.number().int().min(1).max(10),
+    ratingScale: z.string().regex(/^[a-z0-9_]+$/).nullable().optional(),
   })
   .refine((question) => question.ratingMax > question.ratingMin, {
     message: "Rating maximum must be greater than the minimum",
@@ -31,6 +33,7 @@ const ratingQuestionSchema = questionBase
 const multipleChoiceQuestionSchema = questionBase.extend({
   type: z.literal("multiple_choice"),
   options: z.array(optionSchema).min(2).max(20),
+  allowMultiple: z.boolean().default(false),
 });
 
 const textQuestionSchema = questionBase.extend({
@@ -46,6 +49,7 @@ export const surveyBuilderQuestionSchema = z.discriminatedUnion("type", [
 
 export const surveyDraftSchema = z.object({
   surveyId: z.string().uuid().nullable().default(null),
+  surveyType: z.enum(["generic", "fresh_produce"]).default("generic"),
   titleEn: z.string().trim().min(1).max(200),
   titleAr: z.string().trim().max(200).default(""),
   descriptionEn: z.string().trim().max(1000).default(""),
@@ -74,12 +78,15 @@ export function toDatabaseQuestions(questions: SurveyBuilderQuestion[]) {
     required: question.required,
     rating_min: question.type === "rating" ? question.ratingMin : null,
     rating_max: question.type === "rating" ? question.ratingMax : null,
+    rating_scale: question.type === "rating" ? (question.ratingScale ?? null) : null,
+    allow_multiple: question.type === "multiple_choice" ? question.allowMultiple : false,
     text_max_length: question.type === "text" ? question.textMaxLength : null,
     options:
       question.type === "multiple_choice"
         ? question.options.map((option) => ({
             label_en: option.labelEn,
             label_ar: option.labelAr,
+            concern_category_id: option.concernCategoryId ?? null,
           }))
         : [],
   }));

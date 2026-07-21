@@ -11,6 +11,7 @@ import { requireOrganizationManagementContext } from "@/lib/auth/context";
 function blankDraft(locationIds: string[]) {
   return {
     surveyId: null,
+    surveyType: "generic" as const,
     titleEn: "",
     titleAr: "",
     descriptionEn: "",

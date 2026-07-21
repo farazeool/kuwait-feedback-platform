@@ -36,6 +36,7 @@ export async function saveSurveyDraft(formData: FormData) {
     p_default_locale: parsed.data.defaultLocale,
     p_location_ids: parsed.data.locationIds,
     p_questions: toDatabaseQuestions(parsed.data.questions),
+    p_survey_type: parsed.data.surveyType,
   });
   if (error || !data) redirect(`/dashboard/surveys/${parsed.data.surveyId ?? "new"}/edit?error=save_failed`);
   redirect(`/dashboard/surveys/${data}?saved=1`);

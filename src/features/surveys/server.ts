@@ -125,6 +125,7 @@ export async function getSurveyEditor(surveyId: string): Promise<{
     question_id: string;
     label_en: string;
     label_ar: string;
+    concern_category_id: string | null;
   }>>();
   for (const option of options ?? []) {
     const rows = optionsByQuestion.get(option.question_id) ?? [];
@@ -142,7 +143,7 @@ export async function getSurveyEditor(surveyId: string): Promise<{
       required: question.is_required,
     };
     if (question.question_type === "rating") {
-      return { ...base, type: "rating" as const, ratingMin: question.rating_min ?? 1, ratingMax: question.rating_max ?? 5 };
+      return { ...base, type: "rating" as const, ratingMin: question.rating_min ?? 1, ratingMax: question.rating_max ?? 5, ratingScale: question.rating_scale ?? null };
     }
     if (question.question_type === "text") {
       return { ...base, type: "text" as const, textMaxLength: question.text_max_length ?? 1000 };
@@ -150,10 +151,12 @@ export async function getSurveyEditor(surveyId: string): Promise<{
     return {
       ...base,
       type: "multiple_choice" as const,
+      allowMultiple: question.allow_multiple ?? false,
       options: (optionsByQuestion.get(question.id) ?? []).map((option) => ({
         id: option.id,
         labelEn: option.label_en,
         labelAr: option.label_ar === option.label_en ? "" : option.label_ar,
+        concernCategoryId: option.concern_category_id ?? null,
       })),
     };
   });
@@ -161,6 +164,7 @@ export async function getSurveyEditor(surveyId: string): Promise<{
   return {
     draft: {
       surveyId: survey.id,
+      surveyType: survey.survey_type ?? "generic",
       titleEn: survey.title_en,
       titleAr: survey.title_ar === survey.title_en ? "" : survey.title_ar,
       descriptionEn: survey.description_en ?? "",

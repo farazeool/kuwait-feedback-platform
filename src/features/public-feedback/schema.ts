@@ -9,6 +9,22 @@ const publicOptionSchema = z.object({
   id: z.string().uuid(),
   position: z.number().int(),
   label: localizedSchema,
+  concern_category_id: z.string().uuid().nullable().optional(),
+});
+
+const ratingScalePointSchema = z.object({
+  value: z.number().int(),
+  position: z.number().int(),
+  label: localizedSchema,
+});
+
+const ratingScaleSchema = z.object({
+  name: localizedSchema,
+  scale_min: z.number().int(),
+  scale_max: z.number().int(),
+  satisfied_min: z.number().int(),
+  negative_max: z.number().int(),
+  points: z.array(ratingScalePointSchema),
 });
 
 const publicQuestionSchema = z.object({
@@ -20,6 +36,7 @@ const publicQuestionSchema = z.object({
   required: z.boolean(),
   rating_min: z.number().int().nullable(),
   rating_max: z.number().int().nullable(),
+  rating_scale: z.string().nullable().optional(),
   allow_multiple: z.boolean(),
   text_max_length: z.number().int().nullable(),
   options: z.array(publicOptionSchema),
@@ -27,6 +44,7 @@ const publicQuestionSchema = z.object({
 
 export const publicSurveySchema = z.object({
   public_slug: z.string(),
+  survey_type: z.enum(["generic", "fresh_produce"]).optional().default("generic"),
   title: localizedSchema,
   description: localizedSchema,
   thank_you: localizedSchema,
@@ -43,6 +61,7 @@ export const publicSurveySchema = z.object({
     }),
   }),
   location: z.object({ name: localizedSchema }),
+  rating_scales: z.record(z.string(), ratingScaleSchema).optional().default({}),
   questions: z.array(publicQuestionSchema).min(1).max(50),
 });
 
@@ -60,9 +79,12 @@ export const submissionPayloadSchema = z.object({
   startedAt: z.number().int().positive(),
   website: z.string().max(0),
   botToken: z.string().min(1).max(4_096).optional(),
+  channel: z.enum(["qr", "kiosk", "web"]).optional(),
+  touchpointToken: z.string().min(24).max(128).optional(),
 }).strict();
 
 export type PublicSurvey = z.infer<typeof publicSurveySchema>;
+export type RatingScale = z.infer<typeof ratingScaleSchema>;
 export type SubmissionPayload = z.infer<typeof submissionPayloadSchema>;
 
 export function validateAnswersForSurvey(
@@ -89,6 +111,11 @@ export function validateAnswersForSurvey(
         answer.rating < question.rating_min ||
         answer.rating > question.rating_max
       ) return false;
+
+      if (question.rating_scale) {
+        const scale = survey.rating_scales[question.rating_scale];
+        if (!scale || !scale.points.some((p) => p.value === answer.rating)) return false;
+      }
     } else if (question.type === "text") {
       const text = answer.text?.trim() ?? "";
       if (answer.rating !== undefined || answer.optionIds !== undefined || !text || question.text_max_length === null || text.length > question.text_max_length) {
@@ -97,7 +124,9 @@ export function validateAnswersForSurvey(
     } else {
       const optionIds = answer.optionIds ?? [];
       const allowed = new Set(question.options.map((option) => option.id));
-      if (answer.rating !== undefined || answer.text !== undefined || optionIds.length !== 1 || !allowed.has(optionIds[0])) return false;
+      if (answer.rating !== undefined || answer.text !== undefined || optionIds.length === 0) return false;
+      if (!question.allow_multiple && optionIds.length !== 1) return false;
+      if (!optionIds.every((id) => allowed.has(id))) return false;
     }
   }
 

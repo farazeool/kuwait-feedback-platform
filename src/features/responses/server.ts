@@ -105,9 +105,12 @@ export async function getResponseDetail(responseId: string) {
   ]);
   const answerIds = (answers ?? []).map((answer) => answer.id);
   const questionIds = (questions ?? []).map((question) => question.id);
-  const [{ data: choices }, { data: options }] = await Promise.all([
+  const [{ data: choices }, { data: options }, { data: concerns }, { data: department }, { data: touchpoint }] = await Promise.all([
     answerIds.length ? supabase.from("survey_answer_choices").select("answer_id, option_id").in("answer_id", answerIds) : Promise.resolve({ data: [] }),
     questionIds.length ? supabase.from("survey_question_options").select("id, label_en, label_ar").in("question_id", questionIds) : Promise.resolve({ data: [] }),
+    supabase.from("response_concerns").select("concern_category_id, is_primary, concern_categories!inner(id, slug, name_en, name_ar)").eq("response_id", response.id),
+    response.department_id ? supabase.from("departments").select("name_en, name_ar").eq("id", response.department_id).maybeSingle() : Promise.resolve({ data: null }),
+    response.touchpoint_id ? supabase.from("touchpoints").select("name_en, name_ar, channel").eq("id", response.touchpoint_id).maybeSingle() : Promise.resolve({ data: null }),
   ]);
   const optionById = new Map((options ?? []).map((option) => [option.id, option]));
   const choicesByAnswer = new Map<string, Array<{ answer_id: string; option_id: string }>>();
@@ -125,6 +128,14 @@ export async function getResponseDetail(responseId: string) {
     organization,
     alerts: alerts ?? [],
     notes: notes ?? [],
+    concerns: (concerns ?? []).map((c) => ({
+      slug: c.concern_categories.slug,
+      nameEn: c.concern_categories.name_en,
+      nameAr: c.concern_categories.name_ar,
+      isPrimary: c.is_primary,
+    })),
+    department: department ?? null,
+    touchpoint: touchpoint ?? null,
     profiles: profiles?.length ? profiles : [{ id: context.user.id, display_name: context.profile.displayName }],
     canManage: Boolean(canManage),
     answers: (questions ?? []).map((question) => {

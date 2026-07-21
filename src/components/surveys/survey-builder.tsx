@@ -49,12 +49,13 @@ export function SurveyBuilder({
       required: false,
     };
     const question: SurveyBuilderQuestion = type === "rating"
-      ? { ...base, type, ratingMin: 1, ratingMax: 5 }
+      ? { ...base, type, ratingMin: 1, ratingMax: 5, ratingScale: null }
       : type === "text"
         ? { ...base, type, textMaxLength: 1000 }
         : {
             ...base,
             type,
+            allowMultiple: false,
             options: [
               { id: crypto.randomUUID(), labelEn: "", labelAr: "" },
               { id: crypto.randomUUID(), labelEn: "", labelAr: "" },

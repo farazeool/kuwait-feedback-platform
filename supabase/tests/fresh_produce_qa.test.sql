@@ -99,6 +99,10 @@ insert into public.survey_question_options (
 -- Anonymous read path: get_public_survey surfaces FP metadata (no direct table access)
 -- ---------------------------------------------------------------------------
 
+-- Capture concern category IDs before switching to anon (anon has no direct table access).
+select set_config('test.freshness_id', id::text, false)
+  from public.concern_categories where slug = 'freshness';
+
 set local role anon;
 select set_config('request.jwt.claim.sub', '', true);
 
@@ -130,7 +134,7 @@ select is(
 select is(
   (public.get_public_survey('demo-fresh-produce-qa-touchpoint-2026')
     -> 'questions' -> 1 -> 'options' -> 0 ->> 'concern_category_id'),
-  (select id::text from public.concern_categories where slug = 'freshness'),
+  current_setting('test.freshness_id'),
   'concern-linked options expose their controlled category id'
 );
 select is(
@@ -206,7 +210,7 @@ select throws_ok(
     select public.submit_protected_survey_response(
       'demo-fresh-produce-qa-touchpoint-2026', 'en',
       '[{"question_id":"50000000-0000-4000-8000-000000000071","rating":3}]'::jsonb,
-      'pgtap-fp-gap-0001', repeat('g', 64)
+      'pgtap-fp-gap-0001', repeat('a', 64)
     )
   $$,
   '22023',
@@ -220,7 +224,7 @@ select throws_ok(
     select public.submit_protected_survey_response(
       'demo-salmiya-customer-satisfaction-2026', 'en',
       '[{"question_id":"50000000-0000-4000-8000-000000000001","rating":5}]'::jsonb,
-      'pgtap-fp-wrongtoken-0001', repeat('h', 64),
+      'pgtap-fp-wrongtoken-0001', repeat('b', 64),
       'web', 'nonexistent-touchpoint-token-000000000000'
     )
   $$,

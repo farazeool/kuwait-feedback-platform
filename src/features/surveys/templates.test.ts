@@ -11,8 +11,8 @@ import {
 const ALL_IDS = SURVEY_TEMPLATE_SUMMARIES.map((template) => template.id);
 
 describe("survey templates", () => {
-  it("exposes the four required pilot templates", () => {
-    expect(ALL_IDS).toEqual(["cafe_restaurant", "retail", "service_center", "general"]);
+  it("exposes the five required pilot templates", () => {
+    expect(ALL_IDS).toEqual(["cafe_restaurant", "retail", "service_center", "general", "fresh_produce"]);
   });
 
   it("recognizes valid template ids and rejects others", () => {
