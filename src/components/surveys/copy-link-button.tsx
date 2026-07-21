@@ -15,7 +15,7 @@ export function CopyLinkButton({ value, labelEn, labelAr, copiedLabelEn, copiedL
   return (
     <button
       type="button"
-      className="rounded-xl border border-border px-3 py-2 text-sm font-semibold"
+      className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:border-brand"
       onClick={async () => {
         await navigator.clipboard.writeText(value);
         setCopied(true);

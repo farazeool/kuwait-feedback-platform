@@ -1,5 +1,7 @@
 import type { InputHTMLAttributes, SelectHTMLAttributes } from "react";
 
+const inputClass = "min-h-10 rounded-lg border border-border bg-white px-3 py-2 text-sm font-normal text-foreground outline-none transition-colors placeholder:text-muted/60 focus:border-brand focus:ring-2 focus:ring-brand/15";
+
 type FieldProps = InputHTMLAttributes<HTMLInputElement> & {
   label: string;
   hint?: string;
@@ -8,14 +10,9 @@ type FieldProps = InputHTMLAttributes<HTMLInputElement> & {
 export function Field({ label, hint, id, name, ...props }: FieldProps) {
   const fieldId = id ?? name;
   return (
-    <label className="grid gap-2 text-sm font-semibold text-foreground" htmlFor={fieldId}>
+    <label className="grid gap-1.5 text-sm font-medium text-foreground" htmlFor={fieldId}>
       {label}
-      <input
-        {...props}
-        id={fieldId}
-        name={name}
-        className="min-h-11 rounded-xl border border-border bg-white px-3 py-2 font-normal outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
-      />
+      <input {...props} id={fieldId} name={name} className={inputClass} />
       {hint ? <span className="text-xs font-normal text-muted">{hint}</span> : null}
     </label>
   );
@@ -29,14 +26,9 @@ type SelectFieldProps = SelectHTMLAttributes<HTMLSelectElement> & {
 export function SelectField({ label, id, name, children, ...props }: SelectFieldProps) {
   const fieldId = id ?? name;
   return (
-    <label className="grid gap-2 text-sm font-semibold text-foreground" htmlFor={fieldId}>
+    <label className="grid gap-1.5 text-sm font-medium text-foreground" htmlFor={fieldId}>
       {label}
-      <select
-        {...props}
-        id={fieldId}
-        name={name}
-        className="min-h-11 rounded-xl border border-border bg-white px-3 py-2 font-normal outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
-      >
+      <select {...props} id={fieldId} name={name} className={inputClass}>
         {children}
       </select>
     </label>

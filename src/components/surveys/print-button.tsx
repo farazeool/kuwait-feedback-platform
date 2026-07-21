@@ -4,7 +4,7 @@ export function PrintButton({ labelEn, labelAr }: { labelEn: string; labelAr: st
   return (
     <button
       type="button"
-      className="rounded-xl bg-brand px-4 py-2 font-semibold text-white print:hidden"
+      className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-dark print:hidden"
       onClick={() => window.print()}
     >
       {labelEn} · {labelAr}

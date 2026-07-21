@@ -72,11 +72,11 @@ export function SurveyBuilder({
   };
 
   return (
-    <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_22rem]">
-      <form action={saveSurveyDraft} className="grid gap-7">
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+      <form action={saveSurveyDraft} className="grid gap-5">
         <input type="hidden" name="definition" value={JSON.stringify(draft)} />
-        <section className="grid gap-5 rounded-3xl border border-border bg-white p-6 sm:grid-cols-2">
-          <h2 className="text-xl font-bold sm:col-span-2">Survey details</h2>
+        <section className="grid gap-4 rounded-xl border border-border bg-white p-5 sm:grid-cols-2">
+          <h2 className="text-base font-semibold text-foreground sm:col-span-2">Survey details</h2>
           <BuilderField label="English title" value={draft.titleEn} onChange={(titleEn) => setDraft({ ...draft, titleEn })} required />
           <BuilderField label="Arabic title (optional)" value={draft.titleAr} onChange={(titleAr) => setDraft({ ...draft, titleAr })} dir="rtl" />
           <BuilderArea label="English description" value={draft.descriptionEn} onChange={(descriptionEn) => setDraft({ ...draft, descriptionEn })} />
@@ -93,7 +93,7 @@ export function SurveyBuilder({
             <legend className="text-sm font-semibold">Assigned locations</legend>
             <div className="grid gap-2 sm:grid-cols-2">
               {locations.map((location) => (
-                <label key={location.id} className="flex items-center gap-3 rounded-xl border border-border p-3 text-sm">
+                <label key={location.id} className="flex items-center gap-2 rounded-lg border border-border p-2.5 text-sm">
                   <input
                     type="checkbox"
                     checked={draft.locationIds.includes(location.id)}
@@ -113,17 +113,17 @@ export function SurveyBuilder({
 
         <section className="grid gap-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div><h2 className="text-2xl font-bold">Questions</h2><p className="text-sm text-muted">Order controls the public form and response detail.</p></div>
+            <div><h2 className="text-lg font-bold text-foreground">Questions</h2><p className="text-xs text-muted">Order controls the public form and response detail.</p></div>
             <div className="flex flex-wrap gap-2">
               {(["rating", "multiple_choice", "text"] as const).map((type) => (
-                <button key={type} type="button" onClick={() => addQuestion(type)} className="rounded-xl border border-border bg-white px-3 py-2 text-sm font-semibold hover:border-brand">
+                <button key={type} type="button" onClick={() => addQuestion(type)} className="rounded-lg border border-border bg-white px-3 py-1.5 text-sm font-medium transition-colors hover:border-brand">
                   + {type.replace("_", " ")}
                 </button>
               ))}
             </div>
           </div>
           {draft.questions.length === 0 ? (
-            <div className="rounded-3xl border border-dashed border-border p-10 text-center text-muted">Add the first question to make this survey publishable.</div>
+            <div className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted">Add the first question to make this survey publishable.</div>
           ) : null}
           {draft.questions.map((question, index) => (
             <QuestionEditor
@@ -138,19 +138,19 @@ export function SurveyBuilder({
         </section>
 
         {!parsed.success ? (
-          <div role="alert" className="rounded-xl bg-red-50 p-4 text-sm text-red-800">
+          <div role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">
             {parsed.error.issues.slice(0, 5).map((issue) => <p key={`${issue.path.join(".")}-${issue.message}`}>{issue.path.join(" → ")}: {issue.message}</p>)}
           </div>
         ) : null}
         <div className="flex flex-wrap justify-end gap-3">
-          <button type="button" onClick={() => setShowPreview((value) => !value)} className="rounded-xl border border-border bg-white px-5 py-3 font-semibold">{showPreview ? "Hide preview" : "Preview"}</button>
-          <button disabled={!parsed.success} className="rounded-xl bg-brand px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50" type="submit">Save draft</button>
+          <button type="button" onClick={() => setShowPreview((value) => !value)} className="rounded-lg border border-border bg-white px-4 py-2 text-sm font-medium transition-colors hover:border-brand">{showPreview ? "Hide preview" : "Preview"}</button>
+          <button disabled={!parsed.success} className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-50" type="submit">Save draft</button>
         </div>
       </form>
 
       <aside className="xl:sticky xl:top-6 xl:self-start">
         {showPreview ? <SurveyPreview draft={draft} locale={locale} onLocale={setLocale} /> : (
-          <div className="rounded-3xl border border-border bg-white p-6 text-sm text-muted">Preview the bilingual customer experience before publishing.</div>
+          <div className="rounded-xl border border-border bg-white p-5 text-sm text-muted">Preview the bilingual customer experience before publishing.</div>
         )}
       </aside>
     </div>
@@ -165,9 +165,9 @@ function QuestionEditor({ question, index, onChange, onRemove, onMove }: {
   onMove: (direction: -1 | 1) => void;
 }) {
   return (
-    <article className="grid gap-4 rounded-3xl border border-border bg-white p-6">
+    <article className="grid gap-3 rounded-xl border border-border bg-white p-5">
       <div className="flex items-center justify-between gap-3">
-        <h3 className="font-bold">{index + 1}. {question.type.replace("_", " ")}</h3>
+        <h3 className="text-sm font-semibold text-foreground">{index + 1}. {question.type.replace("_", " ")}</h3>
         <div className="flex gap-1">
           <button type="button" aria-label="Move question up" onClick={() => onMove(-1)} className="rounded-lg border px-2 py-1">↑</button>
           <button type="button" aria-label="Move question down" onClick={() => onMove(1)} className="rounded-lg border px-2 py-1">↓</button>
@@ -220,7 +220,7 @@ function moveItem<T>(items: T[], index: number, direction: -1 | 1) {
 function SurveyPreview({ draft, locale, onLocale }: { draft: SurveyDraft; locale: "en" | "ar"; onLocale: (locale: "en" | "ar") => void }) {
   const pick = (en: string, ar: string) => locale === "ar" ? ar || en : en;
   return (
-    <div dir={locale === "ar" ? "rtl" : "ltr"} className="grid gap-5 rounded-3xl border border-border bg-white p-6 shadow-lg">
+    <div dir={locale === "ar" ? "rtl" : "ltr"} className="grid gap-4 rounded-xl border border-border bg-white p-5 shadow-lg">
       <div className="flex justify-end gap-2"><button type="button" onClick={() => onLocale("en")} className="text-sm font-semibold">EN</button><button type="button" onClick={() => onLocale("ar")} className="text-sm font-semibold">العربية</button></div>
       <h2 className="text-2xl font-bold">{pick(draft.titleEn, draft.titleAr) || "Untitled survey"}</h2>
       <p className="text-sm text-muted">{pick(draft.descriptionEn, draft.descriptionAr)}</p>
@@ -229,7 +229,7 @@ function SurveyPreview({ draft, locale, onLocale }: { draft: SurveyDraft; locale
   );
 }
 
-const controlClass = "min-h-11 rounded-xl border border-border bg-white px-3 py-2 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20";
-function BuilderField({ label, value, onChange, dir, required }: { label: string; value: string; onChange: (value: string) => void; dir?: "rtl"; required?: boolean }) { return <label className="grid gap-2 text-sm font-semibold">{label}<input className={controlClass} dir={dir} value={value} required={required} onChange={(event) => onChange(event.target.value)} /></label>; }
-function BuilderArea({ label, value, onChange, dir }: { label: string; value: string; onChange: (value: string) => void; dir?: "rtl" }) { return <label className="grid gap-2 text-sm font-semibold">{label}<textarea className={`${controlClass} min-h-24`} dir={dir} value={value} onChange={(event) => onChange(event.target.value)} /></label>; }
-function NumberField({ label, value, onChange }: { label: string; value: number; onChange: (value: number) => void }) { return <label className="grid gap-2 text-sm font-semibold">{label}<input className={controlClass} type="number" value={value} onChange={(event) => onChange(Number(event.target.value))} /></label>; }
+const controlClass = "min-h-10 rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/15";
+function BuilderField({ label, value, onChange, dir, required }: { label: string; value: string; onChange: (value: string) => void; dir?: "rtl"; required?: boolean }) { return <label className="grid gap-1.5 text-sm font-medium text-foreground">{label}<input className={controlClass} dir={dir} value={value} required={required} onChange={(event) => onChange(event.target.value)} /></label>; }
+function BuilderArea({ label, value, onChange, dir }: { label: string; value: string; onChange: (value: string) => void; dir?: "rtl" }) { return <label className="grid gap-1.5 text-sm font-medium text-foreground">{label}<textarea className={`${controlClass} min-h-20`} dir={dir} value={value} onChange={(event) => onChange(event.target.value)} /></label>; }
+function NumberField({ label, value, onChange }: { label: string; value: number; onChange: (value: number) => void }) { return <label className="grid gap-1.5 text-sm font-medium text-foreground">{label}<input className={controlClass} type="number" value={value} onChange={(event) => onChange(Number(event.target.value))} /></label>; }

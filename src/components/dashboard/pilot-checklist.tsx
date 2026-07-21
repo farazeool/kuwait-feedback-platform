@@ -27,34 +27,34 @@ export async function PilotChecklist() {
   if (checklist.allComplete) return null;
 
   return (
-    <section className="rounded-3xl border border-border bg-white p-6" aria-labelledby="pilot-checklist-title">
-      <header className="grid gap-1">
-        <p className="text-sm font-bold text-brand">Pilot setup · إعداد التجربة</p>
-        <h2 id="pilot-checklist-title" className="text-2xl font-bold tracking-tight">Finish setting up</h2>
-        <p dir="rtl" className="text-sm font-semibold text-muted">أكمل إعداد منصتك</p>
-        <p className="text-sm text-muted">
+    <section className="rounded-xl border border-border bg-white p-5" aria-labelledby="pilot-checklist-title">
+      <header className="grid gap-0.5">
+        <p className="text-xs font-semibold uppercase tracking-wide text-brand">Pilot setup · إعداد التجربة</p>
+        <h2 id="pilot-checklist-title" className="text-lg font-bold tracking-tight text-foreground">Finish setting up</h2>
+        <p dir="rtl" className="text-sm font-medium text-muted">أكمل إعداد منصتك</p>
+        <p className="text-xs text-muted">
           {checklist.completedCount} of {checklist.totalCount} complete · {checklist.completedCount} من {checklist.totalCount} مكتمل
         </p>
       </header>
-      <ol className="mt-5 grid gap-3">
+      <ol className="mt-4 grid gap-2">
         {checklist.steps.map((step, index) => (
           <li key={step.id}>
-            <Link href={step.href} className="flex items-start gap-4 rounded-2xl border border-border p-4 transition hover:border-brand">
+            <Link href={step.href} className="flex items-start gap-3 rounded-lg border border-border p-3 transition-colors hover:border-brand">
               <span
                 aria-hidden="true"
                 className={
                   step.completed
-                    ? "grid h-8 w-8 flex-none place-items-center rounded-full bg-brand text-white"
-                    : "grid h-8 w-8 flex-none place-items-center rounded-full border border-border text-sm font-bold text-muted"
+                    ? "grid h-7 w-7 flex-none place-items-center rounded-full bg-brand text-xs text-white"
+                    : "grid h-7 w-7 flex-none place-items-center rounded-full border border-border text-xs font-semibold text-muted"
                 }
               >
                 {step.completed ? "✓" : index + 1}
               </span>
-              <div className="grid gap-1">
+              <div className="grid gap-0.5">
                 <span className="sr-only">{step.completed ? "Completed: " : `Step ${index + 1}: `}</span>
-                <p className="font-bold">{step.labelEn}</p>
-                <p dir="rtl" className="text-sm font-semibold text-muted">{step.labelAr}</p>
-                <p className="text-sm text-muted">{step.hintEn}</p>
+                <p className="text-sm font-semibold text-foreground">{step.labelEn}</p>
+                <p dir="rtl" className="text-xs font-medium text-muted">{step.labelAr}</p>
+                <p className="text-xs text-muted">{step.hintEn}</p>
                 <p dir="rtl" className="text-xs text-muted">{step.hintAr}</p>
               </div>
             </Link>
