@@ -163,6 +163,86 @@ export type Database = {
           },
         ]
       }
+      concern_categories: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name_ar: string
+          name_en: string
+          position: number
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name_ar: string
+          name_en: string
+          position: number
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name_ar?: string
+          name_en?: string
+          position?: number
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      departments: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          location_id: string
+          name_ar: string
+          name_en: string
+          organization_id: string
+          slug: string
+          status: Database["public"]["Enums"]["entity_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          location_id: string
+          name_ar: string
+          name_en: string
+          organization_id: string
+          slug: string
+          status?: Database["public"]["Enums"]["entity_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          location_id?: string
+          name_ar?: string
+          name_en?: string
+          organization_id?: string
+          slug?: string
+          status?: Database["public"]["Enums"]["entity_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "departments_location_organization_fkey"
+            columns: ["location_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id", "organization_id"]
+          },
+        ]
+      }
       invitation_rate_limits: {
         Row: {
           action: string
@@ -644,6 +724,122 @@ export type Database = {
           },
         ]
       }
+      rating_scale_points: {
+        Row: {
+          label_ar: string
+          label_en: string
+          position: number
+          scale_key: string
+          value: number
+        }
+        Insert: {
+          label_ar: string
+          label_en: string
+          position: number
+          scale_key: string
+          value: number
+        }
+        Update: {
+          label_ar?: string
+          label_en?: string
+          position?: number
+          scale_key?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rating_scale_points_scale_key_fkey"
+            columns: ["scale_key"]
+            isOneToOne: false
+            referencedRelation: "rating_scales"
+            referencedColumns: ["key"]
+          },
+        ]
+      }
+      rating_scales: {
+        Row: {
+          created_at: string
+          is_active: boolean
+          key: string
+          name_ar: string
+          name_en: string
+          negative_max: number
+          satisfied_min: number
+          scale_max: number
+          scale_min: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          is_active?: boolean
+          key: string
+          name_ar: string
+          name_en: string
+          negative_max: number
+          satisfied_min: number
+          scale_max: number
+          scale_min: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          is_active?: boolean
+          key?: string
+          name_ar?: string
+          name_en?: string
+          negative_max?: number
+          satisfied_min?: number
+          scale_max?: number
+          scale_min?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      response_concerns: {
+        Row: {
+          concern_category_id: string
+          created_at: string
+          id: string
+          is_primary: boolean
+          organization_id: string
+          response_id: string
+          survey_id: string
+        }
+        Insert: {
+          concern_category_id: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          organization_id: string
+          response_id: string
+          survey_id: string
+        }
+        Update: {
+          concern_category_id?: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          organization_id?: string
+          response_id?: string
+          survey_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "response_concerns_concern_category_id_fkey"
+            columns: ["concern_category_id"]
+            isOneToOne: false
+            referencedRelation: "concern_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "response_concerns_response_scope_fkey"
+            columns: ["response_id", "survey_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "survey_responses"
+            referencedColumns: ["id", "survey_id", "organization_id"]
+          },
+        ]
+      }
       response_internal_notes: {
         Row: {
           author_id: string | null
@@ -828,6 +1024,7 @@ export type Database = {
       }
       survey_question_options: {
         Row: {
+          concern_category_id: string | null
           created_at: string
           id: string
           is_active: boolean
@@ -840,6 +1037,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          concern_category_id?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
@@ -852,6 +1050,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          concern_category_id?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
@@ -864,6 +1063,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "survey_question_options_concern_category_id_fkey"
+            columns: ["concern_category_id"]
+            isOneToOne: false
+            referencedRelation: "concern_categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "survey_question_options_question_survey_fkey"
             columns: ["question_id", "survey_id"]
@@ -895,6 +1101,7 @@ export type Database = {
           question_type: Database["public"]["Enums"]["question_type"]
           rating_max: number | null
           rating_min: number | null
+          rating_scale: string | null
           status: Database["public"]["Enums"]["survey_status"]
           survey_id: string
           text_max_length: number | null
@@ -914,6 +1121,7 @@ export type Database = {
           question_type: Database["public"]["Enums"]["question_type"]
           rating_max?: number | null
           rating_min?: number | null
+          rating_scale?: string | null
           status?: Database["public"]["Enums"]["survey_status"]
           survey_id: string
           text_max_length?: number | null
@@ -933,12 +1141,20 @@ export type Database = {
           question_type?: Database["public"]["Enums"]["question_type"]
           rating_max?: number | null
           rating_min?: number | null
+          rating_scale?: string | null
           status?: Database["public"]["Enums"]["survey_status"]
           survey_id?: string
           text_max_length?: number | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "survey_questions_rating_scale_fkey"
+            columns: ["rating_scale"]
+            isOneToOne: false
+            referencedRelation: "rating_scales"
+            referencedColumns: ["key"]
+          },
           {
             foreignKeyName: "survey_questions_survey_organization_fkey"
             columns: ["survey_id", "organization_id"]
@@ -951,7 +1167,18 @@ export type Database = {
       survey_responses: {
         Row: {
           assigned_to: string | null
+          channel: Database["public"]["Enums"]["response_channel"]
+          controlled_record_opened_by: string | null
+          controlled_record_outcome_summary: string | null
+          controlled_record_recorded_at: string | null
+          controlled_record_recorded_by: string | null
+          controlled_record_reference: string | null
+          controlled_record_status: string | null
+          controlled_record_type:
+            | Database["public"]["Enums"]["controlled_record_type"]
+            | null
           created_at: string
+          department_id: string | null
           id: string
           idempotency_key: string | null
           internal_tags: string[]
@@ -963,12 +1190,24 @@ export type Database = {
           reviewed_at: string | null
           submitted_at: string
           survey_id: string
+          touchpoint_id: string | null
           updated_at: string
           workflow_status: Database["public"]["Enums"]["response_workflow_status"]
         }
         Insert: {
           assigned_to?: string | null
+          channel?: Database["public"]["Enums"]["response_channel"]
+          controlled_record_opened_by?: string | null
+          controlled_record_outcome_summary?: string | null
+          controlled_record_recorded_at?: string | null
+          controlled_record_recorded_by?: string | null
+          controlled_record_reference?: string | null
+          controlled_record_status?: string | null
+          controlled_record_type?:
+            | Database["public"]["Enums"]["controlled_record_type"]
+            | null
           created_at?: string
+          department_id?: string | null
           id?: string
           idempotency_key?: string | null
           internal_tags?: string[]
@@ -980,12 +1219,24 @@ export type Database = {
           reviewed_at?: string | null
           submitted_at?: string
           survey_id: string
+          touchpoint_id?: string | null
           updated_at?: string
           workflow_status?: Database["public"]["Enums"]["response_workflow_status"]
         }
         Update: {
           assigned_to?: string | null
+          channel?: Database["public"]["Enums"]["response_channel"]
+          controlled_record_opened_by?: string | null
+          controlled_record_outcome_summary?: string | null
+          controlled_record_recorded_at?: string | null
+          controlled_record_recorded_by?: string | null
+          controlled_record_reference?: string | null
+          controlled_record_status?: string | null
+          controlled_record_type?:
+            | Database["public"]["Enums"]["controlled_record_type"]
+            | null
           created_at?: string
+          department_id?: string | null
           id?: string
           idempotency_key?: string | null
           internal_tags?: string[]
@@ -997,15 +1248,30 @@ export type Database = {
           reviewed_at?: string | null
           submitted_at?: string
           survey_id?: string
+          touchpoint_id?: string | null
           updated_at?: string
           workflow_status?: Database["public"]["Enums"]["response_workflow_status"]
         }
         Relationships: [
           {
+            foreignKeyName: "survey_responses_department_scope_fkey"
+            columns: ["department_id", "organization_id", "location_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id", "organization_id", "location_id"]
+          },
+          {
             foreignKeyName: "survey_responses_survey_scope_fkey"
             columns: ["survey_id", "organization_id", "location_id"]
             isOneToOne: false
             referencedRelation: "surveys"
+            referencedColumns: ["id", "organization_id", "location_id"]
+          },
+          {
+            foreignKeyName: "survey_responses_touchpoint_scope_fkey"
+            columns: ["touchpoint_id", "organization_id", "location_id"]
+            isOneToOne: false
+            referencedRelation: "touchpoints"
             referencedColumns: ["id", "organization_id", "location_id"]
           },
         ]
@@ -1024,6 +1290,7 @@ export type Database = {
           published_at: string | null
           status: Database["public"]["Enums"]["survey_status"]
           survey_group_id: string
+          survey_type: Database["public"]["Enums"]["survey_type"]
           thank_you_ar: string | null
           thank_you_en: string | null
           title_ar: string
@@ -1043,6 +1310,7 @@ export type Database = {
           published_at?: string | null
           status?: Database["public"]["Enums"]["survey_status"]
           survey_group_id?: string
+          survey_type?: Database["public"]["Enums"]["survey_type"]
           thank_you_ar?: string | null
           thank_you_en?: string | null
           title_ar: string
@@ -1062,6 +1330,7 @@ export type Database = {
           published_at?: string | null
           status?: Database["public"]["Enums"]["survey_status"]
           survey_group_id?: string
+          survey_type?: Database["public"]["Enums"]["survey_type"]
           thank_you_ar?: string | null
           thank_you_en?: string | null
           title_ar?: string
@@ -1075,6 +1344,72 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "locations"
             referencedColumns: ["id", "organization_id"]
+          },
+        ]
+      }
+      touchpoints: {
+        Row: {
+          channel: Database["public"]["Enums"]["response_channel"]
+          created_at: string
+          created_by: string | null
+          department_id: string
+          id: string
+          location_id: string
+          name_ar: string
+          name_en: string
+          organization_id: string
+          public_token: string
+          slug: string
+          status: Database["public"]["Enums"]["entity_status"]
+          survey_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          channel?: Database["public"]["Enums"]["response_channel"]
+          created_at?: string
+          created_by?: string | null
+          department_id: string
+          id?: string
+          location_id: string
+          name_ar: string
+          name_en: string
+          organization_id: string
+          public_token?: string
+          slug: string
+          status?: Database["public"]["Enums"]["entity_status"]
+          survey_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["response_channel"]
+          created_at?: string
+          created_by?: string | null
+          department_id?: string
+          id?: string
+          location_id?: string
+          name_ar?: string
+          name_en?: string
+          organization_id?: string
+          public_token?: string
+          slug?: string
+          status?: Database["public"]["Enums"]["entity_status"]
+          survey_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "touchpoints_department_scope_fkey"
+            columns: ["department_id", "organization_id", "location_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id", "organization_id", "location_id"]
+          },
+          {
+            foreignKeyName: "touchpoints_survey_scope_fkey"
+            columns: ["survey_id", "organization_id", "location_id"]
+            isOneToOne: false
+            referencedRelation: "surveys"
+            referencedColumns: ["id", "organization_id", "location_id"]
           },
         ]
       }
@@ -1302,19 +1637,23 @@ export type Database = {
       submit_protected_survey_response: {
         Args: {
           p_answers: Json
+          p_channel?: Database["public"]["Enums"]["response_channel"]
           p_fingerprint_hash: string
           p_idempotency_key: string
           p_locale: Database["public"]["Enums"]["locale_code"]
           p_public_slug: string
+          p_touchpoint_token?: string
         }
         Returns: Json
       }
       submit_public_survey_response: {
         Args: {
           p_answers: Json
+          p_channel?: Database["public"]["Enums"]["response_channel"]
           p_idempotency_key?: string
           p_locale: Database["public"]["Enums"]["locale_code"]
           p_public_slug: string
+          p_touchpoint_token?: string
         }
         Returns: string
       }
@@ -1432,11 +1771,13 @@ export type Database = {
         | "organization_admin"
         | "location_manager"
         | "analyst"
+      controlled_record_type: "investigation" | "ncr" | "capa"
       entity_status: "active" | "archived"
       invitation_delivery_status: "pending" | "captured" | "sent" | "failed"
       locale_code: "en" | "ar"
       membership_scope: "organization" | "locations"
       question_type: "rating" | "multiple_choice" | "text"
+      response_channel: "qr" | "kiosk" | "web"
       response_workflow_status:
         | "unread"
         | "reviewed"
@@ -1449,6 +1790,7 @@ export type Database = {
         | "canceled"
         | "archived"
       survey_status: "draft" | "active" | "archived"
+      survey_type: "generic" | "fresh_produce"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1587,11 +1929,13 @@ export const Constants = {
         "location_manager",
         "analyst",
       ],
+      controlled_record_type: ["investigation", "ncr", "capa"],
       entity_status: ["active", "archived"],
       invitation_delivery_status: ["pending", "captured", "sent", "failed"],
       locale_code: ["en", "ar"],
       membership_scope: ["organization", "locations"],
       question_type: ["rating", "multiple_choice", "text"],
+      response_channel: ["qr", "kiosk", "web"],
       response_workflow_status: [
         "unread",
         "reviewed",
@@ -1606,6 +1950,7 @@ export const Constants = {
         "archived",
       ],
       survey_status: ["draft", "active", "archived"],
+      survey_type: ["generic", "fresh_produce"],
     },
   },
 } as const
