@@ -67,11 +67,13 @@ Individual commands are available as `npm run lint`, `npm run typecheck`, and `n
 - [Architecture](docs/architecture.md)
 - [Database foundation](docs/database.md)
 - [Implementation plan](docs/implementation-plan.md)
+- [Deployment preparation](docs/deployment.md)
+- [Operations and recovery runbook](docs/operations.md)
 - [Repository agent instructions](AGENTS.md)
 
 ## Environment status
 
-The repository is linked locally to an isolated free hosted Supabase development project. Its credentials remain in ignored `.env.local`; local demo seed data was not uploaded. The private GitHub repository protects `main` by requiring pull requests while blocking force pushes and branch deletion; administrator bypass remains enabled for the current solo development workflow, and status checks are not required until stable CI exists. No Vercel deployment or production Supabase project exists.
+The repository is linked locally to an isolated free hosted Supabase development project. Its credentials remain in ignored `.env.local`; local demo seed data was not uploaded. Production is intentionally unavailable until an isolated project and provider credentials are configured. The private GitHub repository protects `main` by requiring pull requests while blocking force pushes and branch deletion; CI configuration is checked in and status requirements are configured only after the workflow has completed successfully.
 
 ## Local database
 

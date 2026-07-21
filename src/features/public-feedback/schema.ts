@@ -59,6 +59,7 @@ export const submissionPayloadSchema = z.object({
   idempotencyKey: z.string().uuid(),
   startedAt: z.number().int().positive(),
   website: z.string().max(0),
+  botToken: z.string().min(1).max(4_096).optional(),
 }).strict();
 
 export type PublicSurvey = z.infer<typeof publicSurveySchema>;

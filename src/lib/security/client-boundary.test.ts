@@ -10,13 +10,11 @@ function sourceFiles(directory: string): string[] {
 }
 
 describe("browser secret boundary", () => {
-  it("never references the service-role key from a client module", () => {
+  it("never references server-only credentials or modules from a client module", () => {
     const clientModules = sourceFiles(join(process.cwd(), "src")).filter((path) =>
       /^\s*["']use client["'];/m.test(readFileSync(path, "utf8")),
     );
-    const violations = clientModules.filter((path) =>
-      readFileSync(path, "utf8").includes("SUPABASE_SERVICE_ROLE_KEY"),
-    );
+    const violations = clientModules.filter((path) => /SUPABASE_SERVICE_ROLE_KEY|getServerEnv|createSupabaseServiceClient|features\/bot-protection\/server/.test(readFileSync(path, "utf8")));
     expect(violations).toEqual([]);
   });
 

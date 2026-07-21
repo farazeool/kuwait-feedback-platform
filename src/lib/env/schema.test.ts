@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { parsePublicEnv, parseServerEnv } from "./schema";
 
 const validPublicEnv = {
-  NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
+  NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321",
   NEXT_PUBLIC_SUPABASE_ANON_KEY: "test-anon-key",
   NEXT_PUBLIC_APP_URL: "http://localhost:3000",
 };
@@ -26,5 +26,48 @@ describe("environment validation", () => {
 
   it("defaults server-side reporting to Kuwait time", () => {
     expect(parseServerEnv(validServerEnv).APP_TIME_ZONE).toBe("Asia/Kuwait");
+  });
+
+  it("rejects localhost URLs in production", () => {
+    expect(() => parseServerEnv({ ...validServerEnv, APP_ENV: "production", SUPABASE_PROJECT_ENVIRONMENT: "production" })).toThrow(/non-local HTTPS/);
+  });
+
+  it("requires preview credentials to be marked as preview", () => {
+    expect(() => parseServerEnv({
+      ...validServerEnv,
+      APP_ENV: "preview",
+      SUPABASE_PROJECT_ENVIRONMENT: "production",
+      NEXT_PUBLIC_APP_URL: "https://preview.example.test",
+      NEXT_PUBLIC_SUPABASE_URL: "https://preview.supabase.co",
+    })).toThrow(/must match/);
+  });
+
+  it("denies bot-protection bypass outside local development", () => {
+    expect(() => parseServerEnv({
+      ...validServerEnv,
+      APP_ENV: "production",
+      SUPABASE_PROJECT_ENVIRONMENT: "production",
+      NEXT_PUBLIC_APP_URL: "https://app.example.test",
+      NEXT_PUBLIC_SUPABASE_URL: "https://production.supabase.co",
+      SUPABASE_PROJECT_REF: "abcdefghijklmnopqrst",
+      BOT_PROTECTION_PROVIDER: "turnstile",
+      BOT_PROTECTION_SITE_KEY: "site-key",
+      BOT_PROTECTION_SECRET_KEY: "secret-key",
+      BOT_PROTECTION_EXPECTED_HOSTNAME: "app.example.test",
+      BOT_PROTECTION_LOCAL_BYPASS: "true",
+      EMAIL_DELIVERY_MODE: "smtp",
+      SMTP_USERNAME: "smtp-user",
+      SMTP_PASSWORD: "smtp-password",
+    })).toThrow(/bypass/);
+  });
+
+  it("requires isolated hosted project metadata and critical production services", () => {
+    expect(() => parseServerEnv({
+      ...validServerEnv,
+      APP_ENV: "production",
+      SUPABASE_PROJECT_ENVIRONMENT: "production",
+      NEXT_PUBLIC_APP_URL: "https://app.example.test",
+      NEXT_PUBLIC_SUPABASE_URL: "https://prod.supabase.co",
+    })).toThrow(/project reference/);
   });
 });
