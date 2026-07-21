@@ -1,32 +1,44 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f5f7f4;
-  --foreground: #17211b;
+  --background: #f4f6f3;
+  --foreground: #1a2332;
   --surface: #ffffff;
-  --muted: #66736b;
+  --surface-muted: #f8faf8;
+  --muted: #5f6b7a;
   --brand: #0f6b4d;
-  --brand-dark: #084c37;
-  --border: #dce4df;
+  --brand-dark: #0a5a40;
+  --border: #d8e0dc;
+  --border-strong: #b8c4bc;
+  --ring: color-mix(in srgb, var(--brand) 30%, transparent);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
   --color-muted: var(--muted);
   --color-brand: var(--brand);
   --color-brand-dark: var(--brand-dark);
   --color-border: var(--border);
-  --font-sans: Arial, "Noto Sans Arabic", sans-serif;
+  --color-border-strong: var(--border-strong);
+  --font-sans: var(--font-inter, Inter), var(--font-noto-arabic, "Noto Sans Arabic"), ui-sans-serif, system-ui, sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, "Noto Sans Arabic", sans-serif;
+  font-family: var(--font-inter, Inter), var(--font-noto-arabic, "Noto Sans Arabic"), ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--brand) 22%, transparent);
+  background: color-mix(in srgb, var(--brand) 20%, transparent);
+}
+
+*:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
