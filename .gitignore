@@ -47,3 +47,7 @@ next-env.d.ts
 .eslintcache
 /.local-postgres/
 .qoder/
+
+# unrelated
+/OmniRoute/
+/.OmniRoute-backup/
