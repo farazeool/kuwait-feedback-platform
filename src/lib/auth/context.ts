@@ -165,7 +165,7 @@ export async function requireOnboardingUser() {
 export async function requireOrganizationManagementContext() {
   const context = await requireAppAccessContext();
   const role = context.profile.platformRole ?? context.membership?.role;
-  if (!role || !["platform_admin", "organization_owner", "organization_admin"].includes(role)) {
+  if (!role || !["platform_admin", "organization_owner", "organization_admin", "quality_manager", "senior_management"].includes(role)) {
     redirect("/dashboard");
   }
   return context;

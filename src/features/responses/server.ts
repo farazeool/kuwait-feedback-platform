@@ -48,8 +48,8 @@ export async function listResponses(filters: {
   if (filters.survey) query = query.eq("survey_id", filters.survey);
   if (filters.location) query = query.eq("location_id", filters.location);
   if (filters.rating && /^\d+$/.test(filters.rating)) query = query.eq("overall_rating", Number(filters.rating));
-  if (["unread", "reviewed", "action_required", "resolved"].includes(filters.workflow ?? "")) query = query.eq("workflow_status", filters.workflow as "unread");
-  if (filters.unresolved === "1") query = query.neq("workflow_status", "resolved");
+  if (["monitor_only", "branch_followup", "controlled_investigation", "immediate_escalation"].includes(filters.workflow ?? "")) query = query.eq("workflow_status", filters.workflow as "monitor_only");
+  if (filters.unresolved === "1") query = query.neq("workflow_status", "immediate_escalation");
   if (filters.tag?.trim()) query = query.contains("internal_tags", [filters.tag.trim().slice(0, 40)]);
   if (profiles?.some((profile) => profile.id === filters.assignee)) query = query.eq("assigned_to", filters.assignee!);
   if (alertResponseIds) {

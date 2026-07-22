@@ -72,7 +72,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             if (parsed.data.ratingMax !== undefined) query = query.lte("overall_rating", parsed.data.ratingMax);
             if (parsed.data.rating !== undefined) query = query.eq("overall_rating", parsed.data.rating);
             if (parsed.data.workflow) query = query.eq("workflow_status", parsed.data.workflow);
-            if (parsed.data.unresolved === "1") query = query.neq("workflow_status", "resolved");
+            if (parsed.data.unresolved === "1") query = query.neq("workflow_status", "immediate_escalation");
             if (parsed.data.tag) query = query.contains("internal_tags", [parsed.data.tag]);
             if (parsed.data.assignee) query = query.eq("assigned_to", parsed.data.assignee);
             if (search && (searchSurveyIds.length || searchLocationIds.length)) {
@@ -117,7 +117,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             if (parsed.data.ratingMax !== undefined) responseQuery = responseQuery.lte("overall_rating", parsed.data.ratingMax);
             if (parsed.data.rating !== undefined) responseQuery = responseQuery.eq("overall_rating", parsed.data.rating);
             if (parsed.data.workflow) responseQuery = responseQuery.eq("workflow_status", parsed.data.workflow);
-            if (parsed.data.unresolved === "1") responseQuery = responseQuery.neq("workflow_status", "resolved");
+             if (parsed.data.unresolved === "1") responseQuery = responseQuery.neq("workflow_status", "immediate_escalation");
             if (parsed.data.tag) responseQuery = responseQuery.contains("internal_tags", [parsed.data.tag]);
             if (parsed.data.assignee) responseQuery = responseQuery.eq("assigned_to", parsed.data.assignee);
             if (search && (searchSurveyIds.length || searchLocationIds.length)) {

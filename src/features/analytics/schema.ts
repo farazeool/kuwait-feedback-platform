@@ -18,7 +18,7 @@ export const exportFiltersSchema = analyticsFiltersSchema.extend({
   q: z.string().trim().max(200).optional(),
   rating: z.coerce.number().int().min(0).max(10).optional(),
   alert: z.enum(["open", "acknowledged", "resolved", "dismissed"]).optional(),
-  workflow: z.enum(["unread", "reviewed", "action_required", "resolved"]).optional(),
+  workflow: z.enum(["monitor_only", "branch_followup", "controlled_investigation", "immediate_escalation"]).optional(),
   tag: z.string().trim().max(40).optional(),
   assignee: z.string().uuid().optional(),
   unresolved: z.enum(["1"]).optional(),

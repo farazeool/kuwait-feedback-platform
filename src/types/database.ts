@@ -34,6 +34,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      alert_configurations: {
+        Row: {
+          created_at: string
+          deduplication_minutes: number
+          id: string
+          is_active: boolean
+          location_id: string | null
+          organization_id: string
+          rule_type: Database["public"]["Enums"]["alert_rule_type"]
+          severity: Database["public"]["Enums"]["alert_severity"]
+          threshold_value: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deduplication_minutes?: number
+          id?: string
+          is_active?: boolean
+          location_id?: string | null
+          organization_id: string
+          rule_type: Database["public"]["Enums"]["alert_rule_type"]
+          severity?: Database["public"]["Enums"]["alert_severity"]
+          threshold_value: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deduplication_minutes?: number
+          id?: string
+          is_active?: boolean
+          location_id?: string | null
+          organization_id?: string
+          rule_type?: Database["public"]["Enums"]["alert_rule_type"]
+          severity?: Database["public"]["Enums"]["alert_severity"]
+          threshold_value?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alert_configurations_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alert_configurations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       alerts: {
         Row: {
           acknowledged_at: string | null
@@ -271,6 +325,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "invitation_rate_limits_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kpi_definitions: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          metric: Database["public"]["Enums"]["kpi_metric"]
+          negative_max: number
+          organization_id: string
+          satisfied_min: number
+          updated_at: string
+          zero_response_handling: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          metric: Database["public"]["Enums"]["kpi_metric"]
+          negative_max: number
+          organization_id: string
+          satisfied_min: number
+          updated_at?: string
+          zero_response_handling?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          metric?: Database["public"]["Enums"]["kpi_metric"]
+          negative_max?: number
+          organization_id?: string
+          satisfied_min?: number
+          updated_at?: string
+          zero_response_handling?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kpi_definitions_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -882,6 +980,78 @@ export type Database = {
           },
         ]
       }
+      response_review_audit: {
+        Row: {
+          actor_id: string
+          controlled_record_reason: string | null
+          controlled_record_reference: string | null
+          controlled_record_type:
+            | Database["public"]["Enums"]["controlled_record_type"]
+            | null
+          follow_up_details: string | null
+          id: string
+          new_status: Database["public"]["Enums"]["response_workflow_status"]
+          organization_id: string
+          outcome_summary: string | null
+          previous_status:
+            | Database["public"]["Enums"]["response_workflow_status"]
+            | null
+          recorded_at: string
+          response_id: string
+        }
+        Insert: {
+          actor_id: string
+          controlled_record_reason?: string | null
+          controlled_record_reference?: string | null
+          controlled_record_type?:
+            | Database["public"]["Enums"]["controlled_record_type"]
+            | null
+          follow_up_details?: string | null
+          id?: string
+          new_status: Database["public"]["Enums"]["response_workflow_status"]
+          organization_id: string
+          outcome_summary?: string | null
+          previous_status?:
+            | Database["public"]["Enums"]["response_workflow_status"]
+            | null
+          recorded_at?: string
+          response_id: string
+        }
+        Update: {
+          actor_id?: string
+          controlled_record_reason?: string | null
+          controlled_record_reference?: string | null
+          controlled_record_type?:
+            | Database["public"]["Enums"]["controlled_record_type"]
+            | null
+          follow_up_details?: string | null
+          id?: string
+          new_status?: Database["public"]["Enums"]["response_workflow_status"]
+          organization_id?: string
+          outcome_summary?: string | null
+          previous_status?:
+            | Database["public"]["Enums"]["response_workflow_status"]
+            | null
+          recorded_at?: string
+          response_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "response_review_audit_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "response_review_audit_response_id_fkey"
+            columns: ["response_id"]
+            isOneToOne: false
+            referencedRelation: "survey_responses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
           canceled_at: string | null
@@ -1422,16 +1592,30 @@ export type Database = {
         Args: { p_token: string }
         Returns: string
       }
-      assert_analytics_scope: {
-        Args: {
-          p_end_at: string
-          p_location_id?: string
-          p_organization_id: string
-          p_start_at: string
-          p_survey_id?: string
-        }
-        Returns: undefined
-      }
+      assert_analytics_scope:
+        | {
+            Args: {
+              p_end_at: string
+              p_location_id?: string
+              p_organization_id: string
+              p_start_at: string
+              p_survey_id?: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_channel: string
+              p_department_id: string
+              p_end_at: string
+              p_location_id: string
+              p_organization_id: string
+              p_start_at: string
+              p_survey_id: string
+              p_touchpoint_id: string
+            }
+            Returns: undefined
+          }
       can_access_location: { Args: { p_location_id: string }; Returns: boolean }
       can_access_response: { Args: { p_response_id: string }; Returns: boolean }
       can_manage_alert: { Args: { p_alert_id: string }; Returns: boolean }
@@ -1460,6 +1644,16 @@ export type Database = {
           p_window_seconds?: number
         }
         Returns: boolean
+      }
+      create_department: {
+        Args: {
+          p_location_id: string
+          p_name_ar: string
+          p_name_en: string
+          p_organization_id: string
+          p_slug: string
+        }
+        Returns: string
       }
       create_location_v2: {
         Args: {
@@ -1499,8 +1693,46 @@ export type Database = {
           organization_id: string
         }[]
       }
+      create_rating_scale: {
+        Args: {
+          p_key: string
+          p_name_ar: string
+          p_name_en: string
+          p_negative_max: number
+          p_satisfied_min: number
+          p_scale_max: number
+          p_scale_min: number
+        }
+        Returns: string
+      }
+      create_touchpoint: {
+        Args: {
+          p_channel: Database["public"]["Enums"]["response_channel"]
+          p_department_id: string
+          p_location_id: string
+          p_name_ar: string
+          p_name_en: string
+          p_organization_id: string
+          p_slug: string
+          p_survey_id?: string
+        }
+        Returns: string
+      }
       deactivate_own_account: { Args: never; Returns: undefined }
       duplicate_survey_group: { Args: { p_survey_id: string }; Returns: string }
+      evaluate_kpi_alert_rules: {
+        Args: { p_organization_id: string }
+        Returns: number
+      }
+      get_alert_summary: {
+        Args: {
+          p_end_at: string
+          p_location_id?: string
+          p_organization_id: string
+          p_start_at: string
+        }
+        Returns: Json
+      }
       get_analytics_overview: {
         Args: {
           p_alert_status?: Database["public"]["Enums"]["alert_status"]
@@ -1515,9 +1747,53 @@ export type Database = {
         }
         Returns: Json
       }
+      get_concern_trend: {
+        Args: {
+          p_department_id?: string
+          p_end_at: string
+          p_location_id?: string
+          p_organization_id: string
+          p_start_at: string
+          p_survey_id?: string
+        }
+        Returns: Json
+      }
       get_invitation_public: { Args: { p_token: string }; Returns: Json }
+      get_kpi_dashboard:
+        | {
+            Args: {
+              p_end_at: string
+              p_location_id?: string
+              p_organization_id: string
+              p_start_at: string
+              p_survey_id?: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_channel?: string
+              p_department_id?: string
+              p_end_at: string
+              p_location_id?: string
+              p_organization_id: string
+              p_start_at: string
+              p_survey_id?: string
+              p_touchpoint_id?: string
+            }
+            Returns: Json
+          }
       get_platform_overview: { Args: never; Returns: Json }
       get_public_survey: { Args: { p_public_slug: string }; Returns: Json }
+      get_review_summary: {
+        Args: {
+          p_end_at: string
+          p_location_id?: string
+          p_organization_id: string
+          p_start_at: string
+        }
+        Returns: Json
+      }
       get_survey_question_analytics: {
         Args: {
           p_end_at: string
@@ -1678,6 +1954,18 @@ export type Database = {
         }
         Returns: undefined
       }
+      update_department: {
+        Args: {
+          p_department_id: string
+          p_location_id: string
+          p_name_ar: string
+          p_name_en: string
+          p_organization_id: string
+          p_slug: string
+          p_status: string
+        }
+        Returns: undefined
+      }
       update_location_v2: {
         Args: {
           p_address_ar: string
@@ -1749,13 +2037,57 @@ export type Database = {
         }
         Returns: undefined
       }
-      update_response_workflow: {
+      update_rating_scale: {
         Args: {
-          p_assigned_to?: string
-          p_note?: string
-          p_response_id: string
-          p_status: Database["public"]["Enums"]["response_workflow_status"]
-          p_tags?: string[]
+          p_is_active: boolean
+          p_key: string
+          p_name_ar: string
+          p_name_en: string
+          p_negative_max: number
+          p_satisfied_min: number
+          p_scale_max: number
+          p_scale_min: number
+        }
+        Returns: undefined
+      }
+      update_response_workflow:
+        | {
+            Args: {
+              p_assigned_to?: string
+              p_note?: string
+              p_response_id: string
+              p_status: Database["public"]["Enums"]["response_workflow_status"]
+              p_tags?: string[]
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_assigned_to?: string
+              p_controlled_record_reason?: string
+              p_controlled_record_reference?: string
+              p_controlled_record_type?: Database["public"]["Enums"]["controlled_record_type"]
+              p_follow_up_details?: string
+              p_note?: string
+              p_outcome_summary?: string
+              p_response_id: string
+              p_status: Database["public"]["Enums"]["response_workflow_status"]
+              p_tags?: string[]
+            }
+            Returns: undefined
+          }
+      update_touchpoint: {
+        Args: {
+          p_channel: Database["public"]["Enums"]["response_channel"]
+          p_department_id: string
+          p_location_id: string
+          p_name_ar: string
+          p_name_en: string
+          p_organization_id: string
+          p_slug: string
+          p_status: string
+          p_survey_id?: string
+          p_touchpoint_id: string
         }
         Returns: undefined
       }
@@ -1765,6 +2097,12 @@ export type Database = {
       }
     }
     Enums: {
+      alert_rule_type:
+        | "satisfaction_threshold"
+        | "negative_feedback_threshold"
+        | "concern_frequency_threshold"
+        | "sudden_decline"
+      alert_severity: "low" | "medium" | "high" | "critical"
       alert_status: "open" | "acknowledged" | "resolved" | "dismissed"
       app_role:
         | "platform_admin"
@@ -1772,18 +2110,26 @@ export type Database = {
         | "organization_admin"
         | "location_manager"
         | "analyst"
+        | "quality_manager"
+        | "senior_management"
       controlled_record_type: "investigation" | "ncr" | "capa"
       entity_status: "active" | "archived"
       invitation_delivery_status: "pending" | "captured" | "sent" | "failed"
+      kpi_metric:
+        | "satisfaction_pct"
+        | "negative_feedback_pct"
+        | "main_concern"
+        | "response_count"
+        | "average_rating"
       locale_code: "en" | "ar"
       membership_scope: "organization" | "locations"
       question_type: "rating" | "multiple_choice" | "text"
       response_channel: "qr" | "kiosk" | "web"
       response_workflow_status:
-        | "unread"
-        | "reviewed"
-        | "action_required"
-        | "resolved"
+        | "monitor_only"
+        | "branch_followup"
+        | "controlled_investigation"
+        | "immediate_escalation"
       subscription_status:
         | "trialing"
         | "active"
@@ -1922,6 +2268,13 @@ export const Constants = {
   },
   public: {
     Enums: {
+      alert_rule_type: [
+        "satisfaction_threshold",
+        "negative_feedback_threshold",
+        "concern_frequency_threshold",
+        "sudden_decline",
+      ],
+      alert_severity: ["low", "medium", "high", "critical"],
       alert_status: ["open", "acknowledged", "resolved", "dismissed"],
       app_role: [
         "platform_admin",
@@ -1929,19 +2282,28 @@ export const Constants = {
         "organization_admin",
         "location_manager",
         "analyst",
+        "quality_manager",
+        "senior_management",
       ],
       controlled_record_type: ["investigation", "ncr", "capa"],
       entity_status: ["active", "archived"],
       invitation_delivery_status: ["pending", "captured", "sent", "failed"],
+      kpi_metric: [
+        "satisfaction_pct",
+        "negative_feedback_pct",
+        "main_concern",
+        "response_count",
+        "average_rating",
+      ],
       locale_code: ["en", "ar"],
       membership_scope: ["organization", "locations"],
       question_type: ["rating", "multiple_choice", "text"],
       response_channel: ["qr", "kiosk", "web"],
       response_workflow_status: [
-        "unread",
-        "reviewed",
-        "action_required",
-        "resolved",
+        "monitor_only",
+        "branch_followup",
+        "controlled_investigation",
+        "immediate_escalation",
       ],
       subscription_status: [
         "trialing",
