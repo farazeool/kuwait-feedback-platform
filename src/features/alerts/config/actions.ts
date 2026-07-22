@@ -20,6 +20,9 @@ export async function saveAlertConfiguration(formData: FormData) {
     threshold_value: v.thresholdValue,
     severity: v.severity,
     deduplication_minutes: v.deduplicationMinutes,
+    evaluation_window_hours: v.evaluationWindowHours ?? 24,
+    comparison_window_days: v.comparisonWindowDays ?? 7,
+    minimum_sample_count: v.minimumSampleCount ?? 5,
     is_active: v.isActive === "true",
     location_id: v.locationId || null,
   };

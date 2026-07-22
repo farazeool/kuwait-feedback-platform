@@ -36,11 +36,14 @@ export type Database = {
     Tables: {
       alert_configurations: {
         Row: {
+          comparison_window_days: number
           created_at: string
           deduplication_minutes: number
+          evaluation_window_hours: number
           id: string
           is_active: boolean
           location_id: string | null
+          minimum_sample_count: number
           organization_id: string
           rule_type: Database["public"]["Enums"]["alert_rule_type"]
           severity: Database["public"]["Enums"]["alert_severity"]
@@ -48,11 +51,14 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          comparison_window_days?: number
           created_at?: string
           deduplication_minutes?: number
+          evaluation_window_hours?: number
           id?: string
           is_active?: boolean
           location_id?: string | null
+          minimum_sample_count?: number
           organization_id: string
           rule_type: Database["public"]["Enums"]["alert_rule_type"]
           severity?: Database["public"]["Enums"]["alert_severity"]
@@ -60,11 +66,14 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          comparison_window_days?: number
           created_at?: string
           deduplication_minutes?: number
+          evaluation_window_hours?: number
           id?: string
           is_active?: boolean
           location_id?: string | null
+          minimum_sample_count?: number
           organization_id?: string
           rule_type?: Database["public"]["Enums"]["alert_rule_type"]
           severity?: Database["public"]["Enums"]["alert_severity"]
@@ -250,6 +259,327 @@ export type Database = {
         }
         Relationships: []
       }
+      corrective_action_attachments: {
+        Row: {
+          corrective_action_id: string
+          description: string | null
+          file_name: string
+          file_type: string
+          id: string
+          organization_id: string
+          storage_path: string
+          uploaded_at: string
+          uploaded_by: string
+          verification_comments: string | null
+          verification_status:
+            | Database["public"]["Enums"]["verification_status"]
+            | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          corrective_action_id: string
+          description?: string | null
+          file_name: string
+          file_type: string
+          id?: string
+          organization_id: string
+          storage_path: string
+          uploaded_at?: string
+          uploaded_by: string
+          verification_comments?: string | null
+          verification_status?:
+            | Database["public"]["Enums"]["verification_status"]
+            | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          corrective_action_id?: string
+          description?: string | null
+          file_name?: string
+          file_type?: string
+          id?: string
+          organization_id?: string
+          storage_path?: string
+          uploaded_at?: string
+          uploaded_by?: string
+          verification_comments?: string | null
+          verification_status?:
+            | Database["public"]["Enums"]["verification_status"]
+            | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "corrective_action_attachments_corrective_action_id_fkey"
+            columns: ["corrective_action_id"]
+            isOneToOne: false
+            referencedRelation: "corrective_actions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "corrective_action_attachments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      corrective_action_comments: {
+        Row: {
+          author_id: string
+          comment: string
+          corrective_action_id: string
+          created_at: string
+          id: string
+          organization_id: string
+        }
+        Insert: {
+          author_id: string
+          comment: string
+          corrective_action_id: string
+          created_at?: string
+          id?: string
+          organization_id: string
+        }
+        Update: {
+          author_id?: string
+          comment?: string
+          corrective_action_id?: string
+          created_at?: string
+          id?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "corrective_action_comments_corrective_action_id_fkey"
+            columns: ["corrective_action_id"]
+            isOneToOne: false
+            referencedRelation: "corrective_actions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "corrective_action_comments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      corrective_action_status_history: {
+        Row: {
+          change_reason: string | null
+          changed_at: string
+          changed_by: string
+          corrective_action_id: string
+          id: string
+          new_status: Database["public"]["Enums"]["corrective_action_status"]
+          organization_id: string
+          previous_status:
+            | Database["public"]["Enums"]["corrective_action_status"]
+            | null
+        }
+        Insert: {
+          change_reason?: string | null
+          changed_at?: string
+          changed_by: string
+          corrective_action_id: string
+          id?: string
+          new_status: Database["public"]["Enums"]["corrective_action_status"]
+          organization_id: string
+          previous_status?:
+            | Database["public"]["Enums"]["corrective_action_status"]
+            | null
+        }
+        Update: {
+          change_reason?: string | null
+          changed_at?: string
+          changed_by?: string
+          corrective_action_id?: string
+          id?: string
+          new_status?: Database["public"]["Enums"]["corrective_action_status"]
+          organization_id?: string
+          previous_status?:
+            | Database["public"]["Enums"]["corrective_action_status"]
+            | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "corrective_action_status_history_corrective_action_id_fkey"
+            columns: ["corrective_action_id"]
+            isOneToOne: false
+            referencedRelation: "corrective_actions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "corrective_action_status_history_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      corrective_actions: {
+        Row: {
+          action_description: string
+          assigned_owner_id: string
+          branch_id: string | null
+          closure_approval:
+            | Database["public"]["Enums"]["closure_approval"]
+            | null
+          closure_approved_at: string | null
+          closure_approved_by: string | null
+          closure_date: string | null
+          completion_date: string | null
+          controlled_record_reference: string | null
+          created_at: string
+          created_by: string
+          department_id: string | null
+          due_date: string
+          effectiveness_result:
+            | Database["public"]["Enums"]["effectiveness_result"]
+            | null
+          effectiveness_review_date: string | null
+          effectiveness_review_notes: string | null
+          id: string
+          internal_notes: string | null
+          organization_id: string
+          priority: Database["public"]["Enums"]["corrective_action_priority"]
+          problem: string
+          related_alert_id: string | null
+          root_cause: string
+          source_response_id: string | null
+          status: Database["public"]["Enums"]["corrective_action_status"]
+          target_completion_date: string
+          updated_at: string
+          verification_comments: string | null
+          verification_status:
+            | Database["public"]["Enums"]["verification_status"]
+            | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          action_description: string
+          assigned_owner_id: string
+          branch_id?: string | null
+          closure_approval?:
+            | Database["public"]["Enums"]["closure_approval"]
+            | null
+          closure_approved_at?: string | null
+          closure_approved_by?: string | null
+          closure_date?: string | null
+          completion_date?: string | null
+          controlled_record_reference?: string | null
+          created_at?: string
+          created_by: string
+          department_id?: string | null
+          due_date: string
+          effectiveness_result?:
+            | Database["public"]["Enums"]["effectiveness_result"]
+            | null
+          effectiveness_review_date?: string | null
+          effectiveness_review_notes?: string | null
+          id?: string
+          internal_notes?: string | null
+          organization_id: string
+          priority?: Database["public"]["Enums"]["corrective_action_priority"]
+          problem: string
+          related_alert_id?: string | null
+          root_cause: string
+          source_response_id?: string | null
+          status?: Database["public"]["Enums"]["corrective_action_status"]
+          target_completion_date: string
+          updated_at?: string
+          verification_comments?: string | null
+          verification_status?:
+            | Database["public"]["Enums"]["verification_status"]
+            | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          action_description?: string
+          assigned_owner_id?: string
+          branch_id?: string | null
+          closure_approval?:
+            | Database["public"]["Enums"]["closure_approval"]
+            | null
+          closure_approved_at?: string | null
+          closure_approved_by?: string | null
+          closure_date?: string | null
+          completion_date?: string | null
+          controlled_record_reference?: string | null
+          created_at?: string
+          created_by?: string
+          department_id?: string | null
+          due_date?: string
+          effectiveness_result?:
+            | Database["public"]["Enums"]["effectiveness_result"]
+            | null
+          effectiveness_review_date?: string | null
+          effectiveness_review_notes?: string | null
+          id?: string
+          internal_notes?: string | null
+          organization_id?: string
+          priority?: Database["public"]["Enums"]["corrective_action_priority"]
+          problem?: string
+          related_alert_id?: string | null
+          root_cause?: string
+          source_response_id?: string | null
+          status?: Database["public"]["Enums"]["corrective_action_status"]
+          target_completion_date?: string
+          updated_at?: string
+          verification_comments?: string | null
+          verification_status?:
+            | Database["public"]["Enums"]["verification_status"]
+            | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "corrective_actions_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "corrective_actions_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "corrective_actions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "corrective_actions_related_alert_id_fkey"
+            columns: ["related_alert_id"]
+            isOneToOne: false
+            referencedRelation: "alerts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "corrective_actions_source_response_id_fkey"
+            columns: ["source_response_id"]
+            isOneToOne: false
+            referencedRelation: "survey_responses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       departments: {
         Row: {
           created_at: string
@@ -294,6 +624,575 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "locations"
             referencedColumns: ["id", "organization_id"]
+          },
+        ]
+      }
+      effectiveness_review: {
+        Row: {
+          comments: string | null
+          corrective_action_id: string
+          created_at: string
+          follow_up_notes: string | null
+          follow_up_required: boolean
+          id: string
+          organization_id: string
+          result: Database["public"]["Enums"]["effectiveness_result"]
+          review_date: string
+          reviewer_id: string
+          updated_at: string
+        }
+        Insert: {
+          comments?: string | null
+          corrective_action_id: string
+          created_at?: string
+          follow_up_notes?: string | null
+          follow_up_required?: boolean
+          id?: string
+          organization_id: string
+          result: Database["public"]["Enums"]["effectiveness_result"]
+          review_date?: string
+          reviewer_id: string
+          updated_at?: string
+        }
+        Update: {
+          comments?: string | null
+          corrective_action_id?: string
+          created_at?: string
+          follow_up_notes?: string | null
+          follow_up_required?: boolean
+          id?: string
+          organization_id?: string
+          result?: Database["public"]["Enums"]["effectiveness_result"]
+          review_date?: string
+          reviewer_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "effectiveness_review_corrective_action_id_fkey"
+            columns: ["corrective_action_id"]
+            isOneToOne: false
+            referencedRelation: "corrective_actions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "effectiveness_review_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evidence: {
+        Row: {
+          created_at: string
+          description: string | null
+          entity_id: string
+          entity_type: Database["public"]["Enums"]["evidence_entity_type"]
+          file_name: string
+          file_type: Database["public"]["Enums"]["evidence_file_type"]
+          id: string
+          organization_id: string
+          storage_path: string
+          updated_at: string
+          uploaded_at: string
+          uploaded_by: string
+          verification_comments: string | null
+          verification_status: Database["public"]["Enums"]["verification_status"]
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          entity_id: string
+          entity_type: Database["public"]["Enums"]["evidence_entity_type"]
+          file_name: string
+          file_type: Database["public"]["Enums"]["evidence_file_type"]
+          id?: string
+          organization_id: string
+          storage_path: string
+          updated_at?: string
+          uploaded_at?: string
+          uploaded_by: string
+          verification_comments?: string | null
+          verification_status?: Database["public"]["Enums"]["verification_status"]
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          entity_id?: string
+          entity_type?: Database["public"]["Enums"]["evidence_entity_type"]
+          file_name?: string
+          file_type?: Database["public"]["Enums"]["evidence_file_type"]
+          id?: string
+          organization_id?: string
+          storage_path?: string
+          updated_at?: string
+          uploaded_at?: string
+          uploaded_by?: string
+          verification_comments?: string | null
+          verification_status?: Database["public"]["Enums"]["verification_status"]
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evidence_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investigation_alerts: {
+        Row: {
+          alert_id: string
+          created_at: string
+          id: string
+          investigation_id: string
+          organization_id: string
+        }
+        Insert: {
+          alert_id: string
+          created_at?: string
+          id?: string
+          investigation_id: string
+          organization_id: string
+        }
+        Update: {
+          alert_id?: string
+          created_at?: string
+          id?: string
+          investigation_id?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investigation_alerts_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "alerts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investigation_alerts_investigation_id_fkey"
+            columns: ["investigation_id"]
+            isOneToOne: false
+            referencedRelation: "investigations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investigation_alerts_organization_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investigation_alerts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investigation_attachments: {
+        Row: {
+          description: string | null
+          evidence_category: string | null
+          file_name: string
+          file_type: string
+          id: string
+          investigation_id: string
+          organization_id: string
+          storage_path: string
+          uploaded_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          description?: string | null
+          evidence_category?: string | null
+          file_name: string
+          file_type: string
+          id?: string
+          investigation_id: string
+          organization_id: string
+          storage_path: string
+          uploaded_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          description?: string | null
+          evidence_category?: string | null
+          file_name?: string
+          file_type?: string
+          id?: string
+          investigation_id?: string
+          organization_id?: string
+          storage_path?: string
+          uploaded_at?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investigation_attachments_investigation_id_fkey"
+            columns: ["investigation_id"]
+            isOneToOne: false
+            referencedRelation: "investigations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investigation_attachments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investigation_comments: {
+        Row: {
+          author_id: string
+          comment: string
+          created_at: string
+          event_type: string
+          id: string
+          investigation_id: string
+          organization_id: string
+        }
+        Insert: {
+          author_id: string
+          comment: string
+          created_at?: string
+          event_type?: string
+          id?: string
+          investigation_id: string
+          organization_id: string
+        }
+        Update: {
+          author_id?: string
+          comment?: string
+          created_at?: string
+          event_type?: string
+          id?: string
+          investigation_id?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investigation_comments_investigation_id_fkey"
+            columns: ["investigation_id"]
+            isOneToOne: false
+            referencedRelation: "investigations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investigation_comments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investigation_corrective_actions: {
+        Row: {
+          corrective_action_id: string
+          created_at: string
+          id: string
+          investigation_id: string
+          organization_id: string
+        }
+        Insert: {
+          corrective_action_id: string
+          created_at?: string
+          id?: string
+          investigation_id: string
+          organization_id: string
+        }
+        Update: {
+          corrective_action_id?: string
+          created_at?: string
+          id?: string
+          investigation_id?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investigation_ca_organization_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investigation_corrective_actions_corrective_action_id_fkey"
+            columns: ["corrective_action_id"]
+            isOneToOne: false
+            referencedRelation: "corrective_actions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investigation_corrective_actions_investigation_id_fkey"
+            columns: ["investigation_id"]
+            isOneToOne: false
+            referencedRelation: "investigations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investigation_corrective_actions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investigation_responses: {
+        Row: {
+          created_at: string
+          id: string
+          investigation_id: string
+          organization_id: string
+          response_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          investigation_id: string
+          organization_id: string
+          response_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          investigation_id?: string
+          organization_id?: string
+          response_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investigation_responses_investigation_id_fkey"
+            columns: ["investigation_id"]
+            isOneToOne: false
+            referencedRelation: "investigations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investigation_responses_organization_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investigation_responses_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investigation_responses_response_id_fkey"
+            columns: ["response_id"]
+            isOneToOne: false
+            referencedRelation: "survey_responses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investigation_status_history: {
+        Row: {
+          change_reason: string | null
+          changed_at: string
+          changed_by: string
+          id: string
+          investigation_id: string
+          new_status: Database["public"]["Enums"]["investigation_status"]
+          organization_id: string
+          previous_status:
+            | Database["public"]["Enums"]["investigation_status"]
+            | null
+        }
+        Insert: {
+          change_reason?: string | null
+          changed_at?: string
+          changed_by: string
+          id?: string
+          investigation_id: string
+          new_status: Database["public"]["Enums"]["investigation_status"]
+          organization_id: string
+          previous_status?:
+            | Database["public"]["Enums"]["investigation_status"]
+            | null
+        }
+        Update: {
+          change_reason?: string | null
+          changed_at?: string
+          changed_by?: string
+          id?: string
+          investigation_id?: string
+          new_status?: Database["public"]["Enums"]["investigation_status"]
+          organization_id?: string
+          previous_status?:
+            | Database["public"]["Enums"]["investigation_status"]
+            | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investigation_status_history_investigation_id_fkey"
+            columns: ["investigation_id"]
+            isOneToOne: false
+            referencedRelation: "investigations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investigation_status_history_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investigations: {
+        Row: {
+          branch_id: string
+          closed_at: string | null
+          controlled_record_references: string[]
+          created_at: string
+          created_by: string
+          department_id: string | null
+          description: string | null
+          escalation_decision: Database["public"]["Enums"]["escalation_decision"]
+          evidence_reviewed: string | null
+          findings: string | null
+          id: string
+          inspection_records: Json
+          internal_notes: string | null
+          investigated_at: string
+          investigator_id: string
+          organization_id: string
+          product_category_id: string | null
+          product_id: string | null
+          product_name: string | null
+          receiving_records: Json
+          recommendation: string | null
+          repeated_complaints: boolean
+          repeated_complaints_notes: string | null
+          root_cause: string | null
+          status: Database["public"]["Enums"]["investigation_status"]
+          supplier_information: Json
+          temperature_records: Json
+          timeline: Json
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          closed_at?: string | null
+          controlled_record_references?: string[]
+          created_at?: string
+          created_by: string
+          department_id?: string | null
+          description?: string | null
+          escalation_decision?: Database["public"]["Enums"]["escalation_decision"]
+          evidence_reviewed?: string | null
+          findings?: string | null
+          id?: string
+          inspection_records?: Json
+          internal_notes?: string | null
+          investigated_at: string
+          investigator_id: string
+          organization_id: string
+          product_category_id?: string | null
+          product_id?: string | null
+          product_name?: string | null
+          receiving_records?: Json
+          recommendation?: string | null
+          repeated_complaints?: boolean
+          repeated_complaints_notes?: string | null
+          root_cause?: string | null
+          status?: Database["public"]["Enums"]["investigation_status"]
+          supplier_information?: Json
+          temperature_records?: Json
+          timeline?: Json
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          closed_at?: string | null
+          controlled_record_references?: string[]
+          created_at?: string
+          created_by?: string
+          department_id?: string | null
+          description?: string | null
+          escalation_decision?: Database["public"]["Enums"]["escalation_decision"]
+          evidence_reviewed?: string | null
+          findings?: string | null
+          id?: string
+          inspection_records?: Json
+          internal_notes?: string | null
+          investigated_at?: string
+          investigator_id?: string
+          organization_id?: string
+          product_category_id?: string | null
+          product_id?: string | null
+          product_name?: string | null
+          receiving_records?: Json
+          recommendation?: string | null
+          repeated_complaints?: boolean
+          repeated_complaints_notes?: string | null
+          root_cause?: string | null
+          status?: Database["public"]["Enums"]["investigation_status"]
+          supplier_information?: Json
+          temperature_records?: Json
+          timeline?: Json
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investigations_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investigations_branch_organization_fkey"
+            columns: ["branch_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "investigations_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investigations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investigations_product_category_id_fkey"
+            columns: ["product_category_id"]
+            isOneToOne: false
+            referencedRelation: "concern_categories"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1052,6 +1951,60 @@ export type Database = {
           },
         ]
       }
+      response_status_history: {
+        Row: {
+          actor_id: string
+          created_at: string
+          id: string
+          new_status: Database["public"]["Enums"]["response_workflow_status"]
+          organization_id: string
+          previous_status:
+            | Database["public"]["Enums"]["response_workflow_status"]
+            | null
+          reason: string | null
+          response_id: string
+        }
+        Insert: {
+          actor_id: string
+          created_at?: string
+          id?: string
+          new_status: Database["public"]["Enums"]["response_workflow_status"]
+          organization_id: string
+          previous_status?:
+            | Database["public"]["Enums"]["response_workflow_status"]
+            | null
+          reason?: string | null
+          response_id: string
+        }
+        Update: {
+          actor_id?: string
+          created_at?: string
+          id?: string
+          new_status?: Database["public"]["Enums"]["response_workflow_status"]
+          organization_id?: string
+          previous_status?:
+            | Database["public"]["Enums"]["response_workflow_status"]
+            | null
+          reason?: string | null
+          response_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "response_status_history_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "response_status_history_response_id_fkey"
+            columns: ["response_id"]
+            isOneToOne: false
+            referencedRelation: "survey_responses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
           canceled_at: string | null
@@ -1583,6 +2536,54 @@ export type Database = {
           },
         ]
       }
+      verification: {
+        Row: {
+          comments: string | null
+          created_at: string
+          evidence_id: string
+          id: string
+          organization_id: string
+          status: Database["public"]["Enums"]["verification_status"]
+          verified_at: string
+          verifier_id: string
+        }
+        Insert: {
+          comments?: string | null
+          created_at?: string
+          evidence_id: string
+          id?: string
+          organization_id: string
+          status: Database["public"]["Enums"]["verification_status"]
+          verified_at?: string
+          verifier_id: string
+        }
+        Update: {
+          comments?: string | null
+          created_at?: string
+          evidence_id?: string
+          id?: string
+          organization_id?: string
+          status?: Database["public"]["Enums"]["verification_status"]
+          verified_at?: string
+          verifier_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verification_evidence_id_fkey"
+            columns: ["evidence_id"]
+            isOneToOne: false
+            referencedRelation: "evidence"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "verification_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1756,6 +2757,10 @@ export type Database = {
           p_start_at: string
           p_survey_id?: string
         }
+        Returns: Json
+      }
+      get_corrective_action_stats: {
+        Args: { p_organization_id: string }
         Returns: Json
       }
       get_invitation_public: { Args: { p_token: string }; Returns: Json }
@@ -2112,8 +3117,46 @@ export type Database = {
         | "analyst"
         | "quality_manager"
         | "senior_management"
+      closure_approval: "pending" | "approved" | "rejected"
       controlled_record_type: "investigation" | "ncr" | "capa"
+      corrective_action_priority: "low" | "medium" | "high" | "critical"
+      corrective_action_status:
+        | "draft"
+        | "open"
+        | "in_progress"
+        | "pending_verification"
+        | "verified"
+        | "effectiveness_review"
+        | "closed"
+        | "rejected"
+      effectiveness_result:
+        | "effective"
+        | "partially_effective"
+        | "not_effective"
       entity_status: "active" | "archived"
+      escalation_decision:
+        | "none"
+        | "quality_manager"
+        | "senior_management"
+        | "platform_admin"
+      evidence_entity_type:
+        | "corrective_action"
+        | "investigation"
+        | "response"
+        | "alert"
+      evidence_file_type:
+        | "photo"
+        | "pdf"
+        | "checklist"
+        | "training_record"
+        | "maintenance_record"
+        | "supplier_document"
+        | "other"
+      investigation_status:
+        | "draft"
+        | "active"
+        | "waiting_verification"
+        | "closed"
       invitation_delivery_status: "pending" | "captured" | "sent" | "failed"
       kpi_metric:
         | "satisfaction_pct"
@@ -2138,6 +3181,11 @@ export type Database = {
         | "archived"
       survey_status: "draft" | "active" | "archived"
       survey_type: "generic" | "fresh_produce"
+      verification_status:
+        | "pending"
+        | "accepted"
+        | "rejected"
+        | "more_evidence_required"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2285,8 +3333,52 @@ export const Constants = {
         "quality_manager",
         "senior_management",
       ],
+      closure_approval: ["pending", "approved", "rejected"],
       controlled_record_type: ["investigation", "ncr", "capa"],
+      corrective_action_priority: ["low", "medium", "high", "critical"],
+      corrective_action_status: [
+        "draft",
+        "open",
+        "in_progress",
+        "pending_verification",
+        "verified",
+        "effectiveness_review",
+        "closed",
+        "rejected",
+      ],
+      effectiveness_result: [
+        "effective",
+        "partially_effective",
+        "not_effective",
+      ],
       entity_status: ["active", "archived"],
+      escalation_decision: [
+        "none",
+        "quality_manager",
+        "senior_management",
+        "platform_admin",
+      ],
+      evidence_entity_type: [
+        "corrective_action",
+        "investigation",
+        "response",
+        "alert",
+      ],
+      evidence_file_type: [
+        "photo",
+        "pdf",
+        "checklist",
+        "training_record",
+        "maintenance_record",
+        "supplier_document",
+        "other",
+      ],
+      investigation_status: [
+        "draft",
+        "active",
+        "waiting_verification",
+        "closed",
+      ],
       invitation_delivery_status: ["pending", "captured", "sent", "failed"],
       kpi_metric: [
         "satisfaction_pct",
@@ -2314,6 +3406,12 @@ export const Constants = {
       ],
       survey_status: ["draft", "active", "archived"],
       survey_type: ["generic", "fresh_produce"],
+      verification_status: [
+        "pending",
+        "accepted",
+        "rejected",
+        "more_evidence_required",
+      ],
     },
   },
 } as const

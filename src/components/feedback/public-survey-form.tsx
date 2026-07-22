@@ -9,16 +9,27 @@ import type { PublicSurvey, SubmissionPayload } from "@/features/public-feedback
 
 type AnswerState = Record<string, number | string | string[] | undefined>;
 
-interface PublicSurveyFormProps {
+export interface PublicSurveyFormProps {
   survey: PublicSurvey;
   startedAt: number;
   idempotencyKey: string;
   touchpointToken?: string;
   channel?: "qr" | "kiosk" | "web";
   autoReset?: boolean;
+  kioskMode?: boolean;
+  onKioskComplete?: (success: boolean) => void;
 }
 
-export function PublicSurveyForm({ survey, startedAt, idempotencyKey: initialIdempotencyKey, touchpointToken, channel: propChannel, autoReset }: PublicSurveyFormProps) {
+export function PublicSurveyForm({
+  survey,
+  startedAt,
+  idempotencyKey: initialIdempotencyKey,
+  touchpointToken,
+  channel: propChannel,
+  autoReset,
+  kioskMode = false,
+  onKioskComplete,
+}: PublicSurveyFormProps) {
   const channel = propChannel ?? (touchpointToken ? "qr" : "web");
   const [locale, setLocale] = useState<"en" | "ar">(survey.default_locale);
   const [answers, setAnswers] = useState<AnswerState>({});
@@ -29,7 +40,7 @@ export function PublicSurveyForm({ survey, startedAt, idempotencyKey: initialIde
   const resetTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
   const isArabic = locale === "ar";
   const branding = survey.organization.branding;
-  const pick = (value: { en: string | null; ar: string | null }) => isArabic ? value.ar || value.en || "" : value.en || "";
+  const pick = (value: { en: string | null; ar: string | null }) => (isArabic ? value.ar || value.en || "" : value.en || "");
 
   const resetForm = useCallback(() => {
     setAnswers({});
@@ -46,7 +57,18 @@ export function PublicSurveyForm({ survey, startedAt, idempotencyKey: initialIde
     }
   }, [autoReset, state, resetForm]);
 
+  // In kiosk mode, notify parent on success/duplicate and let it handle the thank you screen
+  useEffect(() => {
+    if (kioskMode && (state === "success" || state === "duplicate")) {
+      onKioskComplete?.(state === "success");
+    }
+  }, [kioskMode, state, onKioskComplete]);
+
   if (state === "success" || state === "duplicate") {
+    // In kiosk mode, the parent shell shows the thank-you screen
+    if (kioskMode) {
+      return null;
+    }
     return <main dir={isArabic ? "rtl" : "ltr"} lang={locale} className="grid min-h-screen place-items-center bg-background px-5"><section style={{ borderTopColor: branding.primary_color }} className="w-full max-w-md rounded-xl border border-border bg-white p-6 text-center sm:p-8">{branding.logo_url ? <img alt={pick(survey.organization.name)} src={branding.logo_url} className="mx-auto mb-4 max-h-16 max-w-40 object-contain" /> : null}<div style={{ color: branding.primary_color, backgroundColor: `${branding.accent_color}20` }} className="mx-auto grid size-12 place-items-center rounded-full text-xl">✓</div><h1 className="mt-4 text-xl font-bold tracking-tight text-foreground">{pick(survey.thank_you) || (isArabic ? "شكراً لملاحظاتك" : "Thank you for your feedback")}</h1>{state === "duplicate" ? <p className="mt-2 text-sm text-muted">{isArabic ? "تم استلام هذه الإجابة مسبقاً." : "This response was already received."}</p> : null}{pick(branding.footer) ? <p className="mt-5 border-t border-border pt-3 text-sm text-muted">{pick(branding.footer)}</p> : null}</section></main>;
   }
 
@@ -109,7 +131,7 @@ export function PublicSurveyForm({ survey, startedAt, idempotencyKey: initialIde
       {question.type === "text" ? <textarea name={question.id} maxLength={question.text_max_length ?? 1000} value={String(answers[question.id] ?? "")} onChange={(event) => setAnswers({ ...answers, [question.id]: event.target.value })} className="min-h-28 w-full rounded-lg border border-border p-2.5 text-sm outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/15" /> : null}
     </fieldset>)}
     {validationError ? <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{validationError}</p> : null}{state === "error" ? <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{isArabic ? "تعذر إرسال الملاحظات. يرجى المحاولة لاحقاً." : "Feedback could not be submitted. Please try again shortly."}</p> : null}<button disabled={state === "submitting"} className="min-h-11 rounded-lg bg-brand px-5 text-sm font-semibold text-white transition-colors hover:bg-brand-dark disabled:opacity-60">{state === "submitting" ? (isArabic ? "جارٍ الإرسال…" : "Submitting…") : (isArabic ? "إرسال الملاحظات" : "Submit feedback")}</button>
-    {pick(branding.footer) ? <footer className="pb-4 text-center text-xs text-muted">{pick(branding.footer)}</footer> : null}</form></main>;
+        {pick(branding.footer) ? <footer className="pb-4 text-center text-xs text-muted">{pick(branding.footer)}</footer> : null}</form></main>;
 
   function renderRating(question: PublicSurvey["questions"][number]) {
     const scaleKey = question.rating_scale;

@@ -18,13 +18,65 @@ export default async function AlertConfigFormPage({ params }: Props) {
       <h1 className="text-2xl font-bold tracking-tight text-foreground">{existing ? "Edit configuration" : "New alert configuration"}</h1>
       <form action={saveAlertConfiguration} className="grid gap-4 rounded-xl border border-border bg-white p-6 md:grid-cols-2">
         {existing ? <input type="hidden" name="id" value={existing.id} /> : null}
-        <label className="grid gap-2 font-semibold">Rule type<select name="ruleType" defaultValue={existing?.rule_type ?? "satisfaction_threshold"} className={input}><option value="satisfaction_threshold">Satisfaction threshold</option><option value="negative_feedback_threshold">Negative feedback threshold</option><option value="concern_frequency_threshold">Concern frequency threshold</option><option value="sudden_decline">Sudden decline</option></select></label>
-        <label className="grid gap-2 font-semibold">Threshold value<input type="number" name="thresholdValue" step="0.01" defaultValue={existing?.threshold_value ?? 7} className={input} required /></label>
-        <label className="grid gap-2 font-semibold">Severity<select name="severity" defaultValue={existing?.severity ?? "medium"} className={input}><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="critical">Critical</option></select></label>
-        <label className="grid gap-2 font-semibold">Deduplication minutes<input type="number" name="deduplicationMinutes" step="1" defaultValue={existing?.deduplication_minutes ?? 60} className={input} /></label>
-        <label className="grid gap-2 font-semibold">Location<select name="locationId" defaultValue={existing?.location_id ?? ""} className={input}><option value="">All locations</option>{result.locations.map((loc) => <option key={loc.id} value={loc.id}>{result.context.profile.locale === "ar" ? loc.name_ar : loc.name_en}</option>)}</select></label>
-        <label className="grid gap-2 font-semibold">Active<select name="isActive" defaultValue={existing ? (existing.is_active ? "true" : "false") : "true"} className={input}><option value="true">Active</option><option value="false">Paused</option></select></label>
-        <div className="md:col-span-2"><button className="rounded-lg bg-brand px-5 py-3 font-bold text-white">{m["common.save"]}</button></div>
+        <label className="grid gap-2 font-semibold">
+          Rule type
+          <select name="ruleType" defaultValue={existing?.rule_type ?? "satisfaction_threshold"} className={input}>
+            <option value="satisfaction_threshold">Satisfaction threshold</option>
+            <option value="negative_feedback_threshold">Negative feedback threshold</option>
+            <option value="concern_frequency_threshold">Concern frequency threshold</option>
+            <option value="sudden_decline">Sudden decline</option>
+          </select>
+        </label>
+        <label className="grid gap-2 font-semibold">
+          Threshold value
+          <input type="number" name="thresholdValue" step="0.01" defaultValue={existing?.threshold_value ?? 7} className={input} required />
+        </label>
+        <label className="grid gap-2 font-semibold">
+          Severity
+          <select name="severity" defaultValue={existing?.severity ?? "medium"} className={input}>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+        </label>
+        <label className="grid gap-2 font-semibold">
+          Deduplication minutes
+          <input type="number" name="deduplicationMinutes" step="1" defaultValue={existing?.deduplication_minutes ?? 60} className={input} />
+        </label>
+        <label className="grid gap-2 font-semibold">
+          Evaluation window (hours)
+          <input type="number" name="evaluationWindowHours" step="1" min="1" max="168" defaultValue={existing?.evaluation_window_hours ?? 24} className={input} />
+        </label>
+        <label className="grid gap-2 font-semibold">
+          Comparison window (days)
+          <input type="number" name="comparisonWindowDays" step="1" min="1" max="30" defaultValue={existing?.comparison_window_days ?? 7} className={input} />
+        </label>
+        <label className="grid gap-2 font-semibold">
+          Minimum sample count
+          <input type="number" name="minimumSampleCount" step="1" min="1" max="100" defaultValue={existing?.minimum_sample_count ?? 5} className={input} />
+        </label>
+        <label className="grid gap-2 font-semibold">
+          Location
+          <select name="locationId" defaultValue={existing?.location_id ?? ""} className={input}>
+            <option value="">All locations</option>
+            {result.locations.map((loc) => (
+              <option key={loc.id} value={loc.id}>
+                {result.context.profile.locale === "ar" ? loc.name_ar : loc.name_en}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="grid gap-2 font-semibold">
+          Active
+          <select name="isActive" defaultValue={existing ? (existing.is_active ? "true" : "false") : "true"} className={input}>
+            <option value="true">Active</option>
+            <option value="false">Paused</option>
+          </select>
+        </label>
+        <div className="md:col-span-2">
+          <button className="rounded-lg bg-brand px-5 py-3 font-bold text-white">{m["common.save"]}</button>
+        </div>
       </form>
     </div>
   );

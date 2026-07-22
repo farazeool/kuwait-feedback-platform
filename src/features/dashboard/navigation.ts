@@ -21,6 +21,11 @@ export const DASHBOARD_NAVIGATION = [
     roles: ["platform_admin", "organization_owner", "organization_admin", "quality_manager", "senior_management"],
   },
   {
+    href: "/dashboard/corrective-actions",
+    label: "nav.correctiveActions",
+    roles: ["platform_admin", "organization_owner", "organization_admin", "quality_manager"],
+  },
+  {
     href: "/dashboard/settings",
     label: "nav.settings",
     roles: ["platform_admin", "organization_owner", "organization_admin", "quality_manager"],
