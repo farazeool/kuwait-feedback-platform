@@ -2725,7 +2725,25 @@ export type Database = {
         Args: { p_organization_id: string }
         Returns: number
       }
+      get_alert_severity_breakdown: {
+        Args: {
+          p_end_at: string
+          p_location_id?: string
+          p_organization_id: string
+          p_start_at: string
+        }
+        Returns: Json
+      }
       get_alert_summary: {
+        Args: {
+          p_end_at: string
+          p_location_id?: string
+          p_organization_id: string
+          p_start_at: string
+        }
+        Returns: Json
+      }
+      get_alert_trigger_breakdown: {
         Args: {
           p_end_at: string
           p_location_id?: string
@@ -2748,6 +2766,24 @@ export type Database = {
         }
         Returns: Json
       }
+      get_branch_ranking: {
+        Args: {
+          p_end_at: string
+          p_organization_id: string
+          p_start_at: string
+        }
+        Returns: Json
+      }
+      get_concern_response_trends: {
+        Args: {
+          p_bucket?: string
+          p_end_at: string
+          p_location_id?: string
+          p_organization_id: string
+          p_start_at: string
+        }
+        Returns: Json
+      }
       get_concern_trend: {
         Args: {
           p_department_id?: string
@@ -2759,8 +2795,57 @@ export type Database = {
         }
         Returns: Json
       }
+      get_controlled_record_references: {
+        Args: {
+          p_end_at: string
+          p_location_id?: string
+          p_organization_id: string
+          p_start_at: string
+        }
+        Returns: Json
+      }
+      get_corrective_action_effectiveness: {
+        Args: {
+          p_end_at: string
+          p_location_id?: string
+          p_organization_id: string
+          p_start_at: string
+        }
+        Returns: Json
+      }
       get_corrective_action_stats: {
-        Args: { p_organization_id: string }
+        Args: {
+          p_end_at: string
+          p_location_id?: string
+          p_organization_id: string
+          p_start_at: string
+        }
+        Returns: Json
+      }
+      get_corrective_action_verification: {
+        Args: {
+          p_end_at: string
+          p_location_id?: string
+          p_organization_id: string
+          p_start_at: string
+        }
+        Returns: Json
+      }
+      get_department_ranking: {
+        Args: {
+          p_end_at: string
+          p_organization_id: string
+          p_start_at: string
+        }
+        Returns: Json
+      }
+      get_followup_records: {
+        Args: {
+          p_end_at: string
+          p_location_id?: string
+          p_organization_id: string
+          p_start_at: string
+        }
         Returns: Json
       }
       get_invitation_public: { Args: { p_token: string }; Returns: Json }
@@ -2788,6 +2873,15 @@ export type Database = {
             }
             Returns: Json
           }
+      get_management_decisions: {
+        Args: {
+          p_end_at: string
+          p_location_id?: string
+          p_organization_id: string
+          p_start_at: string
+        }
+        Returns: Json
+      }
       get_platform_overview: { Args: never; Returns: Json }
       get_public_survey: { Args: { p_public_slug: string }; Returns: Json }
       get_review_summary: {
@@ -2806,6 +2900,15 @@ export type Database = {
           p_survey_id: string
           p_text_limit?: number
           p_text_offset?: number
+        }
+        Returns: Json
+      }
+      get_target_status: {
+        Args: {
+          p_end_at: string
+          p_location_id?: string
+          p_organization_id: string
+          p_start_at: string
         }
         Returns: Json
       }

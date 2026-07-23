@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { listAlertConfigurations } from "@/features/alerts/config/server";
-import { saveAlertConfiguration, toggleAlertConfiguration, deleteAlertConfiguration } from "@/features/alerts/config/actions";
+import { toggleAlertConfiguration, deleteAlertConfiguration } from "@/features/alerts/config/actions";
 import { getMessages } from "@/lib/i18n/messages";
 
 export default async function AlertConfigurationsPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {

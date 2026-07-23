@@ -26,6 +26,16 @@ export const DASHBOARD_NAVIGATION = [
     roles: ["platform_admin", "organization_owner", "organization_admin", "quality_manager"],
   },
   {
+    href: "/dashboard/evidence",
+    label: "nav.evidence",
+    roles: ["platform_admin", "organization_owner", "organization_admin", "quality_manager", "location_manager"],
+  },
+  {
+    href: "/dashboard/investigations",
+    label: "nav.investigations",
+    roles: ["platform_admin", "organization_owner", "organization_admin", "quality_manager", "senior_management"],
+  },
+  {
     href: "/dashboard/settings",
     label: "nav.settings",
     roles: ["platform_admin", "organization_owner", "organization_admin", "quality_manager"],

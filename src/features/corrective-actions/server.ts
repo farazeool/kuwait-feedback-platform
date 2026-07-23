@@ -107,7 +107,7 @@ export async function listCorrectiveActions(filters: {
 
   let query = supabase
     .from("corrective_actions")
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     .select("*, branch:locations!branch_id(id, name_en, name_ar), department:departments!department_id(id, name_en, name_ar)", { count: "exact" } as any)
     .eq("organization_id", orgId)
     .order("created_at", { ascending: false });
@@ -189,7 +189,7 @@ export async function getCorrectiveAction(actionId: string) {
   // Fetch related source response if exists
   let sourceResponse = null;
   if (action.source_response_id) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const { data } = await (supabase
       .from("survey_responses")
       .select("id, overall_rating, workflow_status, submitted_at, locale, channel, survey:surveys!survey_id(title_en, title_ar), location:locations!location_id(name_en, name_ar)")
