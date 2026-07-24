@@ -3271,32 +3271,18 @@ export type Database = {
         Returns: Json
       }
       get_invitation_public: { Args: { p_token: string }; Returns: Json }
-      get_kpi_dashboard:
-        | {
-            Args: {
-              p_channel?: string
-              p_department_id?: string
-              p_end_at: string
-              p_location_id?: string
-              p_organization_id: string
-              p_start_at: string
-              p_survey_id?: string
-              p_touchpoint_id?: string
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              p_channel?: string
-              p_end_at: string
-              p_feedback_mode?: Database["public"]["Enums"]["feedback_mode"]
-              p_location_id?: string
-              p_organization_id: string
-              p_start_at: string
-              p_survey_id?: string
-            }
-            Returns: Json
-          }
+      get_kpi_dashboard: {
+        Args: {
+          p_channel?: string
+          p_end_at: string
+          p_feedback_mode?: Database["public"]["Enums"]["feedback_mode"]
+          p_location_id?: string
+          p_organization_id: string
+          p_start_at: string
+          p_survey_id?: string
+        }
+        Returns: Json
+      }
       get_management_decisions: {
         Args: {
           p_end_at: string
@@ -3477,80 +3463,45 @@ export type Database = {
         }
         Returns: string
       }
-      submit_protected_survey_response:
-        | {
-            Args: {
-              p_answers: Json
-              p_campaign_id?: string
-              p_channel?: Database["public"]["Enums"]["response_channel"]
-              p_employee_reference?: string
-              p_feedback_mode?: Database["public"]["Enums"]["feedback_mode"]
-              p_fingerprint_hash: string
-              p_idempotency_key: string
-              p_interaction_reference?: string
-              p_locale: Database["public"]["Enums"]["locale_code"]
-              p_public_slug: string
-              p_source_identifier?: string
-              p_touchpoint_token?: string
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              p_answers: Json
-              p_campaign_id?: string
-              p_channel?: Database["public"]["Enums"]["response_channel"]
-              p_distribution_public_token?: string
-              p_employee_reference?: string
-              p_feedback_mode?: Database["public"]["Enums"]["feedback_mode"]
-              p_fingerprint_hash: string
-              p_idempotency_key: string
-              p_interaction_reference?: string
-              p_locale: Database["public"]["Enums"]["locale_code"]
-              p_public_slug: string
-              p_quick_categories?: Json
-              p_quick_rating?: number
-              p_source_identifier?: string
-              p_touchpoint_token?: string
-            }
-            Returns: Json
-          }
-      submit_public_survey_response:
-        | {
-            Args: {
-              p_answers: Json
-              p_campaign_id?: string
-              p_channel?: Database["public"]["Enums"]["response_channel"]
-              p_employee_reference?: string
-              p_feedback_mode?: Database["public"]["Enums"]["feedback_mode"]
-              p_idempotency_key?: string
-              p_interaction_reference?: string
-              p_locale: Database["public"]["Enums"]["locale_code"]
-              p_public_slug: string
-              p_source_identifier?: string
-              p_touchpoint_token?: string
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              p_answers: Json
-              p_campaign_id?: string
-              p_channel?: Database["public"]["Enums"]["response_channel"]
-              p_distribution_public_token?: string
-              p_employee_reference?: string
-              p_feedback_mode?: Database["public"]["Enums"]["feedback_mode"]
-              p_idempotency_key?: string
-              p_interaction_reference?: string
-              p_locale: Database["public"]["Enums"]["locale_code"]
-              p_public_slug: string
-              p_quick_categories?: Json
-              p_quick_rating?: number
-              p_source_identifier?: string
-              p_touchpoint_token?: string
-            }
-            Returns: string
-          }
+      submit_protected_survey_response: {
+        Args: {
+          p_answers: Json
+          p_campaign_id?: string
+          p_channel?: Database["public"]["Enums"]["response_channel"]
+          p_distribution_public_token?: string
+          p_employee_reference?: string
+          p_feedback_mode?: Database["public"]["Enums"]["feedback_mode"]
+          p_fingerprint_hash: string
+          p_idempotency_key: string
+          p_interaction_reference?: string
+          p_locale: Database["public"]["Enums"]["locale_code"]
+          p_public_slug: string
+          p_quick_categories?: Json
+          p_quick_rating?: number
+          p_source_identifier?: string
+          p_touchpoint_token?: string
+        }
+        Returns: Json
+      }
+      submit_public_survey_response: {
+        Args: {
+          p_answers: Json
+          p_campaign_id?: string
+          p_channel?: Database["public"]["Enums"]["response_channel"]
+          p_distribution_public_token?: string
+          p_employee_reference?: string
+          p_feedback_mode?: Database["public"]["Enums"]["feedback_mode"]
+          p_idempotency_key?: string
+          p_interaction_reference?: string
+          p_locale: Database["public"]["Enums"]["locale_code"]
+          p_public_slug: string
+          p_quick_categories?: Json
+          p_quick_rating?: number
+          p_source_identifier?: string
+          p_touchpoint_token?: string
+        }
+        Returns: string
+      }
       transfer_organization_ownership: {
         Args: { p_organization_id: string; p_target_membership_id: string }
         Returns: undefined
@@ -3667,32 +3618,21 @@ export type Database = {
         }
         Returns: undefined
       }
-      update_response_workflow:
-        | {
-            Args: {
-              p_assigned_to?: string
-              p_note?: string
-              p_response_id: string
-              p_status: Database["public"]["Enums"]["response_workflow_status"]
-              p_tags?: string[]
-            }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              p_assigned_to?: string
-              p_controlled_record_reason?: string
-              p_controlled_record_reference?: string
-              p_controlled_record_type?: Database["public"]["Enums"]["controlled_record_type"]
-              p_follow_up_details?: string
-              p_note?: string
-              p_outcome_summary?: string
-              p_response_id: string
-              p_status: Database["public"]["Enums"]["response_workflow_status"]
-              p_tags?: string[]
-            }
-            Returns: undefined
-          }
+      update_response_workflow: {
+        Args: {
+          p_assigned_to?: string
+          p_controlled_record_reason?: string
+          p_controlled_record_reference?: string
+          p_controlled_record_type?: Database["public"]["Enums"]["controlled_record_type"]
+          p_follow_up_details?: string
+          p_note?: string
+          p_outcome_summary?: string
+          p_response_id: string
+          p_status: Database["public"]["Enums"]["response_workflow_status"]
+          p_tags?: string[]
+        }
+        Returns: undefined
+      }
       update_touchpoint: {
         Args: {
           p_channel: Database["public"]["Enums"]["response_channel"]

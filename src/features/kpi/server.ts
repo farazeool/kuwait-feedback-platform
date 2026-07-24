@@ -57,10 +57,8 @@ export async function getKpiDashboard(filters: KpiFilters = {}) {
     ...required,
     ...(filters.locationId ? { p_location_id: filters.locationId } : {}),
     ...(filters.surveyId ? { p_survey_id: filters.surveyId } : {}),
-    ...(filters.departmentId ? { p_department_id: filters.departmentId } : {}),
-    ...(filters.touchpointId ? { p_touchpoint_id: filters.touchpointId } : {}),
     ...(filters.channel ? { p_channel: filters.channel } : {}),
-    ...(filters.feedbackMode ? { p_feedback_mode: filters.feedbackMode } : {}),
+    ...(filters.feedbackMode ? { p_feedback_mode: filters.feedbackMode as "standard" | "quick" } : {}),
   });
   if (error) {
     const message = [

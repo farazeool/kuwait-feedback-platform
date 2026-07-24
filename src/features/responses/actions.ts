@@ -45,11 +45,11 @@ export async function updateResponseWorkflow(formData: FormData) {
     p_assigned_to: parsed.data.assignedTo || undefined,
     p_tags: tags,
     p_note: parsed.data.note || undefined,
-    p_controlled_record_type: parsed.data.controlledRecordType || null,
-    p_controlled_record_reference: parsed.data.controlledRecordReference || null,
-    p_controlled_record_reason: parsed.data.controlledRecordReason || null,
-    p_follow_up_details: parsed.data.followUpDetails || null,
-    p_outcome_summary: parsed.data.outcomeSummary || null,
+    p_controlled_record_type: parsed.data.controlledRecordType || undefined,
+    p_controlled_record_reference: parsed.data.controlledRecordReference || undefined,
+    p_controlled_record_reason: parsed.data.controlledRecordReason || undefined,
+    p_follow_up_details: parsed.data.followUpDetails || undefined,
+    p_outcome_summary: parsed.data.outcomeSummary || undefined,
   });
   if (error) redirect(`/dashboard/responses/${parsed.data.responseId}?error=denied`);
   redirect(`/dashboard/responses/${parsed.data.responseId}?updated=1`);
