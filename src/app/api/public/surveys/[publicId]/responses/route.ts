@@ -79,6 +79,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     p_interaction_reference: parsed.data.interactionReference ?? undefined,
     p_distribution_public_token: parsed.data.distributionToken ?? undefined,
     p_quick_rating: parsed.data.quickRating ?? undefined,
+    p_quick_categories: parsed.data.quickCategories ?? undefined,
   });
 
   if (error) {
