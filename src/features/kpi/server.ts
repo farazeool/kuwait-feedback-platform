@@ -58,13 +58,15 @@ export async function getKpiDashboard(filters: KpiFilters = {}) {
     ...(filters.channel ? { p_channel: filters.channel } : {}),
   });
   if (error) {
-    console.error("KPI RPC failed:", {
-      message: error.message,
-      details: error.details,
-      hint: error.hint,
-      code: error.code,
-    });
-    throw error;
+    const message = [
+      `code=${error.code ?? "unknown"}`,
+      `message=${error.message ?? "unknown"}`,
+      `details=${error.details ?? "none"}`,
+      `hint=${error.hint ?? "none"}`
+    ].join(" | ");
+
+    console.error("KPI RPC failed:", message);
+    throw new Error(message);
   }
 
   // Fetch filter options

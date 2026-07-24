@@ -80,7 +80,7 @@ export async function listEvidence(filters: {
 
   let query = supabase
     .from("evidence")
-    .select("*, uploader:profiles!uploaded_by(display_name, email), verifier:profiles!verified_by(display_name, email)", { count: "exact" } as any)
+    .select("*, uploader:profiles!uploaded_by(display_name), verifier:profiles!verified_by(display_name)", { count: "exact" } as any)
     .eq("organization_id", orgId)
     .order("uploaded_at", { ascending: false });
 
@@ -98,7 +98,17 @@ export async function listEvidence(filters: {
   query = query.range((page - 1) * pageSize, page * pageSize - 1);
 
   const { data, error, count } = await query;
-  if (error) throw new Error("Failed to load evidence");
+  if (error) {
+    const message = [
+      `code=${error.code ?? "unknown"}`,
+      `message=${error.message ?? "unknown"}`,
+      `details=${error.details ?? "none"}`,
+      `hint=${error.hint ?? "none"}`
+    ].join(" | ");
+
+    console.error("listEvidence failed:", message);
+    throw new Error(message);
+  }
 
   return {
     context,
@@ -117,7 +127,7 @@ export async function getEvidence(evidenceId: string) {
 
   const { data: evidence, error } = await supabase
     .from("evidence")
-    .select("*, uploader:profiles!uploaded_by(display_name, email), verifier:profiles!verified_by(display_name, email)")
+    .select("*, uploader:profiles!uploaded_by(display_name), verifier:profiles!verified_by(display_name)")
     .eq("id", evidenceId)
     .maybeSingle();
 
@@ -129,7 +139,7 @@ export async function getEvidence(evidenceId: string) {
   // Fetch verification history
   const { data: verifications } = await supabase
     .from("verification")
-    .select("*, verifier:profiles!verifier_id(display_name, email)")
+    .select("*, verifier:profiles!verifier_id(display_name)")
     .eq("evidence_id", evidenceId)
     .order("verified_at", { ascending: false });
 
@@ -182,7 +192,7 @@ export async function getEvidenceForEntity(entityType: string, entityId: string)
 
   const { data } = await supabase
     .from("evidence")
-    .select("*, uploader:profiles!uploaded_by(display_name, email), verifier:profiles!verified_by(display_name, email)")
+    .select("*, uploader:profiles!uploaded_by(display_name), verifier:profiles!verified_by(display_name)")
     .eq("organization_id", context.organization.id)
     .eq("entity_type", entityType as EvidenceEntityType)
     .eq("entity_id", entityId)
@@ -200,7 +210,7 @@ export async function getVerificationHistory(evidenceId: string) {
 
   const { data } = await supabase
     .from("verification")
-    .select("*, verifier:profiles!verifier_id(display_name, email)")
+    .select("*, verifier:profiles!verifier_id(display_name)")
     .eq("evidence_id", evidenceId)
     .order("verified_at", { ascending: false });
 
@@ -216,7 +226,7 @@ export async function getEffectivenessReview(reviewId: string) {
 
   const { data: review, error } = await supabase
     .from("effectiveness_review")
-    .select("*, reviewer:profiles!reviewer_id(display_name, email)")
+    .select("*, reviewer:profiles!reviewer_id(display_name)")
     .eq("id", reviewId)
     .maybeSingle();
 
@@ -252,7 +262,7 @@ export async function listEffectivenessReviews(filters: {
 
   let query = supabase
     .from("effectiveness_review")
-    .select("*, reviewer:profiles!reviewer_id(display_name, email)", { count: "exact" } as any)
+    .select("*, reviewer:profiles!reviewer_id(display_name)", { count: "exact" } as any)
     .eq("organization_id", orgId)
     .order("review_date", { ascending: false });
 
@@ -268,7 +278,17 @@ export async function listEffectivenessReviews(filters: {
   query = query.range((page - 1) * pageSize, page * pageSize - 1);
 
   const { data, error, count } = await query;
-  if (error) throw new Error("Failed to load effectiveness reviews");
+  if (error) {
+    const message = [
+      `code=${error.code ?? "unknown"}`,
+      `message=${error.message ?? "unknown"}`,
+      `details=${error.details ?? "none"}`,
+      `hint=${error.hint ?? "none"}`
+    ].join(" | ");
+
+    console.error("listEffectivenessReviews failed:", message);
+    throw new Error(message);
+  }
 
   return {
     context,
@@ -287,7 +307,7 @@ export async function getEffectivenessReviewsForAction(correctiveActionId: strin
 
   const { data } = await supabase
     .from("effectiveness_review")
-    .select("*, reviewer:profiles!reviewer_id(display_name, email)")
+    .select("*, reviewer:profiles!reviewer_id(display_name)")
     .eq("organization_id", context.organization.id)
     .eq("corrective_action_id", correctiveActionId)
     .order("review_date", { ascending: false });
