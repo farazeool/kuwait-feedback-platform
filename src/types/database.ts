@@ -7,31 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       alert_configurations: {
@@ -226,6 +201,66 @@ export type Database = {
           },
         ]
       }
+      campaigns: {
+        Row: {
+          channel: Database["public"]["Enums"]["response_channel"]
+          created_at: string
+          created_by: string | null
+          ends_at: string | null
+          id: string
+          name_ar: string
+          name_en: string
+          organization_id: string
+          starts_at: string | null
+          status: Database["public"]["Enums"]["entity_status"]
+          survey_id: string
+          updated_at: string
+        }
+        Insert: {
+          channel?: Database["public"]["Enums"]["response_channel"]
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string | null
+          id?: string
+          name_ar: string
+          name_en: string
+          organization_id: string
+          starts_at?: string | null
+          status?: Database["public"]["Enums"]["entity_status"]
+          survey_id: string
+          updated_at?: string
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["response_channel"]
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string | null
+          id?: string
+          name_ar?: string
+          name_en?: string
+          organization_id?: string
+          starts_at?: string | null
+          status?: Database["public"]["Enums"]["entity_status"]
+          survey_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaigns_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaigns_survey_scope_fkey"
+            columns: ["survey_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "surveys"
+            referencedColumns: ["id", "organization_id"]
+          },
+        ]
+      }
       concern_categories: {
         Row: {
           created_at: string
@@ -269,7 +304,7 @@ export type Database = {
           organization_id: string
           storage_path: string
           uploaded_at: string
-          uploaded_by: string
+          uploaded_by: string | null
           verification_comments: string | null
           verification_status:
             | Database["public"]["Enums"]["verification_status"]
@@ -286,7 +321,7 @@ export type Database = {
           organization_id: string
           storage_path: string
           uploaded_at?: string
-          uploaded_by: string
+          uploaded_by?: string | null
           verification_comments?: string | null
           verification_status?:
             | Database["public"]["Enums"]["verification_status"]
@@ -303,7 +338,7 @@ export type Database = {
           organization_id?: string
           storage_path?: string
           uploaded_at?: string
-          uploaded_by?: string
+          uploaded_by?: string | null
           verification_comments?: string | null
           verification_status?:
             | Database["public"]["Enums"]["verification_status"]
@@ -374,7 +409,8 @@ export type Database = {
         Row: {
           change_reason: string | null
           changed_at: string
-          changed_by: string
+          changed_by: string | null
+          changed_by_name: string | null
           corrective_action_id: string
           id: string
           new_status: Database["public"]["Enums"]["corrective_action_status"]
@@ -386,7 +422,8 @@ export type Database = {
         Insert: {
           change_reason?: string | null
           changed_at?: string
-          changed_by: string
+          changed_by?: string | null
+          changed_by_name?: string | null
           corrective_action_id: string
           id?: string
           new_status: Database["public"]["Enums"]["corrective_action_status"]
@@ -398,7 +435,8 @@ export type Database = {
         Update: {
           change_reason?: string | null
           changed_at?: string
-          changed_by?: string
+          changed_by?: string | null
+          changed_by_name?: string | null
           corrective_action_id?: string
           id?: string
           new_status?: Database["public"]["Enums"]["corrective_action_status"]
@@ -627,6 +665,226 @@ export type Database = {
           },
         ]
       }
+      distribution_assignments: {
+        Row: {
+          assigned_employee_id: string | null
+          assigned_location_id: string | null
+          assigned_touchpoint_id: string | null
+          campaign_id: string | null
+          click_count: number
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          last_clicked_at: string | null
+          last_response_at: string | null
+          metadata: Json
+          organization_id: string
+          public_token: string
+          response_count: number
+          status: string
+          survey_id: string
+          template_id: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_employee_id?: string | null
+          assigned_location_id?: string | null
+          assigned_touchpoint_id?: string | null
+          campaign_id?: string | null
+          click_count?: number
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          last_clicked_at?: string | null
+          last_response_at?: string | null
+          metadata?: Json
+          organization_id: string
+          public_token?: string
+          response_count?: number
+          status?: string
+          survey_id: string
+          template_id: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_employee_id?: string | null
+          assigned_location_id?: string | null
+          assigned_touchpoint_id?: string | null
+          campaign_id?: string | null
+          click_count?: number
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          last_clicked_at?: string | null
+          last_response_at?: string | null
+          metadata?: Json
+          organization_id?: string
+          public_token?: string
+          response_count?: number
+          status?: string
+          survey_id?: string
+          template_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "da_survey_org_fkey"
+            columns: ["survey_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "surveys"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "da_template_org_fkey"
+            columns: ["template_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "distribution_templates"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "distribution_assignments_assigned_location_id_fkey"
+            columns: ["assigned_location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "distribution_assignments_assigned_touchpoint_id_fkey"
+            columns: ["assigned_touchpoint_id"]
+            isOneToOne: false
+            referencedRelation: "touchpoints"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "distribution_assignments_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "distribution_assignments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      distribution_link_events: {
+        Row: {
+          assignment_id: string | null
+          created_at: string
+          event_type: string
+          id: string
+          ip_address: string | null
+          organization_id: string
+          referer: string | null
+          response_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          assignment_id?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          ip_address?: string | null
+          organization_id: string
+          referer?: string | null
+          response_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          assignment_id?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          organization_id?: string
+          referer?: string | null
+          response_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "distribution_link_events_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "distribution_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "distribution_link_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "distribution_link_events_response_id_fkey"
+            columns: ["response_id"]
+            isOneToOne: false
+            referencedRelation: "survey_responses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      distribution_templates: {
+        Row: {
+          channel: Database["public"]["Enums"]["response_channel"]
+          config: Json
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          is_default: boolean
+          organization_id: string
+          render_config: Json
+          template_name: string
+          updated_at: string
+        }
+        Insert: {
+          channel: Database["public"]["Enums"]["response_channel"]
+          config?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          organization_id: string
+          render_config?: Json
+          template_name: string
+          updated_at?: string
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["response_channel"]
+          config?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          organization_id?: string
+          render_config?: Json
+          template_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "distribution_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       effectiveness_review: {
         Row: {
           comments: string | null
@@ -638,7 +896,7 @@ export type Database = {
           organization_id: string
           result: Database["public"]["Enums"]["effectiveness_result"]
           review_date: string
-          reviewer_id: string
+          reviewer_id: string | null
           updated_at: string
         }
         Insert: {
@@ -651,7 +909,7 @@ export type Database = {
           organization_id: string
           result: Database["public"]["Enums"]["effectiveness_result"]
           review_date?: string
-          reviewer_id: string
+          reviewer_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -664,7 +922,7 @@ export type Database = {
           organization_id?: string
           result?: Database["public"]["Enums"]["effectiveness_result"]
           review_date?: string
-          reviewer_id?: string
+          reviewer_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -677,6 +935,72 @@ export type Database = {
           },
           {
             foreignKeyName: "effectiveness_review_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "effectiveness_review_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      escalation_rules: {
+        Row: {
+          auto_assign_investigation: boolean
+          auto_create_alert: boolean
+          auto_notify_manager: boolean
+          created_at: string
+          id: string
+          is_active: boolean
+          keywords: string[] | null
+          location_id: string | null
+          organization_id: string
+          severity: Database["public"]["Enums"]["alert_severity"]
+          survey_id: string | null
+          threshold_value: number | null
+          trigger_type: Database["public"]["Enums"]["escalation_trigger"]
+          updated_at: string
+        }
+        Insert: {
+          auto_assign_investigation?: boolean
+          auto_create_alert?: boolean
+          auto_notify_manager?: boolean
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          keywords?: string[] | null
+          location_id?: string | null
+          organization_id: string
+          severity?: Database["public"]["Enums"]["alert_severity"]
+          survey_id?: string | null
+          threshold_value?: number | null
+          trigger_type: Database["public"]["Enums"]["escalation_trigger"]
+          updated_at?: string
+        }
+        Update: {
+          auto_assign_investigation?: boolean
+          auto_create_alert?: boolean
+          auto_notify_manager?: boolean
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          keywords?: string[] | null
+          location_id?: string | null
+          organization_id?: string
+          severity?: Database["public"]["Enums"]["alert_severity"]
+          survey_id?: string | null
+          threshold_value?: number | null
+          trigger_type?: Database["public"]["Enums"]["escalation_trigger"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "escalation_rules_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -697,7 +1021,7 @@ export type Database = {
           storage_path: string
           updated_at: string
           uploaded_at: string
-          uploaded_by: string
+          uploaded_by: string | null
           verification_comments: string | null
           verification_status: Database["public"]["Enums"]["verification_status"]
           verified_at: string | null
@@ -715,7 +1039,7 @@ export type Database = {
           storage_path: string
           updated_at?: string
           uploaded_at?: string
-          uploaded_by: string
+          uploaded_by?: string | null
           verification_comments?: string | null
           verification_status?: Database["public"]["Enums"]["verification_status"]
           verified_at?: string | null
@@ -733,7 +1057,7 @@ export type Database = {
           storage_path?: string
           updated_at?: string
           uploaded_at?: string
-          uploaded_by?: string
+          uploaded_by?: string | null
           verification_comments?: string | null
           verification_status?: Database["public"]["Enums"]["verification_status"]
           verified_at?: string | null
@@ -745,6 +1069,20 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -858,7 +1196,7 @@ export type Database = {
       }
       investigation_comments: {
         Row: {
-          author_id: string
+          author_id: string | null
           comment: string
           created_at: string
           event_type: string
@@ -867,7 +1205,7 @@ export type Database = {
           organization_id: string
         }
         Insert: {
-          author_id: string
+          author_id?: string | null
           comment: string
           created_at?: string
           event_type?: string
@@ -876,7 +1214,7 @@ export type Database = {
           organization_id: string
         }
         Update: {
-          author_id?: string
+          author_id?: string | null
           comment?: string
           created_at?: string
           event_type?: string
@@ -2290,6 +2628,7 @@ export type Database = {
       survey_responses: {
         Row: {
           assigned_to: string | null
+          campaign_id: string | null
           channel: Database["public"]["Enums"]["response_channel"]
           controlled_record_opened_by: string | null
           controlled_record_outcome_summary: string | null
@@ -2302,8 +2641,13 @@ export type Database = {
             | null
           created_at: string
           department_id: string | null
+          distribution_assignment_id: string | null
+          employee_reference: string | null
+          feedback_mode: Database["public"]["Enums"]["feedback_mode"]
+          had_followup: boolean
           id: string
           idempotency_key: string | null
+          interaction_reference: string | null
           internal_tags: string[]
           locale: Database["public"]["Enums"]["locale_code"]
           location_id: string
@@ -2311,6 +2655,7 @@ export type Database = {
           overall_rating: number | null
           resolved_at: string | null
           reviewed_at: string | null
+          source_identifier: string | null
           submitted_at: string
           survey_id: string
           touchpoint_id: string | null
@@ -2319,6 +2664,7 @@ export type Database = {
         }
         Insert: {
           assigned_to?: string | null
+          campaign_id?: string | null
           channel?: Database["public"]["Enums"]["response_channel"]
           controlled_record_opened_by?: string | null
           controlled_record_outcome_summary?: string | null
@@ -2331,8 +2677,13 @@ export type Database = {
             | null
           created_at?: string
           department_id?: string | null
+          distribution_assignment_id?: string | null
+          employee_reference?: string | null
+          feedback_mode?: Database["public"]["Enums"]["feedback_mode"]
+          had_followup?: boolean
           id?: string
           idempotency_key?: string | null
+          interaction_reference?: string | null
           internal_tags?: string[]
           locale: Database["public"]["Enums"]["locale_code"]
           location_id: string
@@ -2340,6 +2691,7 @@ export type Database = {
           overall_rating?: number | null
           resolved_at?: string | null
           reviewed_at?: string | null
+          source_identifier?: string | null
           submitted_at?: string
           survey_id: string
           touchpoint_id?: string | null
@@ -2348,6 +2700,7 @@ export type Database = {
         }
         Update: {
           assigned_to?: string | null
+          campaign_id?: string | null
           channel?: Database["public"]["Enums"]["response_channel"]
           controlled_record_opened_by?: string | null
           controlled_record_outcome_summary?: string | null
@@ -2360,8 +2713,13 @@ export type Database = {
             | null
           created_at?: string
           department_id?: string | null
+          distribution_assignment_id?: string | null
+          employee_reference?: string | null
+          feedback_mode?: Database["public"]["Enums"]["feedback_mode"]
+          had_followup?: boolean
           id?: string
           idempotency_key?: string | null
+          interaction_reference?: string | null
           internal_tags?: string[]
           locale?: Database["public"]["Enums"]["locale_code"]
           location_id?: string
@@ -2369,6 +2727,7 @@ export type Database = {
           overall_rating?: number | null
           resolved_at?: string | null
           reviewed_at?: string | null
+          source_identifier?: string | null
           submitted_at?: string
           survey_id?: string
           touchpoint_id?: string | null
@@ -2382,6 +2741,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "departments"
             referencedColumns: ["id", "organization_id", "location_id"]
+          },
+          {
+            foreignKeyName: "survey_responses_distribution_assignment_id_fkey"
+            columns: ["distribution_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "distribution_assignments"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "survey_responses_survey_scope_fkey"
@@ -2406,11 +2772,19 @@ export type Database = {
           default_locale: Database["public"]["Enums"]["locale_code"]
           description_ar: string | null
           description_en: string | null
+          escalation_enabled: boolean
+          escalation_keywords: string[] | null
+          escalation_threshold: number | null
           id: string
           location_id: string
           organization_id: string
           public_slug: string
           published_at: string | null
+          quick_feedback_categories: Json
+          quick_feedback_enabled: boolean
+          quick_feedback_negative_threshold: number
+          quick_feedback_positive_threshold: number
+          quick_feedback_rating_style: string
           status: Database["public"]["Enums"]["survey_status"]
           survey_group_id: string
           survey_type: Database["public"]["Enums"]["survey_type"]
@@ -2426,11 +2800,19 @@ export type Database = {
           default_locale?: Database["public"]["Enums"]["locale_code"]
           description_ar?: string | null
           description_en?: string | null
+          escalation_enabled?: boolean
+          escalation_keywords?: string[] | null
+          escalation_threshold?: number | null
           id?: string
           location_id: string
           organization_id: string
           public_slug?: string
           published_at?: string | null
+          quick_feedback_categories?: Json
+          quick_feedback_enabled?: boolean
+          quick_feedback_negative_threshold?: number
+          quick_feedback_positive_threshold?: number
+          quick_feedback_rating_style?: string
           status?: Database["public"]["Enums"]["survey_status"]
           survey_group_id?: string
           survey_type?: Database["public"]["Enums"]["survey_type"]
@@ -2446,11 +2828,19 @@ export type Database = {
           default_locale?: Database["public"]["Enums"]["locale_code"]
           description_ar?: string | null
           description_en?: string | null
+          escalation_enabled?: boolean
+          escalation_keywords?: string[] | null
+          escalation_threshold?: number | null
           id?: string
           location_id?: string
           organization_id?: string
           public_slug?: string
           published_at?: string | null
+          quick_feedback_categories?: Json
+          quick_feedback_enabled?: boolean
+          quick_feedback_negative_threshold?: number
+          quick_feedback_positive_threshold?: number
+          quick_feedback_rating_style?: string
           status?: Database["public"]["Enums"]["survey_status"]
           survey_group_id?: string
           survey_type?: Database["public"]["Enums"]["survey_type"]
@@ -2545,7 +2935,7 @@ export type Database = {
           organization_id: string
           status: Database["public"]["Enums"]["verification_status"]
           verified_at: string
-          verifier_id: string
+          verifier_id: string | null
         }
         Insert: {
           comments?: string | null
@@ -2555,7 +2945,7 @@ export type Database = {
           organization_id: string
           status: Database["public"]["Enums"]["verification_status"]
           verified_at?: string
-          verifier_id: string
+          verifier_id?: string | null
         }
         Update: {
           comments?: string | null
@@ -2565,7 +2955,7 @@ export type Database = {
           organization_id?: string
           status?: Database["public"]["Enums"]["verification_status"]
           verified_at?: string
-          verifier_id?: string
+          verifier_id?: string | null
         }
         Relationships: [
           {
@@ -2580,6 +2970,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "verification_verifier_id_fkey"
+            columns: ["verifier_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2617,6 +3014,17 @@ export type Database = {
             }
             Returns: undefined
           }
+      bulk_create_distribution_assignments: {
+        Args: {
+          p_campaign_id?: string
+          p_employee_ids?: string[]
+          p_location_ids?: string[]
+          p_organization_id: string
+          p_survey_id: string
+          p_template_id: string
+        }
+        Returns: number
+      }
       can_access_location: { Args: { p_location_id: string }; Returns: boolean }
       can_access_response: { Args: { p_response_id: string }; Returns: boolean }
       can_manage_alert: { Args: { p_alert_id: string }; Returns: boolean }
@@ -2756,7 +3164,9 @@ export type Database = {
         Args: {
           p_alert_status?: Database["public"]["Enums"]["alert_status"]
           p_bucket?: string
+          p_channel?: string
           p_end_at: string
+          p_feedback_mode?: Database["public"]["Enums"]["feedback_mode"]
           p_location_id?: string
           p_organization_id: string
           p_rating_max?: number
@@ -2839,6 +3249,18 @@ export type Database = {
         }
         Returns: Json
       }
+      get_distribution_analytics: {
+        Args: {
+          p_campaign_id?: string
+          p_channel?: string
+          p_end_at: string
+          p_location_id?: string
+          p_organization_id: string
+          p_start_at: string
+          p_template_id?: string
+        }
+        Returns: Json
+      }
       get_followup_records: {
         Args: {
           p_end_at: string
@@ -2852,16 +3274,6 @@ export type Database = {
       get_kpi_dashboard:
         | {
             Args: {
-              p_end_at: string
-              p_location_id?: string
-              p_organization_id: string
-              p_start_at: string
-              p_survey_id?: string
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
               p_channel?: string
               p_department_id?: string
               p_end_at: string
@@ -2870,6 +3282,18 @@ export type Database = {
               p_start_at: string
               p_survey_id?: string
               p_touchpoint_id?: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_channel?: string
+              p_end_at: string
+              p_feedback_mode?: Database["public"]["Enums"]["feedback_mode"]
+              p_location_id?: string
+              p_organization_id: string
+              p_start_at: string
+              p_survey_id?: string
             }
             Returns: Json
           }
@@ -2884,6 +3308,15 @@ export type Database = {
       }
       get_platform_overview: { Args: never; Returns: Json }
       get_public_survey: { Args: { p_public_slug: string }; Returns: Json }
+      get_quick_feedback_analytics: {
+        Args: {
+          p_end_at: string
+          p_location_id?: string
+          p_organization_id: string
+          p_start_at: string
+        }
+        Returns: Json
+      }
       get_review_summary: {
         Args: {
           p_end_at: string
@@ -2970,6 +3403,19 @@ export type Database = {
         }
         Returns: undefined
       }
+      record_distribution_click: {
+        Args: {
+          p_ip_address?: string
+          p_public_token: string
+          p_referer?: string
+          p_user_agent?: string
+        }
+        Returns: Json
+      }
+      record_distribution_conversion: {
+        Args: { p_public_token: string; p_response_id: string }
+        Returns: undefined
+      }
       record_invitation_acceptance_failure: {
         Args: { p_reason: string; p_token: string }
         Returns: undefined
@@ -3002,6 +3448,18 @@ export type Database = {
         Args: { p_invitation_id: string }
         Returns: undefined
       }
+      save_quick_feedback_config: {
+        Args: {
+          p_follow_up_enabled?: boolean
+          p_is_enabled: boolean
+          p_negative_threshold?: number
+          p_positive_threshold?: number
+          p_rating_style?: string
+          p_show_comment_field?: boolean
+          p_survey_id: string
+        }
+        Returns: undefined
+      }
       save_survey_draft: {
         Args: {
           p_default_locale: Database["public"]["Enums"]["locale_code"]
@@ -3019,29 +3477,80 @@ export type Database = {
         }
         Returns: string
       }
-      submit_protected_survey_response: {
-        Args: {
-          p_answers: Json
-          p_channel?: Database["public"]["Enums"]["response_channel"]
-          p_fingerprint_hash: string
-          p_idempotency_key: string
-          p_locale: Database["public"]["Enums"]["locale_code"]
-          p_public_slug: string
-          p_touchpoint_token?: string
-        }
-        Returns: Json
-      }
-      submit_public_survey_response: {
-        Args: {
-          p_answers: Json
-          p_channel?: Database["public"]["Enums"]["response_channel"]
-          p_idempotency_key?: string
-          p_locale: Database["public"]["Enums"]["locale_code"]
-          p_public_slug: string
-          p_touchpoint_token?: string
-        }
-        Returns: string
-      }
+      submit_protected_survey_response:
+        | {
+            Args: {
+              p_answers: Json
+              p_campaign_id?: string
+              p_channel?: Database["public"]["Enums"]["response_channel"]
+              p_employee_reference?: string
+              p_feedback_mode?: Database["public"]["Enums"]["feedback_mode"]
+              p_fingerprint_hash: string
+              p_idempotency_key: string
+              p_interaction_reference?: string
+              p_locale: Database["public"]["Enums"]["locale_code"]
+              p_public_slug: string
+              p_source_identifier?: string
+              p_touchpoint_token?: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_answers: Json
+              p_campaign_id?: string
+              p_channel?: Database["public"]["Enums"]["response_channel"]
+              p_distribution_public_token?: string
+              p_employee_reference?: string
+              p_feedback_mode?: Database["public"]["Enums"]["feedback_mode"]
+              p_fingerprint_hash: string
+              p_idempotency_key: string
+              p_interaction_reference?: string
+              p_locale: Database["public"]["Enums"]["locale_code"]
+              p_public_slug: string
+              p_quick_categories?: Json
+              p_quick_rating?: number
+              p_source_identifier?: string
+              p_touchpoint_token?: string
+            }
+            Returns: Json
+          }
+      submit_public_survey_response:
+        | {
+            Args: {
+              p_answers: Json
+              p_campaign_id?: string
+              p_channel?: Database["public"]["Enums"]["response_channel"]
+              p_employee_reference?: string
+              p_feedback_mode?: Database["public"]["Enums"]["feedback_mode"]
+              p_idempotency_key?: string
+              p_interaction_reference?: string
+              p_locale: Database["public"]["Enums"]["locale_code"]
+              p_public_slug: string
+              p_source_identifier?: string
+              p_touchpoint_token?: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_answers: Json
+              p_campaign_id?: string
+              p_channel?: Database["public"]["Enums"]["response_channel"]
+              p_distribution_public_token?: string
+              p_employee_reference?: string
+              p_feedback_mode?: Database["public"]["Enums"]["feedback_mode"]
+              p_idempotency_key?: string
+              p_interaction_reference?: string
+              p_locale: Database["public"]["Enums"]["locale_code"]
+              p_public_slug: string
+              p_quick_categories?: Json
+              p_quick_rating?: number
+              p_source_identifier?: string
+              p_touchpoint_token?: string
+            }
+            Returns: string
+          }
       transfer_organization_ownership: {
         Args: { p_organization_id: string; p_target_membership_id: string }
         Returns: undefined
@@ -3242,6 +3751,7 @@ export type Database = {
         | "quality_manager"
         | "senior_management"
         | "platform_admin"
+      escalation_trigger: "rating_threshold" | "keywords" | "negative_sentiment"
       evidence_entity_type:
         | "corrective_action"
         | "investigation"
@@ -3255,6 +3765,7 @@ export type Database = {
         | "maintenance_record"
         | "supplier_document"
         | "other"
+      feedback_mode: "standard" | "quick"
       investigation_status:
         | "draft"
         | "active"
@@ -3270,12 +3781,23 @@ export type Database = {
       locale_code: "en" | "ar"
       membership_scope: "organization" | "locations"
       question_type: "rating" | "multiple_choice" | "text"
-      response_channel: "qr" | "kiosk" | "web"
+      response_channel:
+        | "qr"
+        | "email"
+        | "kiosk"
+        | "web"
+        | "walk_in"
+        | "website"
+        | "phone"
+        | "whatsapp"
+        | "tablet"
+        | "sms"
       response_workflow_status:
         | "monitor_only"
         | "branch_followup"
         | "controlled_investigation"
         | "immediate_escalation"
+      signature_layout: "horizontal" | "vertical" | "minimal" | "branded"
       subscription_status:
         | "trialing"
         | "active"
@@ -3414,9 +3936,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       alert_rule_type: [
@@ -3461,6 +3980,11 @@ export const Constants = {
         "senior_management",
         "platform_admin",
       ],
+      escalation_trigger: [
+        "rating_threshold",
+        "keywords",
+        "negative_sentiment",
+      ],
       evidence_entity_type: [
         "corrective_action",
         "investigation",
@@ -3476,6 +4000,7 @@ export const Constants = {
         "supplier_document",
         "other",
       ],
+      feedback_mode: ["standard", "quick"],
       investigation_status: [
         "draft",
         "active",
@@ -3493,13 +4018,25 @@ export const Constants = {
       locale_code: ["en", "ar"],
       membership_scope: ["organization", "locations"],
       question_type: ["rating", "multiple_choice", "text"],
-      response_channel: ["qr", "kiosk", "web"],
+      response_channel: [
+        "qr",
+        "email",
+        "kiosk",
+        "web",
+        "walk_in",
+        "website",
+        "phone",
+        "whatsapp",
+        "tablet",
+        "sms",
+      ],
       response_workflow_status: [
         "monitor_only",
         "branch_followup",
         "controlled_investigation",
         "immediate_escalation",
       ],
+      signature_layout: ["horizontal", "vertical", "minimal", "branded"],
       subscription_status: [
         "trialing",
         "active",
@@ -3518,3 +4055,4 @@ export const Constants = {
     },
   },
 } as const
+

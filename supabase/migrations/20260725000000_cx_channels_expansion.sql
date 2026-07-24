@@ -74,7 +74,7 @@ create table public.campaigns (
   survey_id uuid not null,
   name_en text not null check (char_length(name_en) between 1 and 200),
   name_ar text not null check (char_length(name_ar) between 1 and 200),
-  channel public.response_channel not null default 'email',
+  channel public.response_channel not null default 'qr',
   status public.entity_status not null default 'active',
   starts_at timestamptz,
   ends_at timestamptz,
@@ -1215,7 +1215,8 @@ create table public.distribution_templates (
   created_by uuid references auth.users (id) on delete set null,
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now()),
-  constraint dt_org_channel_name_unique unique (organization_id, channel, template_name)
+  constraint dt_org_channel_name_unique unique (organization_id, channel, template_name),
+  constraint dt_id_org_unique unique (id, organization_id)
 );
 
 create index dt_org_channel_idx on public.distribution_templates (organization_id, channel, is_active);

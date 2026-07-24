@@ -36,7 +36,24 @@ export async function getAnalyticsDashboard(rawFilters: Record<string, string | 
     p_alert_status: filters.alertStatus,
     p_bucket: range.bucket,
   });
-  if (error) throw new Error("Unable to load permission-scoped analytics");
+  if (error) {
+    console.error("Permission-scoped analytics RPC failed", {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      organizationId,
+      locationId,
+      surveyId,
+      bucket: range.bucket,
+      startAt: range.start,
+      endAt: range.end,
+      ratingMin: filters.ratingMin,
+      ratingMax: filters.ratingMax,
+      alertStatus: filters.alertStatus,
+    });
+    throw new Error(`Unable to load permission-scoped analytics: ${error.message}`);
+  }
   return {
     context,
     filters: { ...filters, organization: organizationId, location: locationId, survey: surveyId },
