@@ -57,7 +57,15 @@ export async function getKpiDashboard(filters: KpiFilters = {}) {
     ...(filters.touchpointId ? { p_touchpoint_id: filters.touchpointId } : {}),
     ...(filters.channel ? { p_channel: filters.channel } : {}),
   });
-  if (error) throw new Error("Unable to load KPI dashboard");
+  if (error) {
+    console.error("KPI RPC failed:", {
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code,
+    });
+    throw error;
+  }
 
   // Fetch filter options
   const [locations, surveys, departments, touchpoints] = await Promise.all([
