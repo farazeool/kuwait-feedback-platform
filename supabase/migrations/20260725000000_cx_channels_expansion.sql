@@ -1194,120 +1194,243 @@ grant execute on function public.update_quick_feedback_rating(
 ) to authenticated;
 
 -- ==============================================================================
--- 17. Comments
--- ==============================================================================
-
--- ==============================================================================
--- 18. Email signature templates and assignments
+-- 17. Distribution system — generic templates, assignments, events
 -- ==============================================================================
 
 create type public.signature_layout as enum ('horizontal', 'vertical', 'minimal', 'branded');
 
-create table public.email_signature_templates (
+-- Distribution templates: channel-specific rendering configs for any channel
+create table public.distribution_templates (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null references public.organizations (id) on delete cascade,
+  channel public.response_channel not null,
   template_name text not null check (char_length(template_name) between 1 and 200),
-  heading_en text not null default 'How was your experience?' check (char_length(heading_en) <= 200),
-  heading_ar text not null default 'كيف كانت تجربتك؟' check (char_length(heading_ar) <= 200),
-  description_en text check (description_en is null or char_length(description_en) <= 500),
-  description_ar text check (description_ar is null or char_length(description_ar) <= 500),
-  rating_style text not null default 'emoji' check (rating_style in ('emoji', 'star', 'three_option', 'yes_no')),
-  layout public.signature_layout not null default 'horizontal',
-  survey_id uuid,
-  show_logo boolean not null default true,
-  show_business_name boolean not null default true,
-  show_privacy_notice boolean not null default false,
-  privacy_notice_en text check (privacy_notice_en is null or char_length(privacy_notice_en) <= 300),
-  privacy_notice_ar text check (privacy_notice_ar is null or char_length(privacy_notice_ar) <= 300),
-  brand_color text not null default '#2563eb' check (brand_color ~ '^#[0-9a-fA-F]{6}$'),
-  icon_size text not null default 'medium' check (icon_size in ('small', 'medium', 'large')),
-  alignment text not null default 'left' check (alignment in ('left', 'center', 'right')),
-  thank_you_en text check (thank_you_en is null or char_length(thank_you_en) <= 300),
-  thank_you_ar text check (thank_you_ar is null or char_length(thank_you_ar) <= 300),
-  follow_up_enabled boolean not null default true,
-  auto_submit_positive boolean not null default true,
+  description text check (description is null or char_length(description) <= 500),
+  is_active boolean not null default true,
   is_default boolean not null default false,
-  status public.entity_status not null default 'active',
+  -- Shared behavioral config (across all channels)
+  config jsonb not null default '{}'::jsonb,
+  -- Channel-specific rendering config (structure varies by channel)
+  render_config jsonb not null default '{}'::jsonb,
   created_by uuid references auth.users (id) on delete set null,
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now()),
-  constraint email_sig_template_survey_fkey
-    foreign key (survey_id, organization_id)
-    references public.surveys (id, organization_id)
-    on delete set null
+  constraint dt_org_channel_name_unique unique (organization_id, channel, template_name)
 );
 
-create index email_sig_templates_org_idx on public.email_signature_templates (organization_id, status);
+create index dt_org_channel_idx on public.distribution_templates (organization_id, channel, is_active);
 
-create table public.email_signature_assignments (
+-- Distribution assignments: who/what gets a link, with polymorphic target
+create table public.distribution_assignments (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null references public.organizations (id) on delete cascade,
   template_id uuid not null,
-  location_id uuid,
-  department_id uuid,
-  employee_id uuid,
   survey_id uuid not null,
-  campaign_id uuid,
+  campaign_id uuid references public.campaigns (id) on delete set null,
+  -- Polymorphic target: exactly one should be non-null
+  assigned_employee_id uuid references auth.users (id) on delete set null,
+  assigned_location_id uuid references public.locations (id) on delete set null,
+  assigned_touchpoint_id uuid references public.touchpoints (id) on delete set null,
+  -- Link identity
   public_token text not null unique
     default encode(extensions.gen_random_bytes(18), 'hex')
     check (char_length(public_token) between 24 and 128),
   status text not null default 'active' check (status in ('active', 'paused', 'expired', 'revoked')),
   expires_at timestamptz,
-  last_clicked_at timestamptz,
+  -- Frozen attribution context (snapshotted at creation time)
+  metadata jsonb not null default '{}'::jsonb,
+  -- Tracking counters
   click_count integer not null default 0,
   response_count integer not null default 0,
+  last_clicked_at timestamptz,
+  last_response_at timestamptz,
   created_by uuid references auth.users (id) on delete set null,
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now()),
-  constraint email_sig_assign_template_fkey
+  constraint da_template_org_fkey
     foreign key (template_id, organization_id)
-    references public.email_signature_templates (id, organization_id)
+    references public.distribution_templates (id, organization_id)
     on delete cascade,
-  constraint email_sig_assign_survey_fkey
+  constraint da_survey_org_fkey
     foreign key (survey_id, organization_id)
     references public.surveys (id, organization_id)
     on delete cascade,
-  constraint email_sig_assign_employee_location_key
-    unique (employee_id, location_id) where employee_id is not null
+  constraint da_single_target_check check (
+    (assigned_employee_id is not null)::integer
+    + (assigned_location_id is not null)::integer
+    + (assigned_touchpoint_id is not null)::integer
+    = 1
+  )
 );
 
-create index email_sig_assign_org_idx on public.email_signature_assignments (organization_id, status);
-create index email_sig_assign_employee_idx on public.email_signature_assignments (employee_id) where employee_id is not null;
-create index email_sig_assign_location_idx on public.email_signature_assignments (location_id) where location_id is not null;
-create index email_sig_assign_public_token_idx on public.email_signature_assignments (public_token);
+create index da_org_status_idx on public.distribution_assignments (organization_id, status);
+create index da_employee_idx on public.distribution_assignments (assigned_employee_id) where assigned_employee_id is not null;
+create index da_location_idx on public.distribution_assignments (assigned_location_id) where assigned_location_id is not null;
+create index da_touchpoint_idx on public.distribution_assignments (assigned_touchpoint_id) where assigned_touchpoint_id is not null;
+create index da_token_idx on public.distribution_assignments (public_token);
 
--- RLS for email_signature_templates
-alter table public.email_signature_templates enable row level security;
-alter table public.email_signature_templates force row level security;
+-- Distribution link events: append-only click/conversion tracking
+create table public.distribution_link_events (
+  id uuid primary key default gen_random_uuid(),
+  assignment_id uuid not null references public.distribution_assignments (id) on delete cascade,
+  organization_id uuid not null references public.organizations (id) on delete cascade,
+  event_type text not null check (event_type in ('click', 'conversion', 'expired_click', 'invalid_token', 'duplicate_click')),
+  ip_address text,
+  user_agent text,
+  referer text,
+  response_id uuid references public.survey_responses (id) on delete set null,
+  created_at timestamptz not null default timezone('utc', now())
+);
 
-create policy est_platform_admin_all
-  on public.email_signature_templates for all to authenticated
+create index dle_assignment_idx on public.distribution_link_events (assignment_id, event_type, created_at desc);
+create index dle_org_idx on public.distribution_link_events (organization_id, event_type, created_at desc);
+
+-- RLS for distribution_templates
+alter table public.distribution_templates enable row level security;
+alter table public.distribution_templates force row level security;
+
+create policy dt_platform_admin_all
+  on public.distribution_templates for all to authenticated
   using (public.is_platform_admin()) with check (public.is_platform_admin());
-create policy est_read_permitted
-  on public.email_signature_templates for select to authenticated
+create policy dt_read_permitted
+  on public.distribution_templates for select to authenticated
   using (public.can_read_organization(organization_id));
-create policy est_write_permitted
-  on public.email_signature_templates for all to authenticated
+create policy dt_write_permitted
+  on public.distribution_templates for all to authenticated
   using (public.can_manage_organization(organization_id))
   with check (public.can_manage_organization(organization_id));
 
--- RLS for email_signature_assignments
-alter table public.email_signature_assignments enable row level security;
-alter table public.email_signature_assignments force row level security;
+-- RLS for distribution_assignments
+alter table public.distribution_assignments enable row level security;
+alter table public.distribution_assignments force row level security;
 
-create policy esa_platform_admin_all
-  on public.email_signature_assignments for all to authenticated
+create policy da_platform_admin_all
+  on public.distribution_assignments for all to authenticated
   using (public.is_platform_admin()) with check (public.is_platform_admin());
-create policy esa_read_permitted
-  on public.email_signature_assignments for select to authenticated
+create policy da_read_permitted
+  on public.distribution_assignments for select to authenticated
   using (public.can_read_organization(organization_id));
-create policy esa_write_permitted
-  on public.email_signature_assignments for all to authenticated
+create policy da_write_permitted
+  on public.distribution_assignments for all to authenticated
   using (public.can_manage_organization(organization_id))
   with check (public.can_manage_organization(organization_id));
 
--- Bulk create email signature assignments
-create function public.bulk_create_signature_assignments(
+-- RLS for distribution_link_events
+alter table public.distribution_link_events enable row level security;
+alter table public.distribution_link_events force row level security;
+
+create policy dle_platform_admin_all
+  on public.distribution_link_events for all to authenticated
+  using (public.is_platform_admin()) with check (public.is_platform_admin());
+create policy dle_read_permitted
+  on public.distribution_link_events for select to authenticated
+  using (public.can_read_organization(organization_id));
+-- Writes are done via SECURITY DEFINER functions only
+create policy dle_insert_via_rpc
+  on public.distribution_link_events for insert to authenticated
+  with check (false); -- Only SECURITY DEFINER functions can insert
+
+-- Record a click on a distribution link (public, SECURITY DEFINER)
+create function public.record_distribution_click(
+  p_public_token text,
+  p_ip_address text default null,
+  p_user_agent text default null,
+  p_referer text default null
+)
+returns jsonb
+language plpgsql
+volatile
+security definer
+set search_path = ''
+as $$
+declare
+  v_assignment public.distribution_assignments%rowtype;
+  v_event_type text;
+begin
+  select * into v_assignment
+  from public.distribution_assignments
+  where public_token = p_public_token;
+
+  if not found then
+    insert into public.distribution_link_events (assignment_id, organization_id, event_type, ip_address, user_agent, referer)
+    values (null, null, 'invalid_token', p_ip_address, p_user_agent, p_referer);
+    return jsonb_build_object('found', false);
+  end if;
+
+  if v_assignment.status = 'revoked' or v_assignment.status = 'expired' then
+    insert into public.distribution_link_events (assignment_id, organization_id, event_type, ip_address, user_agent, referer)
+    values (v_assignment.id, v_assignment.organization_id, 'expired_click', p_ip_address, p_user_agent, p_referer);
+    return jsonb_build_object('found', false, 'reason', v_assignment.status);
+  end if;
+
+  if v_assignment.expires_at is not null and v_assignment.expires_at < timezone('utc', now()) then
+    insert into public.distribution_link_events (assignment_id, organization_id, event_type, ip_address, user_agent, referer)
+    values (v_assignment.id, v_assignment.organization_id, 'expired_click', p_ip_address, p_user_agent, p_referer);
+    return jsonb_build_object('found', false, 'reason', 'expired');
+  end if;
+
+  update public.distribution_assignments
+  set click_count = click_count + 1,
+      last_clicked_at = timezone('utc', now())
+  where id = v_assignment.id;
+
+  insert into public.distribution_link_events (
+    assignment_id, organization_id, event_type, ip_address, user_agent, referer
+  ) values (
+    v_assignment.id, v_assignment.organization_id, 'click', p_ip_address, p_user_agent, p_referer
+  );
+
+  return jsonb_build_object(
+    'found', true,
+    'assignment_id', v_assignment.id,
+    'survey_id', v_assignment.survey_id,
+    'organization_id', v_assignment.organization_id,
+    'location_id', v_assignment.assigned_location_id,
+    'employee_id', v_assignment.assigned_employee_id,
+    'touchpoint_id', v_assignment.assigned_touchpoint_id,
+    'campaign_id', v_assignment.campaign_id,
+    'channel', (select channel from public.distribution_templates where id = v_assignment.template_id)
+  );
+end;
+$$;
+
+-- Record a conversion (response submitted) against a distribution link
+create function public.record_distribution_conversion(
+  p_public_token text,
+  p_response_id uuid
+)
+returns void
+language plpgsql
+volatile
+security definer
+set search_path = ''
+as $$
+declare
+  v_assignment public.distribution_assignments%rowtype;
+begin
+  select * into v_assignment
+  from public.distribution_assignments
+  where public_token = p_public_token and status = 'active';
+
+  if not found then
+    return;
+  end if;
+
+  update public.distribution_assignments
+  set response_count = response_count + 1,
+      last_response_at = timezone('utc', now())
+  where id = v_assignment.id;
+
+  insert into public.distribution_link_events (
+    assignment_id, organization_id, event_type, response_id
+  ) values (
+    v_assignment.id, v_assignment.organization_id, 'conversion', p_response_id
+  );
+end;
+$$;
+
+-- Bulk create distribution assignments
+create function public.bulk_create_distribution_assignments(
   p_organization_id uuid,
   p_template_id uuid,
   p_survey_id uuid,
@@ -1330,11 +1453,9 @@ begin
     raise exception 'Access denied' using errcode = '42501';
   end if;
 
-  -- For each employee in the list
   if array_length(p_employee_ids, 1) > 0 then
     foreach v_employee_id in array p_employee_ids
     loop
-      -- Try to find an existing location for this employee
       select lm.location_id into v_location_id
       from public.location_memberships lm
       where lm.user_id = v_employee_id
@@ -1346,36 +1467,29 @@ begin
       end if;
 
       if v_location_id is not null then
-        insert into public.email_signature_assignments (
-          organization_id, template_id, location_id, employee_id,
-          survey_id, campaign_id, created_by
+        insert into public.distribution_assignments (
+          organization_id, template_id, survey_id, campaign_id,
+          assigned_employee_id, assigned_location_id
         ) values (
-          p_organization_id, p_template_id, v_location_id, v_employee_id,
-          p_survey_id, p_campaign_id, auth.uid()
+          p_organization_id, p_template_id, p_survey_id, p_campaign_id,
+          v_employee_id, v_location_id
         )
-        on conflict (employee_id, location_id) where employee_id is not null
-        do update set
-          template_id = excluded.template_id,
-          survey_id = excluded.survey_id,
-          campaign_id = excluded.campaign_id,
-          status = 'active',
-          updated_at = timezone('utc', now());
+        on conflict on constraint da_single_target_check do nothing;
         v_count := v_count + 1;
       end if;
     end loop;
   end if;
 
-  -- For each location (org-wide)
   if array_length(p_location_ids, 1) > 0 then
     foreach v_location_id in array p_location_ids
     loop
-      insert into public.email_signature_assignments (
-        organization_id, template_id, location_id, survey_id, campaign_id, created_by
+      insert into public.distribution_assignments (
+        organization_id, template_id, survey_id, campaign_id,
+        assigned_location_id
       ) values (
-        p_organization_id, p_template_id, v_location_id, p_survey_id, p_campaign_id, auth.uid()
-      )
-      on conflict (employee_id, location_id) where employee_id is not null
-      do nothing;
+        p_organization_id, p_template_id, p_survey_id, p_campaign_id,
+        v_location_id
+      );
       v_count := v_count + 1;
     end loop;
   end if;
@@ -1384,70 +1498,39 @@ begin
 end;
 $$;
 
--- Record click on an email signature assignment
-create function public.record_signature_click(p_public_token text, p_referrer text default null)
-returns jsonb
-language plpgsql
-volatile
-security definer
-set search_path = ''
-as $$
-declare
-  v_assignment public.email_signature_assignments%rowtype;
-begin
-  select * into v_assignment
-  from public.email_signature_assignments
-  where public_token = p_public_token and status = 'active';
-
-  if not found then
-    return jsonb_build_object('found', false);
-  end if;
-
-  update public.email_signature_assignments
-  set click_count = click_count + 1,
-      last_clicked_at = timezone('utc', now())
-  where id = v_assignment.id;
-
-  return jsonb_build_object(
-    'found', true,
-    'assignment_id', v_assignment.id,
-    'survey_id', v_assignment.survey_id,
-    'organization_id', v_assignment.organization_id,
-    'location_id', v_assignment.location_id,
-    'employee_id', v_assignment.employee_id,
-    'campaign_id', v_assignment.campaign_id
-  );
-end;
-$$;
+-- Triggers
+create trigger distribution_templates_set_updated_at
+  before update on public.distribution_templates
+  for each row execute function public.set_updated_at();
+create trigger distribution_assignments_set_updated_at
+  before update on public.distribution_assignments
+  for each row execute function public.set_updated_at();
 
 -- Grants
-grant select, insert, update, delete on public.email_signature_templates to authenticated;
-grant select, insert, update, delete on public.email_signature_assignments to authenticated;
-grant execute on function public.bulk_create_signature_assignments(uuid, uuid, uuid, uuid, uuid[], uuid[]) to authenticated;
-grant execute on function public.record_signature_click(text, text) to anon, authenticated;
+grant select, insert, update, delete on public.distribution_templates to authenticated;
+grant select, insert, update, delete on public.distribution_assignments to authenticated;
+grant select on public.distribution_link_events to authenticated;
+grant execute on function public.record_distribution_click(text, text, text, text) to anon, authenticated;
+grant execute on function public.record_distribution_conversion(text, uuid) to authenticated;
+grant execute on function public.bulk_create_distribution_assignments(uuid, uuid, uuid, uuid, uuid[], uuid[]) to authenticated;
 
--- Triggers
-create trigger email_signature_templates_set_updated_at
-  before update on public.email_signature_templates
-  for each row execute function public.set_updated_at();
-create trigger email_signature_assignments_set_updated_at
-  before update on public.email_signature_assignments
-  for each row execute function public.set_updated_at();
-
-comment on table public.email_signature_templates is 'Reusable email signature templates with configurable rating style, layout, and branding';
-comment on table public.email_signature_assignments is 'Per-employee or per-location email signature assignments with unique tracking tokens';
-comment on function public.bulk_create_signature_assignments is 'Create or update signature assignments for employees or locations in bulk';
-comment on function public.record_signature_click is 'Record a click on an email signature link and return the survey context';
-
+-- Comments
 comment on type public.feedback_mode is 'Standard multi-question surveys vs quick 1-tap feedback';
 comment on type public.escalation_trigger is 'Trigger types for the smart escalation engine';
+comment on type public.signature_layout is 'Layout style for distribution channel templates (used by email channel)';
 comment on column public.surveys.quick_feedback_enabled is 'When true, this survey uses 1-tap quick feedback instead of the full form';
 comment on column public.surveys.quick_feedback_rating_style is 'Visual style for quick feedback: emoji, star, or numeric';
 comment on column public.surveys.quick_feedback_categories is 'Configurable follow-up category options shown when negative feedback is received';
 comment on column public.survey_responses.feedback_mode is 'Distinguishes standard surveys from quick feedback submissions';
-comment on column public.survey_responses.campaign_id is 'Links the response to a specific CX campaign (e.g., email signature campaign)';
+comment on column public.survey_responses.campaign_id is 'Links the response to a specific distribution campaign';
 comment on column public.survey_responses.source_identifier is 'Optional source identifier (e.g., batch ID, link ID)';
 comment on column public.survey_responses.employee_reference is 'Optional employee identifier referenced in the feedback link';
 comment on column public.survey_responses.interaction_reference is 'Optional ticket or interaction reference number';
-comment on table public.campaigns is 'CX campaigns for grouping feedback distribution (email signature campaigns, etc.)';
+comment on table public.campaigns is 'Distribution campaigns for grouping feedback across channels and time periods';
 comment on table public.escalation_rules is 'Configurable escalation rules that auto-create alerts, investigations, or notify managers';
+comment on table public.distribution_templates is 'Generic distribution channel templates — one per channel type (email, qr, whatsapp, etc.) with channel-specific render_config';
+comment on table public.distribution_assignments is 'Who/what gets a distribution link — polymorphic target (employee, location, or touchpoint) with a unique public token';
+comment on table public.distribution_link_events is 'Append-only click and conversion tracking for distribution links';
+comment on function public.record_distribution_click is 'Record a click on any distribution link, validate status/expiry, return survey context for redirect';
+comment on function public.record_distribution_conversion is 'Record that a response was submitted via a distribution link';
+comment on function public.bulk_create_distribution_assignments is 'Create distribution assignments for employees or locations in bulk';
