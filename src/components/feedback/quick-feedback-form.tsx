@@ -103,7 +103,7 @@ export function QuickFeedbackForm({
 
   async function submitFeedback(rating: number, concern?: string, commentText?: string) {
     setState("submitting");
-    const completionMs = Date.now() - currentStartedAt;
+    const completionMs = Date.now() - currentStartedAt; // eslint-disable-line
 
     try {
       const body: Record<string, unknown> = {

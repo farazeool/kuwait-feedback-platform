@@ -1,42 +1,17 @@
 -- Pilot seed: realistic Kuwait hospitality organization with complete data
--- Demo password for every account is "Pilot2024!"
--- Run against staging Supabase after migration chain is applied.
+-- Users must be provisioned via scripts/provision-pilot-users.sh (with env vars)
+-- Run provisioning script FIRST, then run this seed for data.
 -- WARNING: This is for staging only — DO NOT use in production.
 
 -- ==============================================================================
--- 1. Auth Users (7 accounts)
--- ==============================================================================
-
--- Static UUIDs for reproducibility
--- Admin:  a0000000-0000-4000-8000-000000000001
--- Manager: a0000000-0000-4000-8000-000000000002
--- Emp1:    a0000000-0000-4000-8000-000000000003
--- Emp2:    a0000000-0000-4000-8000-000000000004
--- Emp3:    a0000000-0000-4000-8000-000000000005
-
-insert into auth.users (instance_id, id, aud, role, email, email_confirmed_at, encrypted_password, confirmation_token, recovery_token, email_change_token_new, email_change_token_current, email_change, phone_change_token, reauthentication_token, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
-values
-  ('00000000-0000-0000-0000-000000000000', 'a0000000-0000-4000-8000-000000000001', 'authenticated', 'authenticated', 'admin@pilot.kuwait-feedback.test', timezone('utc', now()), crypt('Pilot2024!', gen_salt('bf')), '', '', '', '', '', '', '', '{"provider":"email","providers":["email"]}', '{"display_name":"Sara Al-Mutairi","preferred_locale":"en"}', timezone('utc', now()), timezone('utc', now())),
-  ('00000000-0000-0000-0000-000000000000', 'a0000000-0000-4000-8000-000000000002', 'authenticated', 'authenticated', 'manager@pilot.kuwait-feedback.test', timezone('utc', now()), crypt('Pilot2024!', gen_salt('bf')), '', '', '', '', '', '', '', '{"provider":"email","providers":["email"]}', '{"display_name":"Ahmed Al-Rashid","preferred_locale":"ar"}', timezone('utc', now()), timezone('utc', now())),
-  ('00000000-0000-0000-0000-000000000000', 'a0000000-0000-4000-8000-000000000003', 'authenticated', 'authenticated', 'employee1@pilot.kuwait-feedback.test', timezone('utc', now()), crypt('Pilot2024!', gen_salt('bf')), '', '', '', '', '', '', '', '{"provider":"email","providers":["email"]}', '{"display_name":"Fatima Al-Ali","preferred_locale":"en"}', timezone('utc', now()), timezone('utc', now())),
-  ('00000000-0000-0000-0000-000000000000', 'a0000000-0000-4000-8000-000000000004', 'authenticated', 'authenticated', 'employee2@pilot.kuwait-feedback.test', timezone('utc', now()), crypt('Pilot2024!', gen_salt('bf')), '', '', '', '', '', '', '', '{"provider":"email","providers":["email"]}', '{"display_name":"Khalid Al-Sabah","preferred_locale":"en"}', timezone('utc', now()), timezone('utc', now())),
-  ('00000000-0000-0000-0000-000000000000', 'a0000000-0000-4000-8000-000000000005', 'authenticated', 'authenticated', 'employee3@pilot.kuwait-feedback.test', timezone('utc', now()), crypt('Pilot2024!', gen_salt('bf')), '', '', '', '', '', '', '', '{"provider":"email","providers":["email"]}', '{"display_name":"Nora Al-Kandari","preferred_locale":"ar"}', timezone('utc', now()), timezone('utc', now()))
-on conflict (id) do update set email = excluded.email, encrypted_password = excluded.encrypted_password;
-
-insert into auth.identities (id, user_id, provider_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
-select u.id, u.id, u.email, jsonb_build_object('sub', u.id::text, 'email', u.email, 'email_verified', true), 'email', timezone('utc', now()), timezone('utc', now()), timezone('utc', now())
-from auth.users u where u.id in ('a0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000003', 'a0000000-0000-4000-8000-000000000004', 'a0000000-0000-4000-8000-000000000005')
-on conflict (provider_id, provider) do update set identity_data = excluded.identity_data, updated_at = excluded.updated_at;
-
--- ==============================================================================
--- 2. Organization: Boulevard Cafeteria
+-- 1. Organization: Boulevard Cafeteria
 -- ==============================================================================
 
 insert into public.organizations (id, slug, name_en, name_ar, business_category, phone, timezone, created_by)
 values ('b0000000-0000-4000-8000-000000000001', 'boulevard-cafeteria', 'Boulevard Cafeteria Co.', 'شركة بوليفارد للكافيتريات', 'restaurant', '+96522223333', 'Asia/Kuwait', 'a0000000-0000-4000-8000-000000000001');
 
 -- ==============================================================================
--- 3. Organization Membership (admin + manager)
+-- 2. Organization Membership (admin + manager)
 -- ==============================================================================
 
 insert into public.organization_memberships (id, organization_id, user_id, role, scope, created_by)

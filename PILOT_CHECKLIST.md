@@ -52,12 +52,8 @@ All 33 migrations from `20260720070000_core_schema` through `20260725260000_rest
 
 ## Phase 5: Authentication Configuration
 
-- [ ] Test sign-in with all 5 pilot accounts:
-  - [ ] `admin@pilot.kuwait-feedback.test` / `Pilot2024!`
-  - [ ] `manager@pilot.kuwait-feedback.test` / `Pilot2024!`
-  - [ ] `employee1@pilot.kuwait-feedback.test` / `Pilot2024!`
-  - [ ] `employee2@pilot.kuwait-feedback.test` / `Pilot2024!`
-  - [ ] `employee3@pilot.kuwait-feedback.test` / `Pilot2024!`
+- [ ] Provision users securely: `PILOT_ADMIN_PASSWORD=xxx SUPABASE_URL=xxx SUPABASE_SERVICE_ROLE_KEY=xxx ./scripts/provision-pilot-users.sh`
+- [ ] Test sign-in with all 5 pilot accounts
 - [ ] Verify role-based redirects (admin → dashboard, no-org → onboarding)
 - [ ] Test password reset flow
 

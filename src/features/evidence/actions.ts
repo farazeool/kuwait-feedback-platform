@@ -58,11 +58,8 @@ export async function uploadEvidence(formData: FormData) {
   revalidatePath("/dashboard/corrective-actions");
   revalidatePath("/dashboard/investigations");
 
-  // Redirect based on entity context
   const returnTo = formData.get("returnTo") as string;
-  if (returnTo) {
-    redirect(`${returnTo}?evidence_uploaded=1`);
-  }
+  if (returnTo) redirect(`${returnTo}?evidence_uploaded=1`);
   redirect(`/dashboard/evidence/${evidence.id}?created=1`);
 }
 
@@ -79,23 +76,25 @@ export async function updateEvidence(formData: FormData) {
     description: formData.get("description") === "" ? null : formData.get("description"),
   });
 
-  if (!parsed.success) {
-    redirect(`/dashboard/evidence/${evidenceId}?error=validation`);
-  }
+  if (!parsed.success) redirect(`/dashboard/evidence/${evidenceId}?error=validation`);
 
   const supabase = await createSupabaseServerClient();
-  const updatePayload: Record<string, unknown> = {
+  const updatePayload: Partial<{
+    updated_at: string;
+    file_name?: string;
+    file_type?: EvidenceFileType;
+    description?: string | null;
+  }> = {
     updated_at: new Date().toISOString(),
   };
 
   if (parsed.data.fileName) updatePayload.file_name = parsed.data.fileName;
-  if (parsed.data.fileType) updatePayload.file_type = parsed.data.fileType as EvidenceFileType;
-   
+  if (parsed.data.fileType) updatePayload.file_type = parsed.data.fileType as "photo" | "pdf" | "checklist" | "training_record" | "maintenance_record" | "supplier_document" | "other";
   if (parsed.data.description !== undefined) updatePayload.description = parsed.data.description;
 
   const { error } = await supabase
     .from("evidence")
-    .update(updatePayload as any)
+    .update(updatePayload)
     .eq("id", evidenceId)
     .eq("organization_id", context.organization.id);
 
@@ -116,19 +115,11 @@ export async function verifyEvidence(formData: FormData) {
 
   if (!evidenceId || !status) redirect("/dashboard/evidence?error=missing_fields");
 
-  const parsed = verificationSchema.safeParse({
-    evidenceId,
-    status,
-    comments,
-  });
-
-  if (!parsed.success) {
-    redirect(`/dashboard/evidence/${evidenceId}?error=verification_validation`);
-  }
+  const parsed = verificationSchema.safeParse({ evidenceId, status, comments });
+  if (!parsed.success) redirect(`/dashboard/evidence/${evidenceId}?error=verification_validation`);
 
   const supabase = await createSupabaseServerClient();
 
-  // Get current evidence to verify org access
   const { data: currentEvidence } = await supabase
     .from("evidence")
     .select("organization_id, entity_type, entity_id")
@@ -138,7 +129,6 @@ export async function verifyEvidence(formData: FormData) {
   if (!currentEvidence) redirect(`/dashboard/evidence/${evidenceId}?error=not_found`);
   if (currentEvidence.organization_id !== context.organization.id) redirect("/dashboard/evidence?error=unauthorized");
 
-  // Insert verification record (append-only audit trail)
   const { error: verifyError } = await supabase
     .from("verification")
     .insert({
@@ -155,7 +145,6 @@ export async function verifyEvidence(formData: FormData) {
   revalidatePath(`/dashboard/evidence/${evidenceId}`);
   revalidatePath("/dashboard/corrective-actions");
 
-  // If evidence belongs to a corrective action, revalidate that too
   if (currentEvidence.entity_type === "corrective_action") {
     revalidatePath(`/dashboard/corrective-actions/${currentEvidence.entity_id}`);
     revalidatePath(`/dashboard/corrective-actions/${currentEvidence.entity_id}/verify`);
@@ -175,37 +164,17 @@ export async function submitEffectivenessReview(formData: FormData) {
   const followUpRequired = formData.get("followUpRequired") === "true";
   const followUpNotes = formData.get("followUpNotes") as string;
 
-  if (!correctiveActionId || !result || !reviewDate) {
+  if (!correctiveActionId || !result || !reviewDate)
     redirect(`/dashboard/corrective-actions/${correctiveActionId}/effectiveness?error=missing_fields`);
-  }
 
-  const parsed = effectivenessReviewSchema.safeParse({
-    correctiveActionId,
-    result,
-    reviewDate,
-    comments: comments || null,
-    followUpRequired,
-    followUpNotes: followUpNotes || null,
-  });
-
-  if (!parsed.success) {
-    redirect(`/dashboard/corrective-actions/${correctiveActionId}/effectiveness?error=validation`);
-  }
+  const parsed = effectivenessReviewSchema.safeParse({ correctiveActionId, result, reviewDate, comments: comments || null, followUpRequired, followUpNotes: followUpNotes || null });
+  if (!parsed.success) redirect(`/dashboard/corrective-actions/${correctiveActionId}/effectiveness?error=validation`);
 
   const supabase = await createSupabaseServerClient();
 
-  // Verify the corrective action belongs to the user's org
-  const { data: action } = await supabase
-    .from("corrective_actions")
-    .select("organization_id")
-    .eq("id", correctiveActionId)
-    .maybeSingle();
+  const { data: action } = await supabase.from("corrective_actions").select("organization_id").eq("id", correctiveActionId).maybeSingle();
+  if (!action || action.organization_id !== context.organization.id) redirect("/dashboard/corrective-actions?error=unauthorized");
 
-  if (!action || action.organization_id !== context.organization.id) {
-    redirect("/dashboard/corrective-actions?error=unauthorized");
-  }
-
-  // Insert effectiveness review
   const { data: review, error } = await supabase
     .from("effectiveness_review")
     .insert({
@@ -221,9 +190,7 @@ export async function submitEffectivenessReview(formData: FormData) {
     .select("id")
     .single();
 
-  if (error || !review) {
-    redirect(`/dashboard/corrective-actions/${correctiveActionId}/effectiveness?error=save_failed`);
-  }
+  if (error || !review) redirect(`/dashboard/corrective-actions/${correctiveActionId}/effectiveness?error=save_failed`);
 
   revalidatePath("/dashboard/corrective-actions");
   revalidatePath(`/dashboard/corrective-actions/${correctiveActionId}`);
@@ -240,22 +207,12 @@ export async function submitClosureApproval(formData: FormData) {
   const closureApproval = formData.get("closureApproval") as string;
   const comments = formData.get("comments") as string;
 
-  if (!correctiveActionId || !closureApproval) {
-    redirect(`/dashboard/corrective-actions/${correctiveActionId}?error=missing_fields`);
-  }
+  if (!correctiveActionId || !closureApproval) redirect(`/dashboard/corrective-actions/${correctiveActionId}?error=missing_fields`);
 
-  const parsed = closureApprovalSchema.safeParse({
-    correctiveActionId,
-    closureApproval,
-    comments: comments || null,
-  });
-
-  if (!parsed.success) {
-    redirect(`/dashboard/corrective-actions/${correctiveActionId}?error=validation`);
-  }
+  const parsed = closureApprovalSchema.safeParse({ correctiveActionId, closureApproval, comments: comments || null });
+  if (!parsed.success) redirect(`/dashboard/corrective-actions/${correctiveActionId}?error=validation`);
 
   const supabase = await createSupabaseServerClient();
-
   const now = new Date().toISOString();
 
   const { error } = await supabase
@@ -266,7 +223,7 @@ export async function submitClosureApproval(formData: FormData) {
       closure_approved_at: parsed.data.closureApproval === "approved" ? now : null,
       status: parsed.data.closureApproval === "approved" ? "closed" : "effectiveness_review",
       updated_at: now,
-    } as any)
+    })
     .eq("id", correctiveActionId)
     .eq("organization_id", context.organization.id);
 
@@ -280,19 +237,14 @@ export async function submitClosureApproval(formData: FormData) {
 
 export async function deleteEvidence(formData: FormData) {
   const context = await requireAppAccessContext();
-  if (!context.organization || context.profile.platformRole !== "platform_admin") {
+  if (!context.organization || context.profile.platformRole !== "platform_admin")
     redirect("/dashboard?error=unauthorized");
-  }
 
   const evidenceId = formData.get("evidenceId") as string;
   if (!evidenceId) redirect("/dashboard/evidence?error=missing_id");
 
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase
-    .from("evidence")
-    .delete()
-    .eq("id", evidenceId)
-    .eq("organization_id", context.organization.id);
+  const { error } = await supabase.from("evidence").delete().eq("id", evidenceId).eq("organization_id", context.organization.id);
 
   if (error) redirect("/dashboard/evidence?error=delete_failed");
 
