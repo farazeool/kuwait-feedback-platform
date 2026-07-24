@@ -2,10 +2,11 @@ import { PublicSurveyForm } from "@/components/feedback/public-survey-form";
 import { QuickFeedbackForm } from "@/components/feedback/quick-feedback-form";
 import { createPublicFeedbackSession, getPublicSurvey } from "@/features/public-feedback/server";
 
-export default async function FeedbackPage({ params, searchParams }: { params: Promise<{ publicId: string }>; searchParams: Promise<{ t?: string; ch?: string; c?: string; e?: string; r?: string }> }) {
+export default async function FeedbackPage({ params, searchParams }: { params: Promise<{ publicId: string }>; searchParams: Promise<{ t?: string; d?: string; ch?: string; c?: string; e?: string; r?: string }> }) {
   const { publicId } = await params;
   const sp = await searchParams;
   const touchpointToken = sp.t;
+  const distributionToken = sp.d;
   const channel = sp.ch;
   const campaignId = sp.c;
   const employeeName = sp.e;
@@ -28,7 +29,7 @@ export default async function FeedbackPage({ params, searchParams }: { params: P
   const session = createPublicFeedbackSession();
 
   if (qfConfig?.is_enabled) {
-    return <QuickFeedbackForm survey={survey} config={qfConfig} {...session} touchpointToken={touchpointToken} channel={channel} campaignId={campaignId} employeeName={employeeName} referenceNumber={referenceNumber} />;
+    return <QuickFeedbackForm survey={survey} config={qfConfig} {...session} touchpointToken={touchpointToken} channel={channel} campaignId={campaignId} employeeName={employeeName} referenceNumber={referenceNumber} distributionToken={distributionToken} />;
   }
 
   return <PublicSurveyForm survey={survey} {...session} touchpointToken={touchpointToken} />;

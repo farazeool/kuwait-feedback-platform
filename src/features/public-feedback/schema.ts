@@ -87,6 +87,8 @@ export const submissionPayloadSchema = z.object({
   sourceIdentifier: z.string().max(100).optional(),
   employeeReference: z.string().max(100).optional(),
   interactionReference: z.string().max(100).optional(),
+  // Distribution link public token — links response to the exact distribution assignment
+  distributionToken: z.string().min(24).max(128).optional(),
   // Quick feedback specific — sent instead of answers when feedbackMode is "quick"
   quickRating: z.number().int().min(1).max(5).optional(),
   quickCategories: z.array(z.string()).max(6).optional(),

@@ -21,6 +21,7 @@ export interface QuickFeedbackFormProps {
   campaignId?: string;
   employeeName?: string;
   referenceNumber?: string;
+  distributionToken?: string;
   kioskMode?: boolean;
   onKioskComplete?: (success: boolean) => void;
 }
@@ -43,6 +44,7 @@ export function QuickFeedbackForm({
   campaignId,
   employeeName,
   referenceNumber,
+  distributionToken,
   kioskMode = false,
   onKioskComplete,
 }: QuickFeedbackFormProps) {
@@ -115,6 +117,7 @@ export function QuickFeedbackForm({
         completionMs,
       };
       if (touchpointToken) body.touchpointToken = touchpointToken;
+      if (distributionToken) body.distributionToken = distributionToken;
       if (campaignId) body.campaignId = campaignId;
       if (employeeName) body.employeeName = employeeName;
       if (referenceNumber) body.referenceNumber = referenceNumber;

@@ -77,6 +77,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     p_source_identifier: parsed.data.sourceIdentifier ?? undefined,
     p_employee_reference: parsed.data.employeeReference ?? undefined,
     p_interaction_reference: parsed.data.interactionReference ?? undefined,
+    p_distribution_public_token: parsed.data.distributionToken ?? undefined,
   });
 
   if (error) {
@@ -92,6 +93,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     await supabase.rpc("update_quick_feedback_rating" as never, {
       p_response_id: result.response_id,
       p_rating: parsed.data.quickRating,
+    } as never);
+  }
+
+  // Record distribution conversion for traceability
+  if (!result?.duplicate && result?.response_id && parsed.data.distributionToken) {
+    await supabase.rpc("record_distribution_conversion" as never, {
+      p_public_token: parsed.data.distributionToken,
+      p_response_id: result.response_id,
     } as never);
   }
 

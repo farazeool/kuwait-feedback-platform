@@ -46,9 +46,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 
   // Build redirect URL with attribution
+  // d = distribution public token, t = touchpoint token (separate concepts)
   const feedbackPath = `/feedback/${slug}`;
   const qp = new URLSearchParams();
-  qp.set("t", token);
+  qp.set("d", token);
   if (channel) qp.set("ch", channel);
   if (campaignId) qp.set("c", campaignId);
   if (employeeId) qp.set("e", employeeId);
