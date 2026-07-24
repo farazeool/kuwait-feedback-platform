@@ -78,6 +78,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     p_employee_reference: parsed.data.employeeReference ?? undefined,
     p_interaction_reference: parsed.data.interactionReference ?? undefined,
     p_distribution_public_token: parsed.data.distributionToken ?? undefined,
+    p_quick_rating: parsed.data.quickRating ?? undefined,
   });
 
   if (error) {
@@ -87,22 +88,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
   const result = data as { response_id?: string; duplicate?: boolean } | null;
   logEvent("public_feedback_accepted", { publicId, duplicate: Boolean(result?.duplicate) });
-
-  // For quick feedback submissions, set the overall_rating from the quickRating value
-  if (!result?.duplicate && parsed.data.feedbackMode === "quick" && parsed.data.quickRating !== undefined && result?.response_id) {
-    await supabase.rpc("update_quick_feedback_rating" as never, {
-      p_response_id: result.response_id,
-      p_rating: parsed.data.quickRating,
-    } as never);
-  }
-
-  // Record distribution conversion for traceability
-  if (!result?.duplicate && result?.response_id && parsed.data.distributionToken) {
-    await supabase.rpc("record_distribution_conversion" as never, {
-      p_public_token: parsed.data.distributionToken,
-      p_response_id: result.response_id,
-    } as never);
-  }
 
   return NextResponse.json({ ok: true, duplicate: Boolean(result?.duplicate) }, { status: result?.duplicate ? 200 : 201 });
 }

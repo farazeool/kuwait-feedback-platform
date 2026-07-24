@@ -6,14 +6,8 @@ import { createSupabaseAnonymousClient } from "@/lib/supabase/anonymous";
 import { publicSurveySchema } from "@/features/public-feedback/schema";
 import type { PublicSurvey } from "@/features/public-feedback/schema";
 
-export interface QuickFeedbackSurvey extends PublicSurvey {
-  quick_feedback_enabled: boolean;
-  quick_feedback_rating_style: string;
-  quick_feedback_positive_threshold: number;
-  quick_feedback_negative_threshold: number;
-  quick_feedback_categories: Array<{ id: string; label_en: string; label_ar: string }>;
-  escalation_enabled: boolean;
-}
+// Fields are now part of PublicSurvey via the updated publicSurveySchema
+export type QuickFeedbackSurvey = PublicSurvey;
 
 export async function getPublicQuickFeedbackSurvey(publicId: string): Promise<QuickFeedbackSurvey | null> {
   if (!/^[a-zA-Z0-9-]{24,128}$/.test(publicId)) return null;
@@ -44,7 +38,7 @@ export async function getPublicQuickFeedbackSurvey(publicId: string): Promise<Qu
       branding: { ...parsed.data.organization.branding, logo_url: signed?.signedUrl ?? null },
     },
     quick_feedback_enabled: true,
-    quick_feedback_rating_style: (raw.quick_feedback_rating_style as string) ?? "emoji",
+    quick_feedback_rating_style: ((raw.quick_feedback_rating_style as string) ?? "emoji") as "emoji" | "star" | "numeric",
     quick_feedback_positive_threshold: (raw.quick_feedback_positive_threshold as number) ?? 4,
     quick_feedback_negative_threshold: (raw.quick_feedback_negative_threshold as number) ?? 3,
     quick_feedback_categories: (raw.quick_feedback_categories as Array<{ id: string; label_en: string; label_ar: string }>) ?? [],

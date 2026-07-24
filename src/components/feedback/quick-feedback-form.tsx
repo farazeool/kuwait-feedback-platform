@@ -119,8 +119,8 @@ export function QuickFeedbackForm({
       if (touchpointToken) body.touchpointToken = touchpointToken;
       if (distributionToken) body.distributionToken = distributionToken;
       if (campaignId) body.campaignId = campaignId;
-      if (employeeName) body.employeeName = employeeName;
-      if (referenceNumber) body.referenceNumber = referenceNumber;
+      if (employeeName) body.employeeReference = employeeName;
+      if (referenceNumber) body.interactionReference = referenceNumber;
       if (concern) body.quickCategories = [concern];
       if (commentText?.trim()) body.quickComment = commentText.trim();
 

@@ -63,6 +63,16 @@ export const publicSurveySchema = z.object({
   location: z.object({ name: localizedSchema }),
   rating_scales: z.record(z.string(), ratingScaleSchema).optional().default({}),
   questions: z.array(publicQuestionSchema).min(1).max(50),
+  // Quick Feedback configuration (added in CX Channels expansion)
+  quick_feedback_enabled: z.boolean().optional().default(false),
+  quick_feedback_rating_style: z.enum(["emoji", "star", "numeric"]).optional().default("emoji"),
+  quick_feedback_positive_threshold: z.number().int().min(1).max(5).optional().default(4),
+  quick_feedback_negative_threshold: z.number().int().min(1).max(5).optional().default(3),
+  quick_feedback_categories: z
+    .array(z.object({ id: z.string(), label_en: z.string(), label_ar: z.string() }))
+    .optional()
+    .default([]),
+  escalation_enabled: z.boolean().optional().default(false),
 });
 
 const answerSchema = z.object({
@@ -90,6 +100,7 @@ export const submissionPayloadSchema = z.object({
   // Distribution link public token — links response to the exact distribution assignment
   distributionToken: z.string().min(24).max(128).optional(),
   // Quick feedback specific — sent instead of answers when feedbackMode is "quick"
+  completionMs: z.number().int().min(0).max(86400000).optional(),
   quickRating: z.number().int().min(1).max(5).optional(),
   quickCategories: z.array(z.string()).max(6).optional(),
   quickComment: z.string().max(1000).optional(),
