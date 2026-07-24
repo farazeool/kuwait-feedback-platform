@@ -63,7 +63,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     userAgent: request.headers.get("user-agent") ?? "unknown",
     acceptLanguage: request.headers.get("accept-language") ?? "",
   });
-  const supabase = createSupabaseAnonymousClient();
+  const supabase = createSupabaseAnonymousClient() as never as { rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }> };
   const { data, error } = await supabase.rpc("submit_protected_survey_response", {
     p_public_slug: publicId,
     p_locale: parsed.data.locale,
@@ -72,14 +72,29 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     p_fingerprint_hash: fingerprint,
     p_channel: parsed.data.channel ?? "web",
     p_touchpoint_token: parsed.data.touchpointToken ?? undefined,
+    p_feedback_mode: parsed.data.feedbackMode ?? "standard",
+    p_campaign_id: parsed.data.campaignId ?? undefined,
+    p_source_identifier: parsed.data.sourceIdentifier ?? undefined,
+    p_employee_reference: parsed.data.employeeReference ?? undefined,
+    p_interaction_reference: parsed.data.interactionReference ?? undefined,
   });
 
   if (error) {
-    logEvent("public_feedback_rejected", { publicId, reason: error.code === "P0001" ? "rate_limit" : "database_validation" });
-    return genericError(error.code === "P0001" ? 429 : 400);
+    const err = error as { code?: string };
+    logEvent("public_feedback_rejected", { publicId, reason: err.code === "P0001" ? "rate_limit" : "database_validation" });
+    return genericError(err.code === "P0001" ? 429 : 400);
   }
-  const result = data as { duplicate?: boolean } | null;
+  const result = data as { response_id?: string; duplicate?: boolean } | null;
   logEvent("public_feedback_accepted", { publicId, duplicate: Boolean(result?.duplicate) });
+
+  // For quick feedback submissions, set the overall_rating from the quickRating value
+  if (!result?.duplicate && parsed.data.feedbackMode === "quick" && parsed.data.quickRating !== undefined && result?.response_id) {
+    await supabase.rpc("update_quick_feedback_rating" as never, {
+      p_response_id: result.response_id,
+      p_rating: parsed.data.quickRating,
+    } as never);
+  }
+
   return NextResponse.json({ ok: true, duplicate: Boolean(result?.duplicate) }, { status: result?.duplicate ? 200 : 201 });
 }
 

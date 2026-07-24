@@ -266,6 +266,11 @@ export function buildTemplateDraft(templateId: SurveyTemplateId, locationIds: st
     defaultLocale: "en",
     locationIds: [...locationIds],
     questions: template.questions.map((q) => toBuilderQuestion(q)),
+    quickFeedbackEnabled: false,
+    quickFeedbackRatingStyle: "emoji" as const,
+    quickFeedbackPositiveThreshold: 4,
+    quickFeedbackNegativeThreshold: 3,
+    quickFeedbackCategories: [],
   };
 }
 
@@ -302,5 +307,10 @@ export async function buildFreshProduceTemplateDraft(locationIds: string[]): Pro
     defaultLocale: "en",
     locationIds: [...locationIds],
     questions: template.questions.map((q) => toBuilderQuestion(q, concernIdBySlug)),
+    quickFeedbackEnabled: false,
+    quickFeedbackRatingStyle: "emoji" as const,
+    quickFeedbackPositiveThreshold: 4,
+    quickFeedbackNegativeThreshold: 3,
+    quickFeedbackCategories: [],
   };
 }

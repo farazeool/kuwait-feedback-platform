@@ -13,6 +13,7 @@ export type KpiFilters = {
   departmentId?: string;
   touchpointId?: string;
   channel?: string;
+  feedbackMode?: string;
 };
 
 export type KpiData = {
@@ -31,6 +32,9 @@ export type KpiData = {
   response_trend: Array<{ period: string; count: number; satisfied: number; negative: number }>;
   prev_satisfaction_pct: number | null;
   prev_negative_feedback_pct: number | null;
+  // CX Channels expansion
+  quick_feedback_count?: number;
+  quick_followup_count?: number;
 };
 
 export async function getKpiDashboard(filters: KpiFilters = {}) {
@@ -56,6 +60,7 @@ export async function getKpiDashboard(filters: KpiFilters = {}) {
     ...(filters.departmentId ? { p_department_id: filters.departmentId } : {}),
     ...(filters.touchpointId ? { p_touchpoint_id: filters.touchpointId } : {}),
     ...(filters.channel ? { p_channel: filters.channel } : {}),
+    ...(filters.feedbackMode ? { p_feedback_mode: filters.feedbackMode } : {}),
   });
   if (error) {
     const message = [

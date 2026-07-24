@@ -59,6 +59,23 @@ export const surveyDraftSchema = z.object({
   defaultLocale: z.enum(["en", "ar"]).default("en"),
   locationIds: z.array(z.string().uuid()).min(1).max(20),
   questions: z.array(surveyBuilderQuestionSchema).max(50),
+  // Quick feedback configuration
+  quickFeedbackEnabled: z.boolean().optional().default(false),
+  quickFeedbackRatingStyle: z.enum(["emoji", "star", "numeric"]).optional().default("emoji"),
+  quickFeedbackPositiveThreshold: z.number().int().min(1).max(5).optional().default(4),
+  quickFeedbackNegativeThreshold: z.number().int().min(1).max(5).optional().default(3),
+  quickFeedbackCategories: z
+    .array(z.object({ id: z.string(), labelEn: z.string().max(120), labelAr: z.string().max(120) }))
+    .max(10)
+    .optional()
+    .default([
+      { id: "waiting_time", labelEn: "Waiting time", labelAr: "وقت الانتظار" },
+      { id: "staff", labelEn: "Staff", labelAr: "الموظفين" },
+      { id: "cleanliness", labelEn: "Cleanliness", labelAr: "النظافة" },
+      { id: "product", labelEn: "Product", labelAr: "المنتج" },
+      { id: "service", labelEn: "Service", labelAr: "الخدمة" },
+      { id: "other", labelEn: "Other", labelAr: "أخرى" },
+    ]),
 });
 
 export const surveyPublicationSchema = surveyDraftSchema.extend({

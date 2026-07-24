@@ -40,6 +40,11 @@ export const DASHBOARD_NAVIGATION = [
     label: "nav.settings",
     roles: ["platform_admin", "organization_owner", "organization_admin", "quality_manager"],
   },
+  {
+    href: "/dashboard/settings/channels",
+    label: "nav.channels",
+    roles: ["platform_admin", "organization_owner", "organization_admin", "quality_manager"],
+  },
   { href: "/dashboard/account", label: "nav.account", roles: "all" },
   { href: "/platform", label: "nav.platform", roles: ["platform_admin"] },
 ] as const satisfies ReadonlyArray<{

@@ -79,8 +79,18 @@ export const submissionPayloadSchema = z.object({
   startedAt: z.number().int().positive(),
   website: z.string().max(0),
   botToken: z.string().min(1).max(4_096).optional(),
-  channel: z.enum(["qr", "kiosk", "web"]).optional(),
+  channel: z.enum(["qr", "kiosk", "web", "email", "walk_in", "website", "phone", "whatsapp", "tablet", "sms"]).optional(),
   touchpointToken: z.string().min(24).max(128).optional(),
+  // CX Channels expansion fields
+  feedbackMode: z.enum(["standard", "quick"]).optional().default("standard"),
+  campaignId: z.string().uuid().optional(),
+  sourceIdentifier: z.string().max(100).optional(),
+  employeeReference: z.string().max(100).optional(),
+  interactionReference: z.string().max(100).optional(),
+  // Quick feedback specific — sent instead of answers when feedbackMode is "quick"
+  quickRating: z.number().int().min(1).max(5).optional(),
+  quickCategories: z.array(z.string()).max(6).optional(),
+  quickComment: z.string().max(1000).optional(),
 }).strict();
 
 export type PublicSurvey = z.infer<typeof publicSurveySchema>;

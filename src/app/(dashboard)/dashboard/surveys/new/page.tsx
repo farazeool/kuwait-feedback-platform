@@ -21,6 +21,18 @@ function blankDraft(locationIds: string[]) {
     defaultLocale: "en" as const,
     locationIds,
     questions: [],
+    quickFeedbackEnabled: false,
+    quickFeedbackRatingStyle: "emoji" as const,
+    quickFeedbackPositiveThreshold: 4,
+    quickFeedbackNegativeThreshold: 3,
+    quickFeedbackCategories: [
+      { id: "waiting_time", labelEn: "Waiting time", labelAr: "وقت الانتظار" },
+      { id: "staff", labelEn: "Staff", labelAr: "الموظفين" },
+      { id: "cleanliness", labelEn: "Cleanliness", labelAr: "النظافة" },
+      { id: "product", labelEn: "Product", labelAr: "المنتج" },
+      { id: "service", labelEn: "Service", labelAr: "الخدمة" },
+      { id: "other", labelEn: "Other", labelAr: "أخرى" },
+    ],
   };
 }
 
