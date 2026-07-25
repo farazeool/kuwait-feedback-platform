@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Kuwait Feedback Platform — Deployment & Operations Guide</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+  :root {
+    --brand: #2563eb;
+    --brand-dark: #1d4ed8;
+    --accent: #f59e0b;
+    --foreground: #0f172a;
+    --muted: #64748b;
+    --background: #ffffff;
+    --surface: #f8fafc;
+    --border: #e2e8f0;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --error: #ef4444;
+    --radius: 12px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--foreground);
+    background: var(--background);
+    line-height: 1.7;
+    font-size: 10.5pt;
+  }
+
+  .cover {
+    page-break-after: always;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #064e3b 0%, #059669 50%, #10b981 100%);
+    color: white;
+    text-align: center;
+    padding: 60px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 30% 50%, rgba(255,255,255,0.08) 0%, transparent 50%),
+                radial-gradient(circle at 70% 30%, rgba(255,255,255,0.05) 0%, transparent 40%);
+  }
+  .cover-content { position: relative; z-index: 1; max-width: 700px; }
+  .cover-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.25);
+    padding: 8px 20px;
+    border-radius: 100px;
+    font-size: 11pt;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    margin-bottom: 30px;
+  }
+  .cover h1 {
+    font-size: 34pt;
+    font-weight: 800;
+    line-height: 1.15;
+    margin-bottom: 16px;
+    letter-spacing: -1px;
+  }
+  .cover h1 span { color: #6ee7b7; }
+  .cover-subtitle {
+    font-size: 13pt;
+    opacity: 0.9;
+    line-height: 1.6;
+    margin-bottom: 30px;
+  }
+  .cover-meta {
+    display: flex;
+    gap: 30px;
+    justify-content: center;
+    font-size: 10pt;
+    opacity: 0.75;
+  }
+
+  .toc { page-break-after: always; padding: 50px 60px; }
+  .toc h2 { font-size: 22pt; font-weight: 700; margin-bottom: 30px; color: #059669; }
+  .toc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 40px; }
+  .toc-item { display: flex; gap: 12px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--border); }
+  .toc-num { font-weight: 700; color: #059669; min-width: 28px; font-size: 11pt; }
+  .toc-title { font-weight: 500; font-size: 10pt; }
+
+  .content { padding: 50px 60px; max-width: 920px; margin: 0 auto; }
+
+  h2 { font-size: 20pt; font-weight: 700; color: #059669; margin-top: 50px; margin-bottom: 20px; padding-bottom: 8px; border-bottom: 3px solid #059669; }
+  h3 { font-size: 15pt; font-weight: 600; margin-top: 35px; margin-bottom: 14px; color: var(--foreground); }
+  h4 { font-size: 12pt; font-weight: 600; margin-top: 25px; margin-bottom: 10px; color: var(--foreground); }
+
+  p { margin-bottom: 12px; }
+  ul, ol { margin-bottom: 14px; padding-left: 24px; }
+  li { margin-bottom: 6px; }
+
+  .info-box {
+    background: #eff6ff;
+    border-left: 4px solid var(--brand);
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin: 20px 0;
+  }
+  .info-box strong { color: var(--brand); }
+
+  .warning-box {
+    background: #fffbeb;
+    border-left: 4px solid var(--warning);
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin: 20px 0;
+  }
+
+  .success-box {
+    background: #f0fdf4;
+    border-left: 4px solid var(--success);
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin: 20px 0;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 9.5pt;
+  }
+  th {
+    background: #059669;
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+  }
+  td {
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  tr:nth-child(even) td { background: var(--surface); }
+
+  .step-list { counter-reset: step; list-style: none; padding: 0; }
+  .step-list li {
+    counter-increment: step;
+    padding: 14px 16px 14px 50px;
+    position: relative;
+    background: var(--surface);
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border: 1px solid var(--border);
+  }
+  .step-list li::before {
+    content: counter(step);
+    position: absolute;
+    left: 12px;
+    top: 14px;
+    width: 26px; height: 26px;
+    background: #059669;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10pt;
+    font-weight: 700;
+  }
+
+  .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 18px 0; }
+  .role-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    background: white;
+  }
+  .role-card h4 { margin-top: 0; color: #059669; font-size: 12pt; }
+
+  .feature-box {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin: 20px 0;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .feature-box h4 { margin-top: 0; color: #059669; font-size: 13pt; }
+
+  .stat-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin: 18px 0; }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    text-align: center;
+  }
+  .stat-value { font-size: 22pt; font-weight: 800; color: #059669; }
+  .stat-label { font-size: 8.5pt; color: var(--muted); margin-top: 4px; }
+
+  .compare-table td:first-child { font-weight: 500; background: var(--surface); }
+  .compare-table .before { color: var(--error); }
+  .compare-table .after { color: var(--success); }
+
+  .callout {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    color: white;
+    border-radius: var(--radius);
+    padding: 24px;
+    margin: 20px 0;
+  }
+  .callout h4 { color: white; margin-top: 0; }
+  .callout p { opacity: 0.9; }
+
+  .pb { page-break-after: always; }
+
+  .footer {
+    margin-top: 50px;
+    padding-top: 20px;
+    border-top: 2px solid var(--border);
+    font-size: 9pt;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .diagram-box {
+    background: #ecfdf5;
+    border: 2px solid #a7f3d0;
+    border-radius: var(--radius);
+    padding: 30px;
+    text-align: center;
+    margin: 20px 0;
+    font-family: 'Courier New', monospace;
+    font-size: 9pt;
+    line-height: 1.8;
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  .checklist { list-style: none; padding: 0; }
+  .checklist li {
+    padding: 8px 0 8px 32px;
+    position: relative;
+  }
+  .checklist li::before {
+    content: '☐';
+    position: absolute;
+    left: 0;
+    font-size: 14pt;
+    color: #059669;
+  }
+
+  .cost-table { width: auto; }
+  .cost-table td { text-align: right; }
+  .cost-table td:first-child { text-align: left; }
+  .cost-total { font-weight: 700; background: #ecfdf5 !important; }
+
+  @media print {
+    .cover { min-height: 100vh; }
+    .pb { page-break-after: always; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="cover-content">
+    <div class="cover-badge">🛠️ Version 1.0.0-beta.1</div>
+    <h1>Complete Real-World<br>Deployment, Integration<br>&amp; <span>Operations Guide</span></h1>
+    <p class="cover-subtitle">
+      From source code to working business system<br>
+      <span style="font-size: 10pt; opacity: 0.8;">iPad kiosks · Cloud hosting · Network setup · Staff training · Maintenance</span>
+    </p>
+    <p style="font-size: 11pt; line-height: 1.8; margin-bottom: 30px;">
+      How to take the Kuwait Feedback Platform from a development project<br>
+      and deploy it into a real business environment with physical kiosks.
+    </p>
+    <div class="cover-meta">
+      <span>📅 July 2026</span>
+      <span>📍 Kuwait</span>
+      <span>📄 1,000+ lines</span>
+    </div>
+  </div>
+</div>
+
+<div class="toc">
+  <h2>📖 Table of Contents</h2>
+  <div class="toc-grid">
+    <div class="toc-item"><span class="toc-num">1</span><span class="toc-title">From Development Project to Live System</span></div>
+    <div class="toc-item"><span class="toc-num">2</span><span class="toc-title">iPad Kiosk Implementation</span></div>
+    <div class="toc-item"><span class="toc-num">3</span><span class="toc-title">Kiosk Mode Configuration</span></div>
+    <div class="toc-item"><span class="toc-num">4</span><span class="toc-title">Network Architecture</span></div>
+    <div class="toc-item"><span class="toc-num">5</span><span class="toc-title">Business Hardware Integration</span></div>
+    <div class="toc-item"><span class="toc-num">6</span><span class="toc-title">Installation Checklist</span></div>
+    <div class="toc-item"><span class="toc-num">7</span><span class="toc-title">Staff Training Guide</span></div>
+    <div class="toc-item"><span class="toc-num">8</span><span class="toc-title">Customer Experience Flow</span></div>
+    <div class="toc-item"><span class="toc-num">9</span><span class="toc-title">Maintenance Plan</span></div>
+    <div class="toc-item"><span class="toc-num">10</span><span class="toc-title">Scaling to Multiple Locations</span></div>
+    <div class="toc-item"><span class="toc-num">11</span><span class="toc-title">Cost Breakdown</span></div>
+  </div>
+</div>
+
+<div class="content">
+
+<!-- SECTION 1 -->
+<h2>1. From Development Project to Live Business System</h2>
+
+<h3>The Big Picture</h3>
+<p>Right now, you have <strong>source code</strong> — a set of instructions that tell a computer how to run the feedback platform. But source code on a laptop is not a working system. To make it available to real customers in real businesses, you need four things:</p>
+
+<div class="stat-row">
+  <div class="stat-card"><div class="stat-value">☁️</div><div class="stat-label">Host the application</div></div>
+  <div class="stat-card"><div class="stat-value">🗄️</div><div class="stat-label">Host the database</div></div>
+  <div class="stat-card"><div class="stat-value">🔗</div><div class="stat-label">Configure them to talk</div></div>
+  <div class="stat-card"><div class="stat-value">📟</div><div class="stat-label">Set up kiosk hardware</div></div>
+</div>
+
+<h3>Step 1: Where Does the Application Live?</h3>
+<p>The application — the website customers and managers see — must run on a <strong>server</strong>: a computer that stays on 24/7 and is connected to the internet.</p>
+
+<table>
+  <tr><th>Option</th><th>Pros</th><th>Cons</th><th>Monthly Cost</th><th>Best For</th></tr>
+  <tr>
+    <td><strong>☁️ Cloud Hosting (Recommended)</strong><br>Vercel, Netlify, Fly.io</td>
+    <td>No hardware to buy, auto-scaling, built-in HTTPS, easy rollbacks</td>
+    <td>Monthly cost, requires internet</td>
+    <td>20–100 KWD</td>
+    <td>Most businesses</td>
+  </tr>
+  <tr>
+    <td><strong>🖥️ VPS</strong><br>DigitalOcean, Hetzner</td>
+    <td>Full control, predictable cost</td>
+    <td>Must manage security/backups yourself</td>
+    <td>10–50 KWD</td>
+    <td>Businesses with IT team</td>
+  </tr>
+  <tr>
+    <td><strong>🏢 On-Premises Server</strong></td>
+    <td>Data never leaves your building, no monthly fee</td>
+    <td>Buy hardware, handle power/cooling/backups</td>
+    <td>0 (500–2,000 KWD upfront)</td>
+    <td>Large enterprises with strict data rules</td>
+  </tr>
+</table>
+
+<div class="info-box">
+<strong>💡 Recommendation:</strong> Use <strong>Vercel</strong> for the frontend and <strong>Supabase</strong> for the database. Both offer free tiers with easy upgrades. The platform was built specifically for these services.
+</div>
+
+<h3>Step 2: How Is the Database Hosted?</h3>
+<p>Customer feedback data lives in a <strong>PostgreSQL database</strong> — like a giant smart spreadsheet that organizes everything into tables.</p>
+
+<table>
+  <tr><th>Data Type</th><th>Where It's Stored</th><th>How Long</th></tr>
+  <tr><td>Customer feedback</td><td>Database</td><td>Indefinitely (until you delete)</td></tr>
+  <tr><td>Survey questions</td><td>Database</td><td>Indefinitely</td></tr>
+  <tr><td>User accounts</td><td>Database (auth.users)</td><td>Until account is deleted</td></tr>
+  <tr><td>Organization settings</td><td>Database</td><td>Until organization is deleted</td></tr>
+  <tr><td>Logos and images</td><td>Supabase Storage bucket</td><td>Until deleted</td></tr>
+  <tr><td>Audit logs</td><td>Database</td><td>Indefinitely</td></tr>
+</table>
+
+<div class="info-box"><strong>📌 Data location:</strong> Your data is stored on <strong>AWS servers</strong> in the region you choose (recommend Europe or Middle East for Kuwait). Supabase automatically backs up daily. Paid plans offer point-in-time recovery.</div>
+
+<h3>Step 3: How Does the iPad Access the Application?</h3>
+<p>The iPad does NOT store the application. It acts like a <strong>window</strong> into the cloud. Here's the path data travels:</p>
+
+<div class="diagram-box">
+iPad (kiosk mode)
+    ↓ opens Safari browser
+    ↓ loads https://feedback.yourcompany.com/kiosk/salmiya-survey
+    ↓ page is served FROM the cloud server
+    ↓ customer taps answers ON the iPad
+    ↓ data is sent TO the cloud server
+    ↓ stored IN the database
+    ↓ manager sees it ON their computer
+</div>
+
+<div class="success-box">
+<strong>✅ Why this matters:</strong> If the iPad breaks, feedback data is NOT lost. If you replace the iPad, just open the same URL. Updates happen instantly — no need to touch each iPad.
+</div>
+
+<div class="callout">
+<h4>📱 Any device works</h4>
+<p>The kiosk page works on any device with a browser — iPad, iPhone, Android tablet, laptop, or desktop. Customers can also access the survey from their own phone via QR code.</p>
+</div>
+
+<div class="pb"></div>
+
+<!-- SECTION 2 -->
+<h2>2. iPad Kiosk Implementation</h2>
+
+<h3>Hardware Requirements</h3>
+
+<table>
+  <tr><th>Item</th><th>Purpose</th><th>Estimated Cost (KWD)</th></tr>
+  <tr><td><strong>iPad (9th gen or newer)</strong></td><td>Runs the kiosk display</td><td>100–200</td></tr>
+  <tr><td><strong>iPad security enclosure or stand</strong></td><td>Protects iPad from theft/damage</td><td>20–60</td></tr>
+  <tr><td><strong>Power cable + extension</strong></td><td>Keeps iPad charged 24/7</td><td>5–10</td></tr>
+  <tr><td><strong>WiFi connection</strong></td><td>Connects to the internet</td><td>Included in business internet</td></tr>
+  <tr><td><strong>QR code cards (backup)</strong></td><td>Customers use their own phone if kiosk is down</td><td>5–10</td></tr>
+</table>
+
+<h3>Recommended Enclosure Types</h3>
+
+<table>
+  <tr><th>Type</th><th>Best For</th><th>Description</th></tr>
+  <tr><td><strong>Counter-top stand with lock</strong></td><td>Cash register counters</td><td>Angled stand with lockable compartment, slot for charging cable</td></tr>
+  <tr><td><strong>Wall-mount enclosure</strong></td><td>Near exits or entrance walls</td><td>Secure box mounted to wall, iPad behind glass, key-locked</td></tr>
+  <tr><td><strong>Table stand with tamper-proof screws</strong></td><td>Tables or podiums</td><td>Adjustable arm with security screws, can swivel</td></tr>
+</table>
+
+<h3>Step-by-Step iPad Setup</h3>
+
+<h4>Step 1: Prepare the iPad</h4>
+<ol class="step-list">
+  <li>Unbox the iPad and charge it to 100%</li>
+  <li>Turn it on and connect to your business WiFi</li>
+  <li>Sign in with an Apple ID (dedicated business Apple ID recommended)</li>
+  <li>Update to the latest iPadOS version (Settings → General → Software Update)</li>
+  <li>Disable Auto-Lock: Settings → Display & Brightness → Auto-Lock → Never</li>
+</ol>
+
+<h4>Step 2: Configure the Kiosk (Free Method — Guided Access)</h4>
+<ol class="step-list">
+  <li>Go to <strong>Settings → Accessibility → Guided Access</strong></li>
+  <li>Toggle <strong>Guided Access</strong> ON</li>
+  <li>Tap <strong>Passcode Settings</strong> → <strong>Set Guided Access Passcode</strong> (4-digit code — write this down!)</li>
+  <li>Toggle <strong>Display Auto-Lock</strong> to keep screen on</li>
+  <li>Open <strong>Safari</strong> and go to: <code>https://feedback.yourcompany.com/kiosk/[survey-slug]</code></li>
+  <li>Triple-click the <strong>Home button</strong> (or <strong>Side button</strong> on newer iPads)</li>
+  <li>Tap <strong>Start</strong> in the top-right corner</li>
+</ol>
+
+<p>The iPad is now locked into the survey. Customers cannot close Safari, open other apps, or access settings.</p>
+
+<h4>Step 3: Physical Installation</h4>
+<ol class="step-list">
+  <li>Place the iPad into the enclosure</li>
+  <li>Connect the charging cable and route it through the cable slot</li>
+  <li>Lock the enclosure with the key</li>
+  <li>Mount the enclosure at the chosen location</li>
+  <li>Verify the screen is visible and at a comfortable height</li>
+  <li>Test: walk up, submit feedback, confirm it works</li>
+</ol>
+
+<div class="info-box">
+<strong>🔑 Important:</strong> Keep the Guided Access passcode and enclosure key in a safe place. Create a shared note in your company password manager. Both employees and managers need to know the passcode for troubleshooting.
+</div>
+
+<div class="pb"></div>
+
+<!-- SECTION 3 -->
+<h2>3. Kiosk Mode Configuration</h2>
+
+<h3>Apple's Guided Access (Free, Built-in)</h3>
+<p>Guided Access is a feature built into every iPad that locks the device to a single app.</p>
+
+<table>
+  <tr><th>What It Prevents</th><th>What It Does NOT Prevent</th></tr>
+  <tr><td>✅ Closing the browser</td><td>❌ Force-restart (hold Power + Home) — iPad restarts to lock screen</td></tr>
+  <tr><td>✅ Opening other apps</td><td>❌ Physical damage — use an enclosure</td></tr>
+  <tr><td>✅ Accessing Settings</td><td>❌ Disconnecting power — use a lockable enclosure</td></tr>
+  <tr><td>✅ Changing WiFi</td><td>❌</td></tr>
+  <tr><td>✅ Using Home button</td><td>❌</td></tr>
+</table>
+
+<h3>Kiosk Mode Comparison</h3>
+<table>
+  <tr><th>Feature</th><th>Guided Access (Free)</th><th>Kiosk Browser App</th><th>Full MDM</th></tr>
+  <tr><td>Cost</td><td>Free</td><td>10–50 KWD one-time</td><td>3–5 KWD/month/device</td></tr>
+  <tr><td>Setup time per iPad</td><td>5 minutes</td><td>10 minutes</td><td>5 minutes (after initial config)</td></tr>
+  <tr><td>Prevents app switching</td><td>✅</td><td>✅</td><td>✅</td></tr>
+  <tr><td>Hides browser controls</td><td>⚠️ (can block touch)</td><td>✅</td><td>✅</td></tr>
+  <tr><td>Multi-device management</td><td>❌ Manual</td><td>⚠️ Some support</td><td>✅ Central console</td></tr>
+  <tr><td>Remote lock/wipe</td><td>❌</td><td>❌</td><td>✅</td></tr>
+  <tr><td><strong>Recommended for</strong></td><td>Single iPad, testing</td><td>1–5 kiosks</td><td>5+ kiosks, enterprise</td></tr>
+</table>
+
+<div class="info-box"><strong>For multi-branch deployments:</strong> Use an MDM like Jamf Now (4 KWD/month/device) or Scalefusion (3 KWD/month/device). This allows remote configuration and monitoring of all kiosks from a single dashboard.</div>
+
+<div class="pb"></div>
+
+<!-- SECTION 4 -->
+<h2>4. Network Architecture</h2>
+
+<h3>Simple Data Flow Diagram</h3>
+
+<div class="diagram-box">
+CUSTOMER                     INTERNET                        CLOUD
+   │                            │                              │
+   ▼                            ▼                              ▼
+┌──────────┐              ┌────────────┐              ┌───────────────┐
+│ iPad      │──WiFi──▶    │ Your Router │──Internet──▶│ Vercel         │
+│ (Kiosk)  │              │ (Business) │              │ (App Server)   │
+└──────────┘              └────────────┘              └───────┬───────┘
+                                                               │
+                                                               ▼
+┌──────────┐              ┌────────────┐              ┌───────────────┐
+│ Manager's │──WiFi──▶    │ Internet   │──Internet──▶│ Supabase       │
+│ PC/Phone │              │            │              │ (Database)     │
+└──────────┘              └────────────┘              └───────────────┘
+</div>
+
+<h3>What Happens When a Customer Taps "Submit"?</h3>
+
+<ol class="step-list">
+  <li><strong>iPad sends data</strong> — The customer's answers are packaged into a secure HTTPS request (like a sealed envelope) containing the answers, survey ID, and fingerprint. (0.1–1 second)</li>
+  <li><strong>Data travels</strong> — The request goes from iPad → WiFi → router → internet → Vercel server. (0.2–1 second)</li>
+  <li><strong>Server validates</strong> — The server checks the survey is active, all required questions are answered, and this isn't a duplicate submission. (0.05–0.2 second)</li>
+  <li><strong>Database stores</strong> — A new row in <code>survey_responses</code> plus rows in <code>survey_answers</code> for each question. (0.05–0.2 second)</li>
+  <li><strong>Alert check</strong> — The database automatically checks if the rating is below the threshold and creates an alert if needed. (0.05 second)</li>
+  <li><strong>"Thank You" displayed</strong> — The server sends back a success response. The iPad shows the thank-you message. (0.1 second)</li>
+  <li><strong>Kiosk resets</strong> — After 3–5 seconds, the kiosk returns to the starting screen for the next customer.</li>
+  <li><strong>Manager sees it</strong> — Next time the manager logs in, the response is visible. If an alert was triggered, it appears in the Alerts section.</li>
+</ol>
+
+<div class="success-box"><strong>⏱️ Total time:</strong> From tapping Submit to seeing "Thank You" — <strong>1 to 3 seconds</strong> on a typical internet connection.</div>
+
+<div class="pb"></div>
+
+<!-- SECTION 5 -->
+<h2>5. Business Hardware Integration</h2>
+
+<div class="feature-box">
+<h4>📟 iPad Kiosk</h4>
+<table>
+  <tr><td><strong>Purpose</strong></td><td>Allow customers to submit feedback at the business location</td></tr>
+  <tr><td><strong>Connection</strong></td><td>WiFi → Internet → Cloud</td></tr>
+  <tr><td><strong>Power</strong></td><td>Connected to wall outlet 24/7 (cable routed inside enclosure)</td></tr>
+  <tr><td><strong>Daily check</strong></td><td>Is screen on? Is survey visible? Is cable connected?</td></tr>
+  <tr><td><strong>If it breaks</strong></td><td>Customer uses own phone via QR code instead. Replace iPad when possible. No data loss.</td></tr>
+  <tr><td><strong>Troubleshoot</strong></td><td>Screen black? Check power → check auto-lock → restart iPad</td></tr>
+</table>
+</div>
+
+<div class="feature-box">
+<h4>📶 Router / Business WiFi</h4>
+<table>
+  <tr><td><strong>Purpose</strong></td><td>Connect all devices to the internet</td></tr>
+  <tr><td><strong>Connection</strong></td><td>ISP → Router → WiFi → iPads/computers</td></tr>
+  <tr><td><strong>If it fails</strong></td><td>No feedback can be submitted. No dashboard access. Staff take notes manually.</td></tr>
+  <tr><td><strong>Troubleshoot</strong></td><td>Restart the router. Check ISP status. Call your internet provider.</td></tr>
+</table>
+</div>
+
+<div class="feature-box">
+<h4>💻 Manager's Workstation (PC/Laptop)</h4>
+<table>
+  <tr><td><strong>Purpose</strong></td><td>View feedback dashboard, manage surveys, respond to alerts</td></tr>
+  <tr><td><strong>Requirements</strong></td><td>Web browser, internet connection</td></tr>
+  <tr><td><strong>Setup</strong></td><td>Log into the website. Bookmark the dashboard URL.</td></tr>
+  <tr><td><strong>If it breaks</strong></td><td>Use another computer or phone browser. All data is in the cloud.</td></tr>
+</table>
+</div>
+
+<div class="feature-box">
+<h4>📺 TV Dashboard Display (Optional)</h4>
+<table>
+  <tr><td><strong>Purpose</strong></td><td>Display real-time satisfaction data on a TV in the staff area</td></tr>
+  <tr><td><strong>Setup</strong></td><td>Connect a small device (Raspberry Pi, Chromebox, Fire TV Stick) to the TV's HDMI → Open dashboard URL → Full screen → Auto-refresh every 60 seconds</td></tr>
+  <tr><td><strong>If it breaks</strong></td><td>Open the dashboard on any computer instead</td></tr>
+</table>
+</div>
+
+<div class="feature-box">
+<h4>🖨️ Printer (QR Code Cards)</h4>
+<table>
+  <tr><td><strong>Purpose</strong></td><td>Print QR code cards for tables, counters, and walls</td></tr>
+  <tr><td><strong>Usage</strong></td><td>Download QR code from platform → Print on card stock (200+ gsm) → Laminate → Place at location</td></tr>
+  <tr><td><strong>Recommendation</strong></td><td>Use a color printer. Print on thick paper. Laminate for durability.</td></tr>
+</table>
+</div>
+
+<div class="pb"></div>
+
+<!-- SECTION 6 -->
+<h2>6. Installation Checklist</h2>
+
+<h3>Pre-Installation (1–2 Weeks Before)</h3>
+<ul class="checklist">
+  <li>Select hosting provider (Vercel + Supabase)</li>
+  <li>Create accounts with hosting providers</li>
+  <li>Register domain name (e.g., feedback.yourcompany.com)</li>
+  <li>Configure DNS to point domain to hosting provider</li>
+  <li>Purchase iPad(s) and security enclosures</li>
+  <li>Ensure business internet is installed and reliable</li>
+  <li>Test WiFi coverage at kiosk location(s)</li>
+  <li>Create admin accounts in the system</li>
+  <li>Configure survey questions (bilingual — English + Arabic)</li>
+  <li>Generate QR codes and have them printed professionally</li>
+</ul>
+
+<h3>Installation Day — Cloud Setup</h3>
+<ul class="checklist">
+  <li>Deploy frontend to Vercel</li>
+  <li>Apply database migrations to Supabase</li>
+  <li>Configure environment variables (API keys, URLs, secrets)</li>
+  <li>Verify domain resolves correctly</li>
+  <li>Test HTTPS (green padlock in browser)</li>
+  <li>Create organization in the platform</li>
+  <li>Set up locations in the platform</li>
+  <li>Create and publish the first survey</li>
+  <li>Invite team members (admin, managers)</li>
+  <li>Test submission through public URL</li>
+</ul>
+
+<h3>Installation Day — Kiosk Setup</h3>
+<ul class="checklist">
+  <li>Unbox iPad and charge to 100%</li>
+  <li>Connect to WiFi</li>
+  <li>Update iPadOS to latest version</li>
+  <li>Disable auto-lock (Settings → Display → Auto-Lock → Never)</li>
+  <li>Open kiosk URL in Safari</li>
+  <li>Configure Guided Access (set passcode, start session)</li>
+  <li>Test full submission flow (rate → submit → thank you → auto-reset)</li>
+  <li>Place iPad in enclosure and lock</li>
+  <li>Connect power</li>
+  <li>Final test — walk up as a customer and submit</li>
+</ul>
+
+<h3>Installation Day — Manager Setup</h3>
+<ul class="checklist">
+  <li>Train manager on logging in and navigating the dashboard</li>
+  <li>Show manager the responses and alerts sections</li>
+  <li>Verify manager sees only their location's data</li>
+  <li>Test alert workflow (submit low rating → alert created → acknowledge → resolve)</li>
+</ul>
+
+<h3>Post-Installation (Week 1)</h3>
+<ul class="checklist">
+  <li>Monitor daily — are responses coming in?</li>
+  <li>Check for errors in server logs</li>
+  <li>Verify backups are active (Supabase does this automatically)</li>
+  <li>Adjust survey if questions are confusing</li>
+  <li>Train employees on assisting customers with the kiosk</li>
+  <li>Create a support contact for when issues arise</li>
+</ul>
+
+<div class="pb"></div>
+
+<!-- SECTION 7 -->
+<h2>7. Staff Training Guide</h2>
+
+<h3>Your Role With the Feedback System</h3>
+<p>As a staff member, your main jobs with the feedback system are:</p>
+<ol>
+  <li><strong>Keep the kiosk working</strong> — make sure customers can use it</li>
+  <li><strong>Help customers</strong> who are confused by the kiosk</li>
+  <li><strong>Keep an eye on feedback</strong> — especially negative comments</li>
+</ol>
+
+<h3>Starting Your Shift</h3>
+<table>
+  <tr><th>✓</th><th>Action</th></tr>
+  <tr><td>☐</td><td>Walk past the kiosk. Screen on? Survey showing? If yes → ✅ working.</td></tr>
+  <tr><td>☐</td><td>Log into the dashboard (managers). Open browser → go to your company URL → enter email and password.</td></tr>
+  <tr><td>☐</td><td>Check for new responses and any alerts (red badges).</td></tr>
+  <tr><td>☐</td><td>Mention the kiosk to customers: "If you'd like to tell us about your visit, tap the screen by the exit."</td></tr>
+</table>
+
+<h3>During Your Shift</h3>
+<ul>
+  <li>If a customer looks confused near the kiosk, offer help</li>
+  <li>If the screen goes dark, tap it once</li>
+  <li>If the screen is off completely, check the power cable</li>
+  <li>Report any issues to your manager</li>
+</ul>
+
+<h3>What to Do If...</h3>
+
+<div class="feature-box">
+<h4>The iPad screen is black</h4>
+<p>1. Tap the screen gently. 2. Check the power cable. 3. Press the Top button once. 4. If still off, hold Top button until Apple logo appears. 5. Wait 1 minute for it to restart. 6. If it comes back, it should show the survey automatically. 7. If not, call the manager.</p>
+</div>
+
+<div class="feature-box">
+<h4>The survey page is showing an error</h4>
+<p>1. Triple-click the Home/Side button. 2. Enter the passcode (ask your manager). 3. Tap End. 4. Open Safari. 5. Type the kiosk URL. 6. Triple-click Home/Side → tap Start. 7. Tell the manager what happened.</p>
+</div>
+
+<div class="feature-box">
+<h4>The internet stops working</h4>
+<p>1. Place the "Scan on your phone" QR code card on the kiosk stand. 2. Ask customers to scan with their personal phone (uses mobile data). 3. Notify the manager to check the router. 4. Data is not lost — responses will work again when internet returns.</p>
+</div>
+
+<div class="feature-box">
+<h4>A customer is having trouble</h4>
+<p>1. Walk over and ask if they need help. 2. Show them: "Just tap the stars, then tap Submit." 3. For Arabic speakers, show them how to switch language. 4. If the screen is not responding, wipe it clean (fingerprints block touch). 5. Hand them a QR code card to use their own phone.</p>
+</div>
+
+<div class="pb"></div>
+
+<!-- SECTION 8 -->
+<h2>8. Customer Experience Flow</h2>
+
+<h3>Complete Customer Journey</h3>
+
+<p><strong>Step 1: Customer enters the business.</strong> They have their meal, shopping, or service. The kiosk is positioned near the exit — visible but not intrusive.</p>
+
+<p><strong>Step 2: Customer notices the kiosk.</strong> The screen shows your logo, a friendly message like "How was your experience?" and the location name.</p>
+<div class="info-box"><strong>Why this screen exists:</strong> A branded, welcoming screen makes customers more likely to participate.</div>
+
+<p><strong>Step 3: Customer selects a rating.</strong> Large touch buttons appear: 5 stars (Excellent) down to 1 star (Very Poor).</p>
+<div class="info-box"><strong>Why large targets:</strong> Quick interaction works even if the customer is in a hurry, has poor eyesight, or shaky hands.</div>
+
+<p><strong>Step 4: Optional follow-up.</strong> If rating was positive → "What did you enjoy most?" (Staff, Food, Cleanliness, etc.). If rating was low → "What went wrong?" or "Any suggestions?" with a text box.</p>
+
+<p><strong>Step 5: Thank you.</strong> A checkmark or smile appears with "Thank you for your feedback!"</p>
+<div class="info-box"><strong>Why this screen exists:</strong> The customer should feel heard. A thank-you makes them more likely to give feedback again.</div>
+
+<p><strong>Step 6: Kiosk resets automatically.</strong> After 3–5 seconds, the screen returns to Step 2 for the next customer.</p>
+
+<h3>Common Customer Questions</h3>
+<table>
+  <tr><th>Customer asks</th><th>Your response</th></tr>
+  <tr><td>"What is this?"</td><td>"It's a quick way to tell us about your visit. Just tap a rating!"</td></tr>
+  <tr><td>"Is it anonymous?"</td><td>"Yes, completely. We don't ask for your name."</td></tr>
+  <tr><td>"Do I have to do this?"</td><td>"No, it's optional. But we'd love your feedback!"</td></tr>
+  <tr><td>"How do I use it?"</td><td>"Just tap the stars and follow the prompts. Takes 10 seconds."</td></tr>
+  <tr><td>"I don't have an email"</td><td>"No email needed. Just tap."</td></tr>
+  <tr><td>"Is it in Arabic?"</td><td>"Tap the Arabic button at the top and it switches over."</td></tr>
+</table>
+
+<div class="pb"></div>
+
+<!-- SECTION 9 -->
+<h2>9. Maintenance Plan</h2>
+
+<h3>Daily (2 minutes)</h3>
+<ul class="checklist">
+  <li>Check the kiosk screen is on and showing the survey</li>
+  <li>Wipe the screen with a soft cloth (fingerprints build up)</li>
+  <li>Verify the power cable is connected</li>
+  <li>Check the dashboard for any new alerts</li>
+</ul>
+
+<h3>Weekly (10 minutes)</h3>
+<ul class="checklist">
+  <li>Review all feedback from the past week</li>
+  <li>Acknowledge or resolve any open alerts</li>
+  <li>Check that response count seems reasonable for your traffic</li>
+  <li>Clean the kiosk enclosure thoroughly</li>
+  <li>Test a submission from the kiosk yourself</li>
+  <li>Check QR code cards are still in place and not damaged</li>
+</ul>
+
+<h3>Monthly (30 minutes)</h3>
+<ul class="checklist">
+  <li>Review surveys — still relevant? Need new questions?</li>
+  <li>Review team access — remove accounts of employees who left</li>
+  <li>Check database storage usage (Supabase dashboard)</li>
+  <li>Test data export (CSV) to verify backups work</li>
+  <li>Review analytics — compare this month to last month</li>
+  <li>Replace any worn or damaged QR code cards</li>
+</ul>
+
+<h3>Quarterly (1 hour)</h3>
+<ul class="checklist">
+  <li>Full user audit — review all accounts, locations, and surveys</li>
+  <li>Performance check — is the system responding quickly?</li>
+  <li>Security review — check for unusual login attempts (Supabase logs)</li>
+  <li>Verify SSL certificate is still valid (auto-renewed by Vercel)</li>
+  <li>Check iPad battery health (Settings → Battery → Battery Health)</li>
+  <li>Update iPadOS if a major version is available</li>
+  <li>Review hosting bill — is current plan still appropriate?</li>
+</ul>
+
+<h3>Software Updates</h3>
+<div class="info-box"><strong>When the platform is updated:</strong> No action needed on the iPad. The kiosk automatically loads the new version from the server. Updates are deployed by your IT team or system administrator.</div>
+
+<div class="pb"></div>
+
+<!-- SECTION 10 -->
+<h2>10. Scaling to Multiple Locations</h2>
+
+<h3>From 1 Kiosk to 100 Branches</h3>
+<p>The system was built from the start to support multi-location, multi-tenant organizations. Here's what changes as you grow:</p>
+
+<h4>Database Scaling</h4>
+<table>
+  <tr><th>Stage</th><th>Responses/Month</th><th>Plan</th></tr>
+  <tr><td>1 kiosk (start)</td><td>~150</td><td>Supabase Free (500 MB)</td></tr>
+  <tr><td>10 branches</td><td>~1,500</td><td>Supabase Pro (8 GB, $25/mo)</td></tr>
+  <tr><td>50 branches</td><td>~7,500</td><td>Supabase Pro + connection pooling</td></tr>
+  <tr><td>100 branches</td><td>15,000+</td><td>Supabase Team + read replicas</td></tr>
+</table>
+
+<h4>Device Management</h4>
+<table>
+  <tr><th>Stage</th><th>Devices</th><th>Management Strategy</th></tr>
+  <tr><td>1 kiosk</td><td>1 iPad</td><td>Guided Access (free, manual)</td></tr>
+  <tr><td>5–10 branches</td><td>5–10 iPads</td><td>MDM (Jamf, Scalefusion) — 3–5 KWD/month per device</td></tr>
+  <tr><td>100 branches</td><td>100+ iPads</td><td>MDM + enterprise deployment (ABM/Apple Business Manager)</td></tr>
+</table>
+
+<h4>What DOESN'T Change When You Scale</h4>
+<ul>
+  <li>The customer survey looks the same (customers see no difference)</li>
+  <li>The admin dashboard layout is the same (just more data)</li>
+  <li>QR codes work the same way</li>
+  <li>Each manager sees only their location's data</li>
+</ul>
+
+<div class="success-box"><strong>No code changes needed.</strong> The system handles multi-location, multi-tenant data out of the box. You simply add more locations, surveys, users, and iPads through the admin interface.</div>
+
+<div class="pb"></div>
+
+<!-- SECTION 11 -->
+<h2>11. Cost Breakdown</h2>
+
+<h3>One-Time Setup Costs</h3>
+<table class="cost-table">
+  <tr><th>Item</th><th>Cost (KWD)</th><th>Notes</th></tr>
+  <tr><td>iPad (9th gen or newer)</td><td>100–200</td><td>New or refurbished</td></tr>
+  <tr><td>iPad security enclosure</td><td>20–60</td><td>Counter-top or wall-mount</td></tr>
+  <tr><td>QR code printing + lamination</td><td>5–10</td><td>Professional print shop</td></tr>
+  <tr><td>iPad stand/arm (optional)</td><td>15–30</td><td>For counter-top use</td></tr>
+  <tr><td>Domain registration</td><td>3–5/year</td><td>feedback.yourcompany.com</td></tr>
+  <tr><td>Installation labor</td><td>50–100</td><td>If using a technician</td></tr>
+  <tr class="cost-total"><td><strong>Total one-time</strong></td><td><strong>193–405</strong></td><td>Per kiosk</td></tr>
+</table>
+
+<h3>Monthly Recurring Costs</h3>
+<table class="cost-table">
+  <tr><th>Item</th><th>Cost (KWD/month)</th><th>Notes</th></tr>
+  <tr><td>Vercel hosting (frontend)</td><td>0–20</td><td>Free tier covers small usage</td></tr>
+  <tr><td>Supabase database</td><td>0–25</td><td>Free tier covers small usage</td></tr>
+  <tr><td>Domain DNS</td><td>0</td><td>Free with most registrars</td></tr>
+  <tr><td>MDM (per device, optional)</td><td>3–5</td><td>Only needed for 5+ devices</td></tr>
+  <tr><td>Business internet</td><td>Already paid</td><td>Existing business expense</td></tr>
+  <tr class="cost-total"><td><strong>Total monthly</strong></td><td><strong>3–55</strong></td><td>Full stack</td></tr>
+</table>
+
+<h3>Total Cost of Ownership (3 Years)</h3>
+<table>
+  <tr><th>Cost Category</th><th>1 Kiosk</th><th>3 Kiosks</th><th>10 Kiosks</th></tr>
+  <tr><td>Hardware (one-time)</td><td>120 KWD</td><td>360 KWD</td><td>1,200 KWD</td></tr>
+  <tr><td>Enclosures (one-time)</td><td>35 KWD</td><td>105 KWD</td><td>350 KWD</td></tr>
+  <tr><td>Hosting (3 years)</td><td>0–1,620 KWD</td><td>0–1,620 KWD</td><td>600 KWD</td></tr>
+  <tr><td>MDM (3 years)</td><td>0</td><td>0</td><td>540 KWD</td></tr>
+  <tr class="cost-total"><td><strong>Total</strong></td><td><strong>155–1,775 KWD</strong></td><td><strong>465–2,085 KWD</strong></td><td><strong>2,690 KWD</strong></td></tr>
+  <tr><td><strong>Per kiosk per month</strong></td><td><strong>4.3–49 KWD</strong></td><td><strong>12.9–58 KWD</strong></td><td><strong>7.5 KWD</strong></td></tr>
+</table>
+
+<div class="callout">
+<h4>📊 Bottom Line</h4>
+<p>A single kiosk costs about <strong>4 KWD per month</strong> over 3 years (using free hosting tiers). That's less than one meal — for continuous customer feedback that can transform your business.</p>
+</div>
+
+<h3>Go-Live Readiness Checklist</h3>
+<ul class="checklist">
+  <li>Frontend deployed to Vercel</li>
+  <li>Database migrations applied to Supabase</li>
+  <li>Domain configured (feedback.yourcompany.com)</li>
+  <li>HTTPS working (green padlock)</li>
+  <li>Organization created in the platform</li>
+  <li>Locations created in the platform</li>
+  <li>Surveys created and published</li>
+  <li>QR codes generated and printed</li>
+  <li>iPad kiosk configured and tested</li>
+  <li>Manager accounts created and logged in</li>
+  <li>Team members invited</li>
+  <li>Test submission completed (verifies full flow)</li>
+  <li>Alert system confirmed (low rating → alert created)</li>
+  <li>Staff trained on basic operation</li>
+  <li>Contact established for technical support</li>
+  <li>Backups confirmed active (Supabase auto-backup)</li>
+</ul>
+
+<div class="footer">
+Kuwait Feedback Platform — Deployment, Integration & Operations Guide — Version 1.0.0-beta.1 — July 2026
+</div>
+
+</div>
+
+</body>
+</html>
