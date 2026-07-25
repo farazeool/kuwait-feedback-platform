@@ -18,6 +18,45 @@ export function Field({ label, hint, id, name, ...props }: FieldProps) {
   );
 }
 
+type PasswordFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & {
+  label: string;
+};
+
+export function PasswordField({ label, id, name, className, ...props }: PasswordFieldProps) {
+  const fieldId = id ?? name;
+  return (
+    <label className="grid gap-1.5 text-sm font-medium text-foreground" htmlFor={fieldId}>
+      {label}
+      <div className="relative">
+        <input
+          {...props}
+          id={fieldId}
+          name={name}
+          type="password"
+          className={`${inputClass} w-full pe-10`}
+          autoComplete="off"
+        />
+        <button
+          type="button"
+          className="absolute inset-y-0 end-0 flex items-center px-3 text-muted hover:text-foreground"
+          aria-label="Toggle password visibility"
+          tabIndex={-1}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+            input.type = input.type === "password" ? "text" : "password";
+          }}
+        >
+          <svg viewBox="0 0 24 24" fill="none" className="size-4" aria-hidden="true">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2"/>
+          </svg>
+        </button>
+      </div>
+    </label>
+  );
+}
+
 type SelectFieldProps = SelectHTMLAttributes<HTMLSelectElement> & {
   label: string;
   children: React.ReactNode;

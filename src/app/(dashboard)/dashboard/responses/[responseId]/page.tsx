@@ -34,7 +34,7 @@ export default async function ResponseDetailPage({ params, searchParams }: { par
         </div>
         <div>
           <p className="text-sm text-muted">Workflow</p>
-          <p className="mt-2 font-bold">{detail.response.workflow_status.replaceAll("_", " ")}</p>
+          <p className="mt-2 font-bold">{({monitor_only: "No action needed", branch_followup: "Needs follow-up", controlled_investigation: "Under investigation", immediate_escalation: "Urgent escalation"})[detail.response.workflow_status] ?? detail.response.workflow_status}</p>
         </div>
         <div>
           <p className="text-sm text-muted">Alert</p>
@@ -130,10 +130,10 @@ export default async function ResponseDetailPage({ params, searchParams }: { par
           <label className="grid gap-2 text-sm font-semibold">
             Status
             <select name="status" defaultValue={detail.response.workflow_status} className="rounded-lg border border-border px-3 py-2">
-              <option value="monitor_only">Monitor only</option>
-              <option value="branch_followup">Branch follow-up</option>
-              <option value="controlled_investigation">Controlled investigation</option>
-              <option value="immediate_escalation">Immediate escalation</option>
+              <option value="monitor_only">No action needed</option>
+              <option value="branch_followup">Needs follow-up</option>
+              <option value="controlled_investigation">Under investigation</option>
+              <option value="immediate_escalation">Urgent escalation</option>
             </select>
           </label>
           <label className="grid gap-2 text-sm font-semibold">

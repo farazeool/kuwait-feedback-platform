@@ -18,24 +18,38 @@ export default async function ChannelsPage() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Link href="/dashboard/settings/channels/email-signatures"
-          className="rounded-xl border border-border bg-white p-6 transition-colors hover:border-brand/40">
-          <div className="mb-3 text-2xl">✉️</div>
-          <h3 className="font-semibold text-foreground">Email Signatures</h3>
+          className="rounded-xl border border-border bg-white p-6 transition-all hover:border-brand/40 hover:shadow-sm hover:-translate-y-0.5 group">
+          <div className="mb-3 grid size-10 place-items-center rounded-xl bg-brand/10 text-brand" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" className="size-5">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              <path d="M22 6l-10 7L2 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+          <h3 className="font-semibold text-foreground group-hover:text-brand transition-colors">Email Signatures</h3>
           <p className="mt-1 text-xs text-muted">{templatesResult.templates.length} template{templatesResult.templates.length !== 1 ? "s" : ""}</p>
           <p className="mt-0.5 text-xs text-muted">Create and manage email signature feedback blocks</p>
         </Link>
 
         <Link href="/dashboard/settings/channels/campaigns"
-          className="rounded-xl border border-border bg-white p-6 transition-colors hover:border-brand/40">
-          <div className="mb-3 text-2xl">📊</div>
-          <h3 className="font-semibold text-foreground">Campaigns</h3>
+          className="rounded-xl border border-border bg-white p-6 transition-all hover:border-brand/40 hover:shadow-sm hover:-translate-y-0.5 group">
+          <div className="mb-3 grid size-10 place-items-center rounded-xl bg-brand/10 text-brand" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" className="size-5">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+          <h3 className="font-semibold text-foreground group-hover:text-brand transition-colors">Campaigns</h3>
           <p className="mt-1 text-xs text-muted">Manage feedback collection campaigns and track performance</p>
         </Link>
 
         <Link href="/dashboard/settings/channels/escalation"
-          className="rounded-xl border border-border bg-white p-6 transition-colors hover:border-brand/40">
-          <div className="mb-3 text-2xl">🔔</div>
-          <h3 className="font-semibold text-foreground">Escalation Rules</h3>
+          className="rounded-xl border border-border bg-white p-6 transition-all hover:border-brand/40 hover:shadow-sm hover:-translate-y-0.5 group">
+          <div className="mb-3 grid size-10 place-items-center rounded-xl bg-brand/10 text-brand" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" className="size-5">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+          <h3 className="font-semibold text-foreground group-hover:text-brand transition-colors">Escalation Rules</h3>
           <p className="mt-1 text-xs text-muted">Configure smart escalation rules for automated alerts</p>
         </Link>
       </div>

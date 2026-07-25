@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { AuthCard } from "@/components/auth/auth-card";
-import { Field } from "@/components/forms/field";
+import { Field, PasswordField } from "@/components/forms/field";
 import { signIn } from "@/features/auth/actions";
 import { getMessages } from "@/lib/i18n/messages";
 
@@ -54,10 +54,9 @@ export default async function LoginPage({
         <form action={signIn} className="grid gap-5">
           <input type="hidden" name="next" value={params.next ?? ""} />
           <Field label={messages["auth.email"]} name="email" type="email" autoComplete="email" required />
-          <Field
+          <PasswordField
             label={messages["auth.password"]}
             name="password"
-            type="password"
             autoComplete="current-password"
             required
           />

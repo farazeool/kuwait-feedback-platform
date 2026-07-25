@@ -21,7 +21,7 @@ export default async function SurveysPage({ searchParams }: { searchParams: Prom
         <select className="rounded-xl border border-border px-3 py-2" name="location" defaultValue={filters.location ?? ""}><option value="">All locations</option>{context.locations.map((location) => <option key={location.id} value={location.id}>{location.nameEn}</option>)}</select>
         <button className="rounded-lg border border-border px-4 py-2 font-medium">Filter</button>
       </form>
-      {rows.length === 0 ? <EmptyState title="No matching surveys" description="Create a bilingual draft or adjust the current filters." /> : (
+      {rows.length === 0 ? <EmptyState icon="surveys" title="No matching surveys" description="Create a bilingual draft or adjust the current filters." action={{ label: "New survey", href: "/dashboard/surveys/new" }} /> : (
         <div className="overflow-x-auto rounded-xl border border-border bg-white">
           <table className="w-full min-w-[900px] text-start text-sm">
             <thead className="bg-surface-muted text-xs font-medium uppercase tracking-wide text-muted"><tr><th className="px-4 py-2.5 text-start">Survey</th><th className="px-4 py-2.5 text-start">Status</th><th className="px-4 py-2.5 text-start">Organization / locations</th><th className="px-4 py-2.5 text-start">Questions</th><th className="px-4 py-2.5 text-start">Responses</th><th className="px-4 py-2.5 text-start">Updated</th></tr></thead>

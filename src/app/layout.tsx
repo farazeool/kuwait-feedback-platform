@@ -21,6 +21,11 @@ export const metadata: Metadata = {
   },
   description:
     "Multi-tenant customer feedback and branch insights for businesses in Kuwait.",
+  icons: {
+    icon: [
+      { url: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%230f6b4d'><circle cx='12' cy='12' r='10'/><path d='M8 12.5l3 3 7-7' stroke='white' stroke-width='2.5' fill='none'/></svg>", type: "image/svg+xml" },
+    ],
+  },
 };
 
 export default function RootLayout({
