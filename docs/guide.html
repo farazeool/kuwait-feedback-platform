@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Kuwait Feedback Platform — Beginner's Guide</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+  :root {
+    --brand: #2563eb;
+    --brand-dark: #1d4ed8;
+    --accent: #f59e0b;
+    --foreground: #0f172a;
+    --muted: #64748b;
+    --background: #ffffff;
+    --surface: #f8fafc;
+    --border: #e2e8f0;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --error: #ef4444;
+    --radius: 12px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--foreground);
+    background: var(--background);
+    line-height: 1.7;
+    font-size: 10.5pt;
+  }
+
+  /* Cover Page */
+  .cover {
+    page-break-after: always;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1e40af 0%, #2563eb 50%, #3b82f6 100%);
+    color: white;
+    text-align: center;
+    padding: 60px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 30% 50%, rgba(255,255,255,0.08) 0%, transparent 50%),
+                radial-gradient(circle at 70% 30%, rgba(255,255,255,0.05) 0%, transparent 40%);
+  }
+  .cover-content { position: relative; z-index: 1; max-width: 650px; }
+  .cover-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.25);
+    padding: 8px 20px;
+    border-radius: 100px;
+    font-size: 11pt;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    margin-bottom: 30px;
+  }
+  .cover h1 {
+    font-size: 36pt;
+    font-weight: 800;
+    line-height: 1.15;
+    margin-bottom: 16px;
+    letter-spacing: -1px;
+  }
+  .cover h1 span { color: var(--accent); }
+  .cover-subtitle {
+    font-size: 14pt;
+    opacity: 0.9;
+    line-height: 1.6;
+    margin-bottom: 40px;
+  }
+  .cover-meta {
+    display: flex;
+    gap: 30px;
+    justify-content: center;
+    font-size: 10pt;
+    opacity: 0.75;
+  }
+  .cover-meta span { display: flex; align-items: center; gap: 6px; }
+
+  /* Decorative shape */
+  .cover-shapes { position: absolute; z-index: 0; }
+  .cover-shape-1 {
+    position: absolute; width: 300px; height: 300px; border-radius: 50%;
+    background: rgba(255,255,255,0.03); top: -100px; right: -100px;
+  }
+  .cover-shape-2 {
+    position: absolute; width: 200px; height: 200px; border-radius: 50%;
+    background: rgba(255,255,255,0.03); bottom: -50px; left: -50px;
+  }
+
+  /* TOC */
+  .toc { page-break-after: always; padding: 50px 60px; }
+  .toc h2 { font-size: 22pt; font-weight: 700; margin-bottom: 30px; color: var(--brand); }
+  .toc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 40px; }
+  .toc-item { display: flex; gap: 12px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--border); }
+  .toc-num { font-weight: 700; color: var(--brand); min-width: 28px; font-size: 11pt; }
+  .toc-title { font-weight: 500; font-size: 10pt; }
+
+  /* Content */
+  .content { padding: 50px 60px; max-width: 900px; margin: 0 auto; }
+
+  h2 { font-size: 20pt; font-weight: 700; color: var(--brand); margin-top: 50px; margin-bottom: 20px; padding-bottom: 8px; border-bottom: 3px solid var(--brand); }
+  h3 { font-size: 15pt; font-weight: 600; margin-top: 35px; margin-bottom: 14px; color: var(--foreground); }
+  h4 { font-size: 12pt; font-weight: 600; margin-top: 25px; margin-bottom: 10px; color: var(--foreground); }
+
+  p { margin-bottom: 12px; }
+  ul, ol { margin-bottom: 14px; padding-left: 24px; }
+  li { margin-bottom: 6px; }
+
+  /* Info boxes */
+  .info-box {
+    background: #eff6ff;
+    border-left: 4px solid var(--brand);
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin: 20px 0;
+  }
+  .info-box strong { color: var(--brand); }
+
+  .warning-box {
+    background: #fffbeb;
+    border-left: 4px solid var(--warning);
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin: 20px 0;
+  }
+
+  .success-box {
+    background: #f0fdf4;
+    border-left: 4px solid var(--success);
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin: 20px 0;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 9.5pt;
+  }
+  th {
+    background: var(--brand);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+  }
+  td {
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  tr:nth-child(even) td { background: var(--surface); }
+
+  /* Step cards */
+  .step-list { counter-reset: step; list-style: none; padding: 0; }
+  .step-list li {
+    counter-increment: step;
+    padding: 14px 16px 14px 50px;
+    position: relative;
+    background: var(--surface);
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border: 1px solid var(--border);
+  }
+  .step-list li::before {
+    content: counter(step);
+    position: absolute;
+    left: 12px;
+    top: 14px;
+    width: 26px; height: 26px;
+    background: var(--brand);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10pt;
+    font-weight: 700;
+  }
+
+  /* Role cards */
+  .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 18px 0; }
+  .role-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    background: white;
+  }
+  .role-card h4 { margin-top: 0; color: var(--brand); font-size: 12pt; }
+  .role-icon {
+    display: inline-block;
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    background: var(--brand);
+    color: white;
+    text-align: center;
+    line-height: 36px;
+    font-size: 16pt;
+    margin-bottom: 8px;
+  }
+
+  /* Feature cards */
+  .feature-box {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin: 20px 0;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .feature-box h4 { margin-top: 0; color: var(--brand); font-size: 13pt; }
+
+  /* Stats */
+  .stat-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin: 18px 0; }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    text-align: center;
+  }
+  .stat-value { font-size: 22pt; font-weight: 800; color: var(--brand); }
+  .stat-label { font-size: 8.5pt; color: var(--muted); margin-top: 4px; }
+
+  /* Comparison tables */
+  .compare-table td:first-child { font-weight: 500; background: var(--surface); }
+  .compare-table .before { color: var(--error); }
+  .compare-table .after { color: var(--success); }
+
+  /* Checklist */
+  .checklist { list-style: none; padding: 0; }
+  .checklist li {
+    padding: 8px 0 8px 32px;
+    position: relative;
+  }
+  .checklist li::before {
+    content: '☐';
+    position: absolute;
+    left: 0;
+    font-size: 14pt;
+    color: var(--brand);
+  }
+
+  /* Numbered callout */
+  .callout {
+    background: linear-gradient(135deg, var(--brand) 0%, #3b82f6 100%);
+    color: white;
+    border-radius: var(--radius);
+    padding: 24px;
+    margin: 20px 0;
+  }
+  .callout h4 { color: white; margin-top: 0; }
+  .callout p { opacity: 0.9; }
+
+  /* Page breaks */
+  .pb { page-break-after: always; }
+
+  /* Footer */
+  .footer {
+    margin-top: 50px;
+    padding-top: 20px;
+    border-top: 2px solid var(--border);
+    font-size: 9pt;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  /* Screenshot placeholder */
+  .screenshot {
+    background: linear-gradient(135deg, #e0e7ff, #dbeafe);
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 40px;
+    text-align: center;
+    margin: 20px 0;
+    color: var(--muted);
+    font-size: 10pt;
+  }
+  .screenshot .icon { font-size: 32pt; margin-bottom: 8px; display: block; }
+
+  @media print {
+    .cover { min-height: 100vh; }
+    .pb { page-break-after: always; }
+    body { font-size: 10pt; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ========== COVER ========== -->
+<div class="cover">
+  <div class="cover-shape-1"></div>
+  <div class="cover-shape-2"></div>
+  <div class="cover-content">
+    <div class="cover-badge">📋 Version 1.0.0-beta.1</div>
+    <h1>Kuwait Feedback<br><span>Platform</span></h1>
+    <p class="cover-subtitle">
+      The Complete Beginner's Guide<br>
+      <span style="font-size: 11pt; opacity: 0.8;">A simple manual for everyone — no technical knowledge required</span>
+    </p>
+    <p style="font-size: 11pt; line-height: 1.8; margin-bottom: 30px;">
+      Learn how to collect customer feedback, track performance,<br>
+      manage your team, and make your business better — all explained in plain language.
+    </p>
+    <div class="cover-meta">
+      <span>📅 July 2026</span>
+      <span>📍 Kuwait</span>
+      <span>📄 2,100+ words</span>
+    </div>
+  </div>
+</div>
+
+<!-- ========== TOC ========== -->
+<div class="toc">
+  <h2>📖 Table of Contents</h2>
+  <div class="toc-grid">
+    <div class="toc-item"><span class="toc-num">1</span><span class="toc-title">Introduction — What Is This System?</span></div>
+    <div class="toc-item"><span class="toc-num">2</span><span class="toc-title">System Overview — The Big Picture</span></div>
+    <div class="toc-item"><span class="toc-num">3</span><span class="toc-title">User Roles — Who Does What</span></div>
+    <div class="toc-item"><span class="toc-num">4</span><span class="toc-title">Getting Started — Your First Time</span></div>
+    <div class="toc-item"><span class="toc-num">5</span><span class="toc-title">Feature Documentation — Every Button</span></div>
+    <div class="toc-item"><span class="toc-num">6</span><span class="toc-title">Use Cases — Real Business Scenarios</span></div>
+    <div class="toc-item"><span class="toc-num">7</span><span class="toc-title">Testing Manual — Check Everything Works</span></div>
+    <div class="toc-item"><span class="toc-num">8</span><span class="toc-title">Hardware Integration</span></div>
+    <div class="toc-item"><span class="toc-num">9</span><span class="toc-title">Daily Operations Guide</span></div>
+    <div class="toc-item"><span class="toc-num">10</span><span class="toc-title">Administration Guide</span></div>
+    <div class="toc-item"><span class="toc-num">11</span><span class="toc-title">Troubleshooting</span></div>
+    <div class="toc-item"><span class="toc-num">12</span><span class="toc-title">Security</span></div>
+    <div class="toc-item"><span class="toc-num">13</span><span class="toc-title">Business Benefits</span></div>
+    <div class="toc-item"><span class="toc-num">14</span><span class="toc-title">Conclusion</span></div>
+  </div>
+</div>
+
+<!-- ========== CONTENT ========== -->
+<div class="content">
+
+<!-- SECTION 1 -->
+<h2>1. Introduction</h2>
+
+<h3>What is this system?</h3>
+<p>Imagine you own a restaurant in Kuwait. Every day, customers come in, eat your food, and leave. Some are happy. Some are not. But mostly, they just leave without telling you what they thought.</p>
+
+<p>This system is like a <strong>digital suggestion box</strong> that never gets lost and never gets ignored. It automatically organizes all customer feedback so you can actually use it to make your business better.</p>
+
+<div class="info-box">
+<strong>🤔 Think of it this way:</strong> It's a suggestion box + automatic report card + alarm system all in one.
+</div>
+
+<div class="stat-row">
+  <div class="stat-card"><div class="stat-value">📋</div><div class="stat-label">Suggestion Box — Customers tell you what they think</div></div>
+  <div class="stat-card"><div class="stat-value">📊</div><div class="stat-label">Report Card — Automatic scores for each location</div></div>
+  <div class="stat-card"><div class="stat-value">🚨</div><div class="stat-label">Alarm System — Immediate alerts for problems</div></div>
+</div>
+
+<h3>What problem does it solve?</h3>
+
+<table class="compare-table">
+  <tr><th>Before This System</th><th>After This System</th></tr>
+  <tr><td class="before">Customers rarely give feedback</td><td class="after">Easy QR-code feedback from every visit</td></tr>
+  <tr><td class="before">No way to compare locations</td><td class="after">Side-by-side location comparison</td></tr>
+  <tr><td class="before">Problems discovered too late</td><td class="after">Instant alerts for low ratings</td></tr>
+  <tr><td class="before">Guesswork for business decisions</td><td class="after">Data-driven decisions with charts</td></tr>
+  <tr><td class="before">Lost paper records</td><td class="after">Organized digital database</td></tr>
+</table>
+
+<h3>Who will use it?</h3>
+
+<p>Different people use the system in different ways:</p>
+
+<div class="role-grid">
+  <div class="role-card"><div class="role-icon">👤</div><h4>Customers</h4><p>Scan a QR code, answer a short survey, submit feedback. Takes 10 seconds.</p></div>
+  <div class="role-card"><div class="role-icon">👩‍💼</div><h4>Staff / Employees</h4><p>Give customers the QR code. Some have their own personal feedback link.</p></div>
+  <div class="role-card"><div class="role-icon">👨‍💼</div><h4>Location Managers</h4><p>Watch their branch's ratings, respond to alerts, track performance.</p></div>
+  <div class="role-card"><div class="role-icon">👩‍💻</div><h4>Organization Admins</h4><p>Create surveys, view all locations' data, manage the team.</p></div>
+</div>
+
+<div class="callout">
+<h4>💡 Real-world example: A customer's lunch at Boulevard Salmiya</h4>
+<p>1. Customer Sara scans a QR code on her table → 2. She rates 4/5 and types "Great food but slow service" → 3. The system records it instantly → 4. Manager Ahmed sees it on his dashboard the same day → 5. Admin Fatima compares both locations' ratings at the end of the week → 6. The slow-service issue gets fixed.</p>
+</div>
+
+<div class="pb"></div>
+
+<!-- SECTION 2 -->
+<h2>2. System Overview</h2>
+
+<h3>The complete workflow</h3>
+
+<p>Let's walk through how the entire system works, from start to finish:</p>
+
+<ol class="step-list">
+  <li><strong>Set up:</strong> An admin creates the organization in the system, adds locations (branches), and creates a survey with questions.</li>
+  <li><strong>Publish:</strong> The admin publishes the survey and generates a QR code. The QR code is printed and placed on tables or at the counter.</li>
+  <li><strong>Customer scans:</strong> A customer scans the QR code with their phone — no app needed, just the camera. The survey opens in their browser.</li>
+  <li><strong>Customer submits:</strong> The customer answers the questions (tap a rating, select choices, type a comment) and clicks Submit.</li>
+  <li><strong>System records:</strong> The system stores the response with the date, time, location, and channel. It also checks if the rating is low enough to trigger an alert.</li>
+  <li><strong>Manager sees it:</strong> The response appears on the manager's dashboard immediately. If it triggered an alert, the manager gets notified.</li>
+  <li><strong>Admin reviews:</strong> The organization admin can compare all locations, view charts and trends, and make data-driven decisions.</li>
+</ol>
+
+<div class="screenshot">
+  <span class="icon">🔄</span>
+  <strong>How Data Flows:</strong><br>
+  Customer Phone → Public Survey Page → System Database → Dashboard → Analytics → Manager
+</div>
+
+<h3>Major sections of the system</h3>
+
+<table>
+  <tr><th>Section</th><th>What it does</th></tr>
+  <tr><td><strong>Dashboard</strong></td><td>Your home page — shows KPI cards, charts, recent responses, and alerts at a glance</td></tr>
+  <tr><td><strong>Surveys</strong></td><td>Create and manage your feedback questionnaires</td></tr>
+  <tr><td><strong>Responses</strong></td><td>See every customer's answers in one place</td></tr>
+  <tr><td><strong>Alerts</strong></td><td>Warnings about problems that need your attention</td></tr>
+  <tr><td><strong>Analytics</strong></td><td>Charts and graphs showing trends, comparisons, and performance</td></tr>
+  <tr><td><strong>KPI</strong></td><td>Key Performance Indicators — your most important business numbers</td></tr>
+  <tr><td><strong>Team</strong></td><td>Manage who has access to the system</td></tr>
+  <tr><td><strong>Settings</strong></td><td>Configure your organization, locations, branding, and preferences</td></tr>
+</table>
+
+<div class="pb"></div>
+
+<!-- SECTION 3 -->
+<h2>3. User Roles</h2>
+
+<p>The system has <strong>five roles</strong> — each role can see and do different things. Think of it like a building with different levels of access:</p>
+
+<table>
+  <tr><th>Role</th><th>Who they are</th><th>What they can do</th></tr>
+  <tr><td><strong>🔑 Platform Admin</strong></td><td>The people who run the platform itself</td><td>See ALL organizations. Access audit logs. Read-only view of everything.</td></tr>
+  <tr><td><strong>👑 Organization Owner</strong></td><td>The business owner</td><td>Everything within their own organization. Can transfer ownership.</td></tr>
+  <tr><td><strong>⚙️ Organization Admin</strong></td><td>A senior employee managing operations</td><td>Create surveys, manage team, view all locations, manage settings.</td></tr>
+  <tr><td><strong>📍 Location Manager</strong></td><td>Person in charge of one branch</td><td>See their location's data only. Respond to alerts for their location.</td></tr>
+  <tr><td><strong>📊 Analyst</strong></td><td>A data person who views reports</td><td>Read-only access to analytics and responses. Cannot make changes.</td></tr>
+</table>
+
+<div class="warning-box">
+<strong>🔒 Important:</strong> A Location Manager at the Salmiya branch can ONLY see Salmiya data. They cannot see the Sharq branch's data. This protects privacy and prevents mistakes.
+</div>
+
+<h4>Permission Quick Reference</h4>
+<table>
+  <tr><th>Feature</th><th>Admin</th><th>Owner</th><th>Admin</th><th>Manager</th><th>Analyst</th></tr>
+  <tr><td>View Dashboard</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+  <tr><td>Create Surveys</td><td>❌</td><td>✅</td><td>✅</td><td>❌</td><td>❌</td></tr>
+  <tr><td>View Responses</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+  <tr><td>Manage Alerts</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>❌</td></tr>
+  <tr><td>Manage Team</td><td>✅</td><td>✅</td><td>✅</td><td>❌</td><td>❌</td></tr>
+  <tr><td>View Analytics</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+</table>
+
+<div class="pb"></div>
+
+<!-- SECTION 4 -->
+<h2>4. Getting Started</h2>
+
+<h3>Logging in for the first time</h3>
+
+<ol class="step-list">
+  <li>Open your web browser (Chrome, Safari, or Edge)</li>
+  <li>Go to the web address your administrator gave you</li>
+  <li>You will see the <strong>Login</strong> page with fields for email and password</li>
+  <li>Enter your email address and password</li>
+  <li>Click <strong>Sign In</strong></li>
+</ol>
+
+<div class="info-box">
+<strong>💡 Don't have an account yet?</strong> Your organization admin must invite you. They will send you an email with a special invitation link. Click the link to accept and create your account.
+</div>
+
+<h3>Your first look at the Dashboard</h3>
+
+<p>After logging in, you land on the <strong>Dashboard</strong>. This is your home page. Here's what you'll see:</p>
+
+<div class="screenshot">
+  <span class="icon">📊</span>
+  <strong>Dashboard Overview:</strong><br>
+  📈 Response Trend Chart  •  📊 Rating Distribution  •  📍 Location Comparison<br>
+  🏆 KPI Cards  •  📝 Recent Responses Table  •  ⚠️ Alert Count
+</div>
+
+<h3>Creating your first survey</h3>
+
+<ol class="step-list">
+  <li>Click <strong>Surveys</strong> in the menu on the left</li>
+  <li>Click the <strong>New Survey</strong> button</li>
+  <li>Choose a <strong>template</strong> (Cafe/Restaurant, Retail, etc.) or start from scratch</li>
+  <li>Give your survey a name in English (and optionally Arabic)</li>
+  <li>Select which <strong>location</strong> this survey is for</li>
+  <li>Add questions: Rating (e.g., 1-5 stars), Multiple Choice, or Text</li>
+  <li>Click <strong>Save Draft</strong> to save, or <strong>Publish</strong> to make it live</li>
+</ol>
+
+<h3>Sharing the survey with customers</h3>
+
+<ol class="step-list">
+  <li>Open your published survey</li>
+  <li>Click <strong>Distribution</strong> or <strong>View QR Code</strong></li>
+  <li>Download the QR code as an image (SVG or PNG)</li>
+  <li>Print it and place it at your location — on tables, at the counter, near the exit</li>
+  <li>When customers scan the QR code with their phone, they can submit feedback instantly</li>
+</ol>
+
+<div class="success-box">
+<strong>✅ You're now collecting feedback!</strong> Responses will appear on your Dashboard automatically.
+</div>
+
+<div class="pb"></div>
+
+<!-- SECTION 5 — FEATURE DOCUMENTATION -->
+<h2>5. Feature Documentation</h2>
+
+<p>Here is every feature in the system, explained simply.</p>
+
+<!-- 5.1 Dashboard -->
+<div class="feature-box">
+<h4>📊 Dashboard</h4>
+<p><strong>What it is:</strong> Your home page — the first thing you see when you log in.</p>
+<p><strong>Why it exists:</strong> Instead of clicking through many pages to find information, the dashboard brings everything important to one screen.</p>
+<p><strong>What you see:</strong> KPI cards (total responses, average rating, open alerts), charts (response trends, rating distribution, location comparison), and a table of recent responses.</p>
+</div>
+
+<!-- 5.2 Surveys -->
+<div class="feature-box">
+<h4>📋 Surveys</h4>
+<p><strong>What it is:</strong> A survey is a set of questions you create to collect feedback from customers.</p>
+<p><strong>Types of questions you can add:</strong></p>
+<ul>
+  <li><strong>Rating:</strong> Customer picks a number (e.g., 1-5 stars)</li>
+  <li><strong>Multiple Choice:</strong> Customer picks from a list of options</li>
+  <li><strong>Text:</strong> Customer types their own answer</li>
+</ul>
+<p><strong>Statuses:</strong> Draft (still working), Active (live and collecting), Archived (closed, but data kept)</p>
+</div>
+
+<!-- 5.3 Responses -->
+<div class="feature-box">
+<h4>📨 Responses</h4>
+<p><strong>What it is:</strong> One customer's completed survey with all their answers.</p>
+<p><strong>Why it exists:</strong> Scattered feedback becomes organized, searchable records you can filter and act on.</p>
+<p><strong>Workflow statuses:</strong> Monitor Only, Branch Follow-up, Controlled Investigation, Immediate Escalation</p>
+</div>
+
+<!-- 5.4 Alerts -->
+<div class="feature-box">
+<h4>🚨 Alerts</h4>
+<p><strong>What it is:</strong> An automatic warning created when a customer gives a very low rating.</p>
+<p><strong>Why it exists:</strong> You need to know about problems immediately — not a week later when you check reports.</p>
+<p><strong>Statuses:</strong> Open (new), Acknowledged (being handled), Resolved (fixed), Dismissed (not an issue)</p>
+</div>
+
+<!-- 5.5 Analytics -->
+<div class="feature-box">
+<h4>📈 Analytics</h4>
+<p><strong>What it is:</strong> Charts and graphs that show how your business is doing over time.</p>
+<p><strong>What you can see:</strong> Response trends, rating distribution, location comparison, survey comparison, low-score trends, alert metrics.</p>
+<p><strong>Filters:</strong> You can filter by date range, location, survey, rating range, and alert status.</p>
+<div class="info-box"><strong>📌 Normalized Ratings:</strong> Different surveys might use 1-5, 1-10, or other scales. The system converts everything to a 0-100% scale so you can compare them fairly. A 4/5 = 80%.</div>
+</div>
+
+<!-- 5.6 KPI Dashboard -->
+<div class="feature-box">
+<h4>🏆 KPI Dashboard</h4>
+<p><strong>What it is:</strong> Key Performance Indicators — the most important numbers for your business.</p>
+<p><strong>What you see:</strong> Total responses, average rating, satisfaction percentage, negative feedback percentage, top concerns, location KPIs, channel breakdown.</p>
+</div>
+
+<!-- 5.7 Quick Feedback -->
+<div class="feature-box">
+<h4>⚡ Quick Feedback (One-Tap)</h4>
+<p><strong>What it is:</strong> A super-simple way for customers to give feedback with just one tap — no forms, no typing. Just tap a smiley face.</p>
+<p><strong>Why it exists:</strong> Long surveys can be annoying for busy customers. Quick feedback increases response rates.</p>
+<p><strong>How it works:</strong> Customer taps 😊 (good), 😐 (okay), or 😡 (bad) → optionally adds a comment → done in 2 seconds.</p>
+</div>
+
+<!-- 5.8 Distribution -->
+<div class="feature-box">
+<h4>🔗 Distribution</h4>
+<p><strong>What it is:</strong> A system for creating trackable feedback links for each employee, location, or touchpoint.</p>
+<p><strong>Why it exists:</strong> If Employee A gets 50 responses and Employee B gets 5, Employee A is doing a better job engaging customers.</p>
+<p><strong>What you can track:</strong> Clicks, responses, conversion rate, employee attribution, location attribution.</p>
+</div>
+
+<div class="pb"></div>
+
+<!-- 5.9 Touchpoints -->
+<div class="feature-box">
+<h4>📍 Touchpoints</h4>
+<p><strong>What it is:</strong> A specific place where customers interact with your business — like the front counter, a service desk, or a drive-through.</p>
+<p><strong>Why it exists:</strong> If you have different departments, you need to know which one is doing well and which needs improvement.</p>
+</div>
+
+<!-- 5.10 Departments -->
+<div class="feature-box">
+<h4>🏢 Departments</h4>
+<p><strong>What it is:</strong> A sub-group within a location — for example, a Kitchen department and a Service department within a restaurant.</p>
+<p><strong>How it differs from a Touchpoint:</strong> A touchpoint is <em>where</em> customers give feedback. A department is <em>who</em> the feedback is about.</p>
+</div>
+
+<!-- 5.11 Campaigns -->
+<div class="feature-box">
+<h4>📢 Campaigns</h4>
+<p><strong>What it is:</strong> A targeted feedback collection effort — for example, sending an email to recent customers asking them to fill out a survey.</p>
+<p><strong>Why it exists:</strong> Instead of waiting for customers to find your QR code, campaigns let you actively reach out to them.</p>
+</div>
+
+<!-- 5.12 Export -->
+<div class="feature-box">
+<h4>📥 Export</h4>
+<p><strong>What it is:</strong> Download your data as a CSV file that opens in Excel or Google Sheets.</p>
+<p><strong>When to use it:</strong> When you need to create custom reports, share data with a consultant, or archive data.</p>
+<div class="warning-box"><strong>⚠️ Note:</strong> The export respects your current filters. If you filtered by a specific location, only that location's data is exported.</div>
+</div>
+
+<!-- 5.13 Team -->
+<div class="feature-box">
+<h4>👥 Team</h4>
+<p><strong>What it is:</strong> Manage who has access to your organization in the system.</p>
+<p><strong>How to invite someone:</strong> Go to Team → Invite Member → Enter email → Choose role → Send. They receive an email with an invitation link.</p>
+<p><strong>Important:</strong> You cannot remove the last owner of an organization.</p>
+</div>
+
+<!-- 5.14-5.19 Settings and Branding -->
+<div class="feature-box">
+<h4>⚙️ Settings</h4>
+<p><strong>What it is:</strong> Where you configure your organization, locations, branding, and preferences.</p>
+<p><strong>What you can change:</strong> Organization name (English/Arabic), logo, brand colors, location details, governorate, area, thank-you messages, and more.</p>
+</div>
+
+<div class="feature-box">
+<h4>🎨 Branding</h4>
+<p><strong>What it is:</strong> Customizing how the feedback page looks to your customers — with your logo, colors, and messages.</p>
+<p><strong>Why it exists:</strong> When a customer scans your QR code, the survey should look like YOUR business, not a generic form.</p>
+</div>
+
+<!-- 5.20 QR Code -->
+<div class="feature-box">
+<h4>📱 QR Code</h4>
+<p><strong>What it is:</strong> The system generates QR code images that link to your surveys.</p>
+<p><strong>How to use:</strong> Download as SVG (best for printing) or PNG, then print and display at your location.</p>
+</div>
+
+<!-- 5.21 Kiosk -->
+<div class="feature-box">
+<h4>🖥️ Kiosk Mode</h4>
+<p><strong>What it is:</strong> A full-screen feedback page designed for tablets or touchscreens mounted at your business.</p>
+<p><strong>How it works:</strong> A tablet sits at the exit with the kiosk page open. Customers tap their rating on the screen as they leave. The screen auto-resets for the next person.</p>
+</div>
+
+<div class="pb"></div>
+
+<!-- 5.22 Escalation -->
+<div class="feature-box">
+<h4>⚡ Escalation Rules</h4>
+<p><strong>What it is:</strong> Automatic triggers that take action when certain conditions are met — like a very negative response that mentions specific keywords.</p>
+<p><strong>Example:</strong> IF rating is 1/5 AND comment contains "food poisoning" THEN create an alert AND notify the manager immediately.</p>
+</div>
+
+<!-- 5.23 Corrective Actions -->
+<div class="feature-box">
+<h4>🔧 Corrective Actions</h4>
+<p><strong>What it is:</strong> A formal task to fix a problem identified through customer feedback.</p>
+<p><strong>Lifecycle:</strong> Open → In Progress → Under Review → Closed</p>
+<p><strong>When to use:</strong> When a problem needs more than a quick fix — it needs investigation, a plan, and verification.</p>
+</div>
+
+<!-- 5.24 Investigations -->
+<div class="feature-box">
+<h4>🔍 Investigations</h4>
+<p><strong>What it is:</strong> A formal inquiry into a problem. More detailed than a corrective action because you're still figuring out what happened.</p>
+</div>
+
+<!-- 5.25 Evidence -->
+<div class="feature-box">
+<h4>📎 Evidence</h4>
+<p><strong>What it is:</strong> Proof that something happened — a photo, PDF, training record, maintenance log, or other file.</p>
+<p><strong>Why it exists:</strong> When you say "we fixed the broken air conditioner," you attach a photo to prove it.</p>
+</div>
+
+<!-- 5.26 Pilot Checklist -->
+<div class="feature-box">
+<h4>✅ Pilot Checklist</h4>
+<p><strong>What it is:</strong> A to-do list that appears on the dashboard for new organizations.</p>
+<p><strong>The four steps:</strong> 1. Set up a location → 2. Create a survey → 3. Publish the survey → 4. Collect a response. The checklist disappears when all steps are done.</p>
+</div>
+
+<!-- 5.27 Onboarding -->
+<div class="feature-box">
+<h4>🚀 Onboarding</h4>
+<p><strong>What it is:</strong> The first-time setup process when a new organization joins the platform.</p>
+<p><strong>What you fill in:</strong> Organization name, slug (web address), business category, phone number, first location name and address. Everything is created at once.</p>
+</div>
+
+<div class="pb"></div>
+
+<!-- SECTION 6 -->
+<h2>6. Use Cases — Real Business Scenarios</h2>
+
+<h3>Scenario 1: Normal Daily Operation</h3>
+<p><strong>8:00 AM</strong> — Ahmed (manager) arrives, logs in, and checks the Dashboard for overnight responses.</p>
+<p><strong>Throughout the day</strong> — Customers scan QR codes and submit feedback. Responses appear instantly.</p>
+<p><strong>4:00 PM</strong> — Ahmed reviews the day: 8 responses, average rating 4.1/5, notes that service speed could improve during lunch rush.</p>
+<p><strong>Features used:</strong> Dashboard, Responses, Analytics</p>
+
+<h3>Scenario 2: A Customer Complaint</h3>
+<p>A customer rates 1/5 with comment "Terrible service, wrong order." The system creates an Alert automatically. Ahmed sees the alert, acknowledges it, speaks to the staff, and resolves it.</p>
+<p><strong>Without the system:</strong> Ahmed might never have known. The customer would have left angry.</p>
+<p><strong>Features used:</strong> Alerts, Responses, Workflow</p>
+
+<h3>Scenario 3: End-of-Month Review</h3>
+<p>Fatima (admin) logs in and sees the Location Comparison chart. Salmiya: 4.2 average, 150 responses. Sharq: 4.6 average, 100 responses. She identifies that Salmiya needs improvement.</p>
+<p><strong>Features used:</strong> Dashboard, Analytics, Filters</p>
+
+<h3>Scenario 4: A Serious Incident</h3>
+<p>A customer mentions "undercooked chicken." The Escalation Rule triggers because the keyword matches. An investigation is created. Evidence (kitchen photos) is uploaded. A corrective action is issued. The fix is verified and closed.</p>
+<p><strong>Features used:</strong> Alerts, Escalation, Investigations, Evidence, Corrective Actions</p>
+
+<h3>Scenario 5: New Location Opening</h3>
+<p>Fatima adds a new location in Ahmadi, creates a survey for it, prints a QR code, and assigns a new manager. The manager sees only Ahmadi data when they log in.</p>
+<p><strong>Features used:</strong> Locations, Surveys, QR Code, Team</p>
+
+<div class="pb"></div>
+
+<!-- SECTION 7 -->
+<h2>7. Testing Manual</h2>
+
+<p>Use these tests to make sure everything is working correctly.</p>
+
+<h3>Login Tests</h3>
+<table>
+  <tr><th>Test</th><th>Steps</th><th>Expected Result</th></tr>
+  <tr><td>✅ Valid Login</td><td>Enter correct email + password → Click Sign In</td><td>Dashboard loads</td></tr>
+  <tr><td>❌ Invalid Login</td><td>Enter correct email + wrong password</td><td>Error message, stays on login page</td></tr>
+  <tr><td>🔒 Unauthenticated Access</td><td>Go to /dashboard without logging in</td><td>Redirected to /login</td></tr>
+</table>
+
+<h3>Survey Tests</h3>
+<table>
+  <tr><th>Test</th><th>Steps</th><th>Expected Result</th></tr>
+  <tr><td>✅ Create Survey</td><td>Surveys → New → Fill in → Save Draft</td><td>Survey saved as Draft</td></tr>
+  <tr><td>✅ Publish Survey</td><td>Open draft survey → Click Publish</td><td>Status changes to Active, public link generated</td></tr>
+  <tr><td>✅ Submit Feedback</td><td>Open public survey → Rate → Submit</td><td>Thank you shown, response in dashboard</td></tr>
+  <tr><td>❌ Invalid Rating</td><td>Submit rating of 99 on a 1-5 scale</td><td>Validation error, not accepted</td></tr>
+</table>
+
+<h3>Alert &amp; Analytics Tests</h3>
+<table>
+  <tr><th>Test</th><th>Steps</th><th>Expected Result</th></tr>
+  <tr><td>✅ Alert Created</td><td>Submit a 1/5 rating</td><td>Alert appears in Alerts page</td></tr>
+  <tr><td>✅ Acknowledge Alert</td><td>Open alert → Click Acknowledge</td><td>Status changes to "acknowledged"</td></tr>
+  <tr><td>✅ Dashboard Charts</td><td>Log in as admin → View dashboard</td><td>Charts show data matching responses</td></tr>
+  <tr><td>✅ Filter by Location</td><td>Select a location filter</td><td>Only that location's data shown</td></tr>
+</table>
+
+<h3>Permission Tests</h3>
+<table>
+  <tr><th>Test</th><th>Steps</th><th>Expected Result</th></tr>
+  <tr><td>✅ Manager Scope</td><td>Log in as manager of Salmiya only</td><td>Cannot see Sharq data</td></tr>
+  <tr><td>✅ Tenant Isolation</td><td>Log in as Org A, try to access Org B data</td><td>Access denied</td></tr>
+  <tr><td>✅ Arabic Interface</td><td>Change language to Arabic</td><td>Text changes, RTL layout</td></tr>
+  <tr><td>✅ Mobile View</td><td>Open on phone browser</td><td>Fits screen, touchable buttons</td></tr>
+</table>
+
+<div class="pb"></div>
+
+<!-- SECTION 8 -->
+<h2>8. Hardware Integration</h2>
+
+<h3>What hardware does this system work with?</h3>
+
+<div class="feature-box">
+<h4>💻 Computers and Laptops</h4>
+<p><strong>Used by:</strong> Admins, managers, and staff to manage the system.</p>
+<p><strong>Requirements:</strong> Any computer with a web browser and internet connection.</p>
+<p><strong>If it fails:</strong> Try a different browser. Clear your cache. Check your internet.</p>
+</div>
+
+<div class="feature-box">
+<h4>📱 Smartphones (Customers)</h4>
+<p><strong>Used by:</strong> Customers to scan QR codes and submit feedback.</p>
+<p><strong>How it works:</strong> Customer opens camera → scans QR code → phone opens survey in browser. No app needed!</p>
+<p><strong>If it fails:</strong> Make sure the QR code is clean and well-lit. Customer can also type the URL directly.</p>
+</div>
+
+<div class="feature-box">
+<h4>📟 Tablets (Kiosk Mode)</h4>
+<p><strong>Used by:</strong> Customers at a dedicated feedback station in your business.</p>
+<p><strong>Setup:</strong> Mount a tablet near the exit. Open the kiosk URL. The page shows large, easy-to-tap buttons. After each response, it auto-resets.</p>
+</div>
+
+<div class="feature-box">
+<h4>🖨️ Printed QR Code Cards</h4>
+<p><strong>Used by:</strong> Customers scan with their phone.</p>
+<p><strong>Best practices:</strong> Print on card stock, laminate for durability, place at eye level, ensure good lighting. Include simple instructions in English and Arabic near the QR code.</p>
+</div>
+
+<div class="feature-box">
+<h4>📶 Network Equipment</h4>
+<p><strong>What it does:</strong> Provides internet for the system to work.</p>
+<p><strong>If it fails:</strong> Responses cannot be submitted until internet is restored — but no data is lost. Staff can write feedback manually and enter it later.</p>
+</div>
+
+<div class="pb"></div>
+
+<!-- SECTION 9 -->
+<h2>9. Daily Operations Guide</h2>
+
+<h3>A Day in the Life</h3>
+
+<div class="callout">
+<h4>🌅 Morning (8:00 AM - 10:00 AM)</h4>
+<p>Log in and check the Dashboard. Look for new responses overnight. Check for open alerts. Read customer comments. Note any recurring themes.</p>
+</div>
+
+<div class="callout">
+<h4>☀️ Midday (10:00 AM - 2:00 PM)</h4>
+<p>Ensure QR codes are visible on tables. Check that the kiosk tablet is working. Monitor the dashboard as responses come in.</p>
+</div>
+
+<div class="callout">
+<h4>🌤️ Afternoon (2:00 PM - 5:00 PM)</h4>
+<p>Lunch rush brings more responses. If a low rating triggers an alert, respond right away if needed.</p>
+</div>
+
+<div class="callout">
+<h4>🌙 Evening (5:00 PM - 7:00 PM)</h4>
+<p>Review the day's data: total responses, average rating, new alerts, comments. Plan improvements based on feedback patterns.</p>
+</div>
+
+<h3>Weekly Tasks</h3>
+<ul>
+  <li>Review the KPI Dashboard (satisfaction %, response volume, location comparison)</li>
+  <li>Check team assignments — any new staff to invite?</li>
+  <li>Compare this week's analytics to last week's</li>
+</ul>
+
+<h3>Monthly Tasks</h3>
+<ul>
+  <li>Generate monthly analytics and review all locations</li>
+  <li>Review surveys — are existing ones still relevant? Need new ones?</li>
+  <li>Audit team access — remove inactive users</li>
+  <li>Update branding if needed</li>
+</ul>
+
+<div class="pb"></div>
+
+<!-- SECTION 10 -->
+<h2>10. Administration Guide</h2>
+
+<h3>Adding a Team Member</h3>
+<ol class="step-list">
+  <li>Go to <strong>Team</strong></li>
+  <li>Click <strong>Invite Member</strong></li>
+  <li>Enter their email address and choose their role</li>
+  <li>Click <strong>Send</strong> — They receive an email invitation</li>
+  <li>They click the link, set their password, and they're in</li>
+</ol>
+
+<h3>Adding a New Location</h3>
+<ol class="step-list">
+  <li>Go to <strong>Settings</strong> → <strong>Locations</strong></li>
+  <li>Click <strong>New Location</strong></li>
+  <li>Enter the name (English and Arabic), governorate, area, and address</li>
+  <li>Click <strong>Save</strong></li>
+</ol>
+
+<h3>Archiving a Survey</h3>
+<ol class="step-list">
+  <li>Go to <strong>Surveys</strong></li>
+  <li>Find the survey and click <strong>Archive</strong></li>
+  <li>All responses are kept — the survey just stops accepting new ones</li>
+</ol>
+
+<h3>Data Backup</h3>
+<p>The system runs on Supabase, which automatically creates daily backups. For paid plans, you can restore data from any point in the last 7-30 days.</p>
+<p><strong>What you should also do:</strong> Export data regularly via CSV. Keep notes of important settings.</p>
+
+<div class="pb"></div>
+
+<!-- SECTION 11 -->
+<h2>11. Troubleshooting</h2>
+
+<h3>Cannot log in</h3>
+<p><strong>Possible causes:</strong> Wrong email, wrong password, account not activated, account was removed, system is down.</p>
+<p><strong>Solutions:</strong> Check your email and password. Try "Forgot password." Contact your admin. Wait and retry.</p>
+
+<h3>Dashboard is empty</h3>
+<p><strong>Possible causes:</strong> No responses yet, date filter set wrong, you don't have permission, or a filter is active.</p>
+<p><strong>Solutions:</strong> Check the date filter. Reset all filters. Check your role (manager sees only their location).</p>
+
+<h3>Survey not showing to customers</h3>
+<p><strong>Possible causes:</strong> Survey is in Draft, Archived, or the QR code is damaged.</p>
+<p><strong>Solutions:</strong> Check survey status (must be "Active"). Get the correct link. Test the QR code with your own phone. Reprint if damaged.</p>
+
+<h3>Customer says survey won't load</h3>
+<p><strong>Possible causes:</strong> Slow internet, outdated browser, or a temporary system issue.</p>
+<p><strong>Solutions:</strong> Check the survey on your own phone. Provide the direct URL (instead of QR code). Simplify the survey if it has too many questions.</p>
+
+<h3>False alert</h3>
+<p><strong>Possible causes:</strong> Customer accidentally submitted low rating, or threshold is set too high.</p>
+<p><strong>Solutions:</strong> Read the response to check. Dismiss the alert if not relevant. Adjust the threshold in Settings.</p>
+
+<h3>Email invitation not received</h3>
+<p><strong>Possible causes:</strong> Wrong email address, went to spam, or SMTP provider not configured.</p>
+<p><strong>Solutions:</strong> Check the email address. Check spam folder. Click Resend in Team > Invitations.</p>
+
+<h3>System is slow</h3>
+<p><strong>Solutions:</strong> Refresh the page. Check your internet. Try a different browser. Narrow your filters (smaller date range loads faster).</p>
+
+<div class="pb"></div>
+
+<!-- SECTION 12 -->
+<h2>12. Security</h2>
+
+<h3>How your data stays safe</h3>
+
+<table>
+  <tr><th>Security Feature</th><th>What it does</th></tr>
+  <tr><td><strong>User Accounts</strong></td><td>Each person has their own account. You know who did what, and you can remove access when someone leaves.</td></tr>
+  <tr><td><strong>Passwords</strong></td><td>Must be at least 12 characters. Stored encrypted (not saved as plain text). Use a different password than other services.</td></tr>
+  <tr><td><strong>Role-Based Access</strong></td><td>Managers see only their location. Admins see everything. People can only see what they need.</td></tr>
+  <tr><td><strong>Tenant Isolation</strong></td><td>Different organizations cannot see each other's data. Enforced at the database level.</td></tr>
+  <tr><td><strong>Encryption</strong></td><td>Data is encrypted between your browser and the system (HTTPS). Data at rest is encrypted in the database.</td></tr>
+  <tr><td><strong>Audit Logging</strong></td><td>Every important action is recorded — who logged in, who changed settings, who exported data.</td></tr>
+</table>
+
+<h3>What the system does NOT store</h3>
+<ul>
+  <li>❌ Customer names (feedback is anonymous)</li>
+  <li>❌ Customer personal information</li>
+  <li>❌ Payment or credit card information</li>
+  <li>❌ Plain-text passwords</li>
+</ul>
+
+<h3>Security Best Practices</h3>
+<ul>
+  <li>✅ Use strong passwords (12+ characters, mix of letters, numbers, symbols)</li>
+  <li>✅ Don't share your password — each person should have their own account</li>
+  <li>✅ Log out when you leave your computer</li>
+  <li>✅ Report suspicious activity to your admin</li>
+  <li>✅ Use a password manager</li>
+</ul>
+
+<div class="pb"></div>
+
+<!-- SECTION 13 -->
+<h2>13. Business Benefits</h2>
+
+<h3>How this system helps your business</h3>
+
+<div class="stat-row">
+  <div class="stat-card"><div class="stat-value">⏱️</div><div class="stat-label">Hours saved per week on reports</div></div>
+  <div class="stat-card"><div class="stat-value">📈</div><div class="stat-label">More feedback = better decisions</div></div>
+  <div class="stat-card"><div class="stat-value">🎯</div><div class="stat-label">Problems caught same-day</div></div>
+</div>
+
+<table class="compare-table">
+  <tr><th>Metric</th><th>Before</th><th>After</th></tr>
+  <tr><td>Feedback per month</td><td class="before">5-10 verbal comments</td><td class="after">150+ digital responses</td></tr>
+  <tr><td>Report time per week</td><td class="before">3 hours manual work</td><td class="after">15 minutes (auto-generated)</td></tr>
+  <tr><td>Response to problems</td><td class="before">2-5 days (or never)</td><td class="after">Same day (automatic alerts)</td></tr>
+  <tr><td>Location comparison</td><td class="before">Impossible</td><td class="after">Instant visual charts</td></tr>
+  <tr><td>Satisfaction tracking</td><td class="before">Guesswork</td><td class="after">Precise data (e.g., 82%)</td></tr>
+  <tr><td>Employee performance</td><td class="before">No data available</td><td class="after">Attribution data available</td></tr>
+</table>
+
+<div class="success-box">
+<strong>📊 The result:</strong> Smarter decisions, happier customers, better-performing employees, and lower operational costs — all from a simple QR code on a table.
+</div>
+
+<!-- SECTION 14 -->
+<h2>14. Conclusion</h2>
+
+<h3>You've got this</h3>
+
+<p>The Kuwait Feedback Platform was designed to be <strong>simple enough for anyone to use</strong>. You don't need to be a computer expert. You don't need technical training. If you can use a smartphone, you can use this system.</p>
+
+<div class="info-box">
+<strong>📌 Remember:</strong> Every feature in this system exists for one reason — to help you understand your customers better so you can make your business better.
+</div>
+
+<h3>Your next steps</h3>
+<ol>
+  <li><strong>Log in</strong> and explore the dashboard</li>
+  <li><strong>Create a simple survey</strong> and publish it</li>
+  <li><strong>Scan the QR code</strong> with your phone to test the customer experience</li>
+  <li><strong>Check the responses</strong> to see how they appear</li>
+  <li><strong>Invite a team member</strong> to share access</li>
+</ol>
+
+<div class="callout">
+<h4>🌟 Welcome aboard</h4>
+<p>Your customers have something to say — and now you can hear them.</p>
+</div>
+
+<div class="footer">
+Kuwait Feedback Platform — Beginner's Guide — Version 1.0.0-beta.1 — July 2026
+</div>
+
+</div>
+
+</body>
+</html>
