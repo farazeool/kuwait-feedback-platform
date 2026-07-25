@@ -96,17 +96,20 @@ export async function toggleEscalationRule(formData: FormData) {
   if (!context.organization) redirect("/dashboard/settings/channels/escalation?error=denied");
 
   const ruleId = formData.get("ruleId") as string;
+  if (!ruleId) redirect("/dashboard/settings/channels/escalation?error=invalid");
   const isActive = formData.get("isActive") === "true";
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = anySb(await createSupabaseServerClient()) as any;
-  await supabase
+  const { error } = await supabase
     .from("escalation_rules")
     .update({ is_active: isActive })
     .eq("id", ruleId)
     .eq("organization_id", context.organization.id);
 
-  redirect("/dashboard/settings/channels/escalation?updated=1");
+  redirect(error
+    ? "/dashboard/settings/channels/escalation?error=denied"
+    : "/dashboard/settings/channels/escalation?updated=1");
 }
 
 export async function deleteEscalationRule(formData: FormData) {
@@ -114,13 +117,16 @@ export async function deleteEscalationRule(formData: FormData) {
   if (!context.organization) redirect("/dashboard/settings/channels/escalation?error=denied");
 
   const ruleId = formData.get("ruleId") as string;
+  if (!ruleId) redirect("/dashboard/settings/channels/escalation?error=invalid");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = anySb(await createSupabaseServerClient()) as any;
-  await supabase
+  const { error } = await supabase
     .from("escalation_rules")
     .delete()
     .eq("id", ruleId)
     .eq("organization_id", context.organization.id);
 
-  redirect("/dashboard/settings/channels/escalation?deleted=1");
+  redirect(error
+    ? "/dashboard/settings/channels/escalation?error=denied"
+    : "/dashboard/settings/channels/escalation?deleted=1");
 }

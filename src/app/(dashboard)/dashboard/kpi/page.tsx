@@ -41,14 +41,6 @@ export default async function KpiDashboardPage({ searchParams }: { searchParams:
       {/* Filter bar */}
       <form className="grid gap-3 rounded-xl border border-border bg-white p-4 sm:grid-cols-3 xl:grid-cols-5">
         <FilterSelect
-          name="startAt" defaultValue={params.startAt} label="Period start"
-          options={[]}
-        />
-        <FilterSelect
-          name="endAt" defaultValue={params.endAt} label="Period end"
-          options={[]}
-        />
-        <FilterSelect
           name="locationId" defaultValue={params.locationId} label="Location"
           options={result.filters.locations.map((l) => ({ value: l.id, label: l.name_en }))}
         />

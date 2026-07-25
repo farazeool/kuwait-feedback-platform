@@ -12,7 +12,6 @@ import {
   effectivenessReviewSchema,
   closureApprovalSchema,
   type EvidenceFileType,
-  type EvidenceEntityType,
   type VerificationStatus,
 } from "./schema";
 
@@ -58,8 +57,16 @@ export async function uploadEvidence(formData: FormData) {
   revalidatePath("/dashboard/corrective-actions");
   revalidatePath("/dashboard/investigations");
 
+  // Validate returnTo — only allow internal dashboard paths
   const returnTo = formData.get("returnTo") as string;
-  if (returnTo) redirect(`${returnTo}?evidence_uploaded=1`);
+  if (returnTo) {
+    const allowedPrefixes = ["/dashboard/corrective-actions/", "/dashboard/investigations/", "/dashboard/evidence/"];
+    const isSafe = allowedPrefixes.some((prefix) => returnTo.startsWith(prefix));
+    if (isSafe) {
+      const params = new URLSearchParams({ evidence_uploaded: "1" });
+      redirect(`${returnTo}?${params.toString()}`);
+    }
+  }
   redirect(`/dashboard/evidence/${evidence.id}?created=1`);
 }
 
@@ -214,6 +221,16 @@ export async function submitClosureApproval(formData: FormData) {
 
   const supabase = await createSupabaseServerClient();
   const now = new Date().toISOString();
+
+  // Verify the action exists and belongs to this org before updating
+  const { data: ca } = await supabase
+    .from("corrective_actions")
+    .select("id, status")
+    .eq("id", correctiveActionId)
+    .eq("organization_id", context.organization.id)
+    .maybeSingle();
+
+  if (!ca) redirect(`/dashboard/corrective-actions/${correctiveActionId}?error=not_found`);
 
   const { error } = await supabase
     .from("corrective_actions")

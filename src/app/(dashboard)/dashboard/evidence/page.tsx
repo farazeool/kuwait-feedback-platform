@@ -119,11 +119,14 @@ export default async function EvidenceListPage({ searchParams }: { searchParams:
           <option value="rejected">Rejected</option>
           <option value="more_evidence_required">More evidence required</option>
         </select>
-        <select name="page" defaultValue={params.page ?? "1"} className={controlClass}>
-          {Array.from({ length: pageCount }, (_, i) => i + 1).map((p) => (
-            <option key={p} value={p}>Page {p}</option>
-          ))}
-        </select>
+        <div className="flex gap-2">
+          <select name="page" defaultValue={params.page ?? "1"} className={`${controlClass} flex-1`}>
+            {Array.from({ length: pageCount }, (_, i) => i + 1).map((p) => (
+              <option key={p} value={p}>Page {p}</option>
+            ))}
+          </select>
+          <button className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white">Filter</button>
+        </div>
       </form>
 
       <div className="rounded-xl border border-border bg-white overflow-hidden">

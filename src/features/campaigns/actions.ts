@@ -73,11 +73,13 @@ export async function deleteCampaign(formData: FormData) {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = (await createSupabaseServerClient()) as any;
-  await supabase
+  const { error } = await supabase
     .from("campaigns")
     .delete()
     .eq("id", campaignId)
     .eq("organization_id", context.organization.id);
 
-  redirect("/dashboard/settings/channels/campaigns?deleted=1");
+  redirect(error
+    ? "/dashboard/settings/channels/campaigns?error=denied"
+    : "/dashboard/settings/channels/campaigns?deleted=1");
 }

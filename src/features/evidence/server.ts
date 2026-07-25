@@ -85,7 +85,11 @@ export async function listEvidence(filters: {
     .order("uploaded_at", { ascending: false });
 
   if (filters.q?.trim()) {
-    query = query.or(`file_name.ilike.%${filters.q}%,description.ilike.%${filters.q}%`);
+    // Sanitize search term: remove PostgREST-reserved characters and wrap in parens for multi-word safety
+    const sanitized = filters.q.trim().replace(/[(),.%*]/g, " ").replace(/\s+/g, " ").trim();
+    if (sanitized) {
+      query = query.or(`file_name.ilike.%${sanitized}%,description.ilike.%${sanitized}%`);
+    }
   }
   if (filters.entityType) query = query.eq("entity_type", filters.entityType as EvidenceEntityType);
   if (filters.entityId) query = query.eq("entity_id", filters.entityId);
@@ -99,15 +103,8 @@ export async function listEvidence(filters: {
 
   const { data, error, count } = await query;
   if (error) {
-    const message = [
-      `code=${error.code ?? "unknown"}`,
-      `message=${error.message ?? "unknown"}`,
-      `details=${error.details ?? "none"}`,
-      `hint=${error.hint ?? "none"}`
-    ].join(" | ");
-
-    console.error("listEvidence failed:", message);
-    throw new Error(message);
+    console.error("listEvidence failed:", error.code, error.message, error.details, error.hint);
+    throw new Error("Failed to load evidence");
   }
 
   return {
@@ -129,6 +126,7 @@ export async function getEvidence(evidenceId: string) {
     .from("evidence")
     .select("*, uploader:profiles!uploaded_by(display_name), verifier:profiles!verified_by(display_name)")
     .eq("id", evidenceId)
+    .eq("organization_id", context.organization.id)
     .maybeSingle();
 
   if (error || !evidence) notFound();

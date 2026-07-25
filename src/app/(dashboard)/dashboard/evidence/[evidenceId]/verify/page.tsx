@@ -104,7 +104,8 @@ export default async function VerifyEvidencePage({
             <input type="hidden" name="evidenceId" value={evidenceId} />
             <label className="grid gap-2">
               <span className="text-sm font-semibold">Status</span>
-              <select name="status" className="rounded-lg border border-border px-3 py-2 text-sm">
+              <select name="status" required className="rounded-lg border border-border px-3 py-2 text-sm">
+                <option value="" disabled>Select a decision…</option>
                 <option value="accepted">Accept</option>
                 <option value="rejected">Reject</option>
                 <option value="more_evidence_required">Request more evidence</option>

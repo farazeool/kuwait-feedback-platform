@@ -144,11 +144,12 @@ export async function updateInvestigationStatus(formData: FormData) {
 
   const supabase = await createSupabaseServerClient();
 
-  // Get current investigation to capture old status
+  // Get current investigation scoped to user's org
   const { data: current } = await supabase
     .from("investigations")
     .select("status, organization_id")
     .eq("id", investigationId)
+    .eq("organization_id", context.organization.id)
     .maybeSingle();
 
   if (!current) redirect(`/dashboard/investigations/${investigationId}?error=not_found`);
@@ -204,6 +205,17 @@ export async function addComment(formData: FormData) {
   if (!parsed.success) redirect(`/dashboard/investigations/${investigationId}?error=invalid_comment`);
 
   const supabase = await createSupabaseServerClient();
+
+  // Verify the investigation exists and belongs to this org
+  const { data: validInvestigation } = await supabase
+    .from("investigations")
+    .select("id")
+    .eq("id", investigationId)
+    .eq("organization_id", context.organization.id)
+    .maybeSingle();
+
+  if (!validInvestigation) redirect(`/dashboard/investigations/${investigationId}?error=not_found`);
+
   const { error } = await supabase.from("investigation_comments").insert({
     investigation_id: investigationId,
     organization_id: context.organization.id,

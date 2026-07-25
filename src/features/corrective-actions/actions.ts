@@ -133,11 +133,12 @@ export async function updateCorrectiveActionStatus(formData: FormData) {
 
   const supabase = await createSupabaseServerClient();
 
-  // Get current action to capture old status
+  // Get current action with org validation
   const { data: currentAction } = await supabase
     .from("corrective_actions")
     .select("status, organization_id")
     .eq("id", actionId)
+    .eq("organization_id", context.organization.id)
     .maybeSingle();
 
   if (!currentAction) redirect(`/dashboard/corrective-actions/${actionId}?error=not_found`);
@@ -203,6 +204,17 @@ export async function addCorrectiveActionComment(formData: FormData) {
   if (!parsed.success) redirect(`/dashboard/corrective-actions/${actionId}?error=invalid_comment`);
 
   const supabase = await createSupabaseServerClient();
+
+  // Verify the corrective action belongs to this org before adding a comment
+  const { data: validAction } = await supabase
+    .from("corrective_actions")
+    .select("id")
+    .eq("id", actionId)
+    .eq("organization_id", context.organization.id)
+    .maybeSingle();
+
+  if (!validAction) redirect(`/dashboard/corrective-actions/${actionId}?error=not_found`);
+
   const { error } = await supabase.from("corrective_action_comments").insert({
     corrective_action_id: actionId,
     organization_id: context.organization.id,

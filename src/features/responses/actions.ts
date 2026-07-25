@@ -6,7 +6,10 @@ import { z } from "zod";
 import { requireAppAccessContext } from "@/lib/auth/context";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-const controlledRecordTypeEnum = z.enum(["investigation", "ncr", "capa"]).nullable().optional();
+const controlledRecordTypeEnum = z.preprocess(
+  (value) => (value === "" ? null : value),
+  z.enum(["investigation", "ncr", "capa"]).nullable().optional(),
+);
 
 const responseWorkflowSchema = z.object({
   responseId: z.string().uuid(),

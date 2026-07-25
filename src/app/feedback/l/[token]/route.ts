@@ -26,7 +26,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const result = clickResult as Record<string, unknown>;
   const surveyId = result.survey_id as string;
   const campaignId = result.campaign_id as string | null;
-  const employeeId = result.employee_id as string | null;
   const touchpointId = result.touchpoint_id as string | null;
   const channel = result.channel as string | null;
 
@@ -46,14 +45,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 
   // Build redirect URL with attribution
-  // d = distribution public token, t = touchpoint token (separate concepts)
+  // d = distribution public token, t = touchpoint token (align with feedback page's searchParams)
   const feedbackPath = `/feedback/${slug}`;
   const qp = new URLSearchParams();
   qp.set("d", token);
   if (channel) qp.set("ch", channel);
   if (campaignId) qp.set("c", campaignId);
-  if (employeeId) qp.set("e", employeeId);
-  if (touchpointId) qp.set("tp", touchpointId);
+  if (touchpointId) qp.set("t", touchpointId);
   if (ratingParam) qp.set("r", ratingParam);
 
   return NextResponse.redirect(new URL(`${feedbackPath}?${qp.toString()}`, request.nextUrl.origin), 302);

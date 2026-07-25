@@ -48,76 +48,54 @@ export async function generateMonthlyReport(filters: ReportFilters) {
 
   if (!startAt || !endAt) return { context, report: null };
 
+  const startDate = new Date(startAt);
+  const endDate = new Date(endAt);
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime()) || startDate > endDate) {
+    return { context, report: null };
+  }
+
   const base = {
     p_organization_id: orgId,
-    p_start_at: new Date(startAt).toISOString(),
-    p_end_at: new Date(endAt).toISOString(),
+    p_start_at: startDate.toISOString(),
+    p_end_at: endDate.toISOString(),
   };
 
-  // KPI data via RPC
-  const { data: kpiData } = await supabase.rpc("get_kpi_dashboard", {
-    ...base,
-    ...(filters.locationId ? { p_location_id: filters.locationId } : {}),
-    ...(filters.surveyId ? { p_survey_id: filters.surveyId } : {}),
-  });
-
-  // Concern trend via RPC
-  const { data: concernTrend } = await supabase.rpc("get_concern_trend", {
-    ...base,
-    ...(filters.locationId ? { p_location_id: filters.locationId } : {}),
-    ...(filters.surveyId ? { p_survey_id: filters.surveyId } : {}),
-  });
-
-  // Alert summary
   const alertBase = { p_organization_id: orgId, p_start_at: base.p_start_at, p_end_at: base.p_end_at };
-  const { data: alertSummary } = await supabase.rpc("get_alert_summary", {
-    ...alertBase,
-    ...(filters.locationId ? { p_location_id: filters.locationId } : {}),
-  });
 
-  // Review outcome summary
-  const { data: reviewOutcomes } = await supabase.rpc("get_review_summary", {
-    ...alertBase,
-    ...(filters.locationId ? { p_location_id: filters.locationId } : {}),
-  });
+  // Execute all independent RPCs in parallel
+  const rpcCalls = await Promise.allSettled([
+    supabase.rpc("get_kpi_dashboard", { ...base, ...(filters.locationId ? { p_location_id: filters.locationId } : {}), ...(filters.surveyId ? { p_survey_id: filters.surveyId } : {}) }),
+    supabase.rpc("get_concern_trend", { ...base, ...(filters.locationId ? { p_location_id: filters.locationId } : {}), ...(filters.surveyId ? { p_survey_id: filters.surveyId } : {}) }),
+    supabase.rpc("get_alert_summary", { ...alertBase, ...(filters.locationId ? { p_location_id: filters.locationId } : {}) }),
+    supabase.rpc("get_review_summary", { ...alertBase, ...(filters.locationId ? { p_location_id: filters.locationId } : {}) }),
+    supabase.rpc("get_corrective_action_stats", { p_organization_id: orgId, p_start_at: base.p_start_at, p_end_at: base.p_end_at, ...(filters.locationId ? { p_location_id: filters.locationId } : {}) }),
+    supabase.rpc("get_branch_ranking", { p_organization_id: orgId, p_start_at: base.p_start_at, p_end_at: base.p_end_at }),
+    supabase.rpc("get_department_ranking", { p_organization_id: orgId, p_start_at: base.p_start_at, p_end_at: base.p_end_at }),
+    supabase.rpc("get_alert_severity_breakdown", { p_organization_id: orgId, p_start_at: base.p_start_at, p_end_at: base.p_end_at, ...(filters.locationId ? { p_location_id: filters.locationId } : {}) }),
+    supabase.rpc("get_alert_trigger_breakdown", { p_organization_id: orgId, p_start_at: base.p_start_at, p_end_at: base.p_end_at, ...(filters.locationId ? { p_location_id: filters.locationId } : {}) }),
+  ]);
 
-  // Corrective actions summary
-  const { data: correctiveActionsSummary } = await supabase.rpc("get_corrective_action_stats", {
-    p_organization_id: orgId,
-    p_start_at: base.p_start_at,
-    p_end_at: base.p_end_at,
-    ...(filters.locationId ? { p_location_id: filters.locationId } : {}),
-  });
+  const extract = <T,>(result: PromiseSettledResult<{ data: T; error: unknown }>): T | null =>
+    result.status === "fulfilled" && result.value.data ? result.value.data : null;
 
-  // Branch/location ranking
-  const { data: branchRanking } = await supabase.rpc("get_branch_ranking", {
-    p_organization_id: orgId,
-    p_start_at: base.p_start_at,
-    p_end_at: base.p_end_at,
-  });
-
-  // Department ranking
-  const { data: departmentRanking } = await supabase.rpc("get_department_ranking", {
-    p_organization_id: orgId,
-    p_start_at: base.p_start_at,
-    p_end_at: base.p_end_at,
-  });
-
-  // Severity breakdown for alerts
-  const { data: alertSeverityBreakdown } = await supabase.rpc("get_alert_severity_breakdown", {
-    p_organization_id: orgId,
-    p_start_at: base.p_start_at,
-    p_end_at: base.p_end_at,
-    ...(filters.locationId ? { p_location_id: filters.locationId } : {}),
-  });
-
-  // Trigger/rule type breakdown
-  const { data: triggerBreakdown } = await supabase.rpc("get_alert_trigger_breakdown", {
-    p_organization_id: orgId,
-    p_start_at: base.p_start_at,
-    p_end_at: base.p_end_at,
-    ...(filters.locationId ? { p_location_id: filters.locationId } : {}),
-  });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const kpiData = extract<any>(rpcCalls[0]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const concernTrend = extract<any>(rpcCalls[1]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const alertSummary = extract<any>(rpcCalls[2]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const reviewOutcomes = extract<any>(rpcCalls[3]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const correctiveActionsSummary = extract<any>(rpcCalls[4]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const branchRanking = extract<any>(rpcCalls[5]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const departmentRanking = extract<any>(rpcCalls[6]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const alertSeverityBreakdown = extract<any>(rpcCalls[7]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const triggerBreakdown = extract<any>(rpcCalls[8]);
 
   // Management decisions from investigations
   const { data: managementDecisions } = await (supabase.rpc as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: Json[] | null }>)("get_management_decisions", {
@@ -227,7 +205,7 @@ export async function getCorrectiveActionsList(filters: {
   let query = supabase
     .from("corrective_actions")
     .select("*, branch:locations!branch_id(id, name_en, name_ar), department:departments!department_id(id, name_en, name_ar), assigned_owner:profiles!assigned_owner_id(display_name, email), alerts:alerts!related_alert_id(id, alert_type, severity)", { count: "exact" })
-    .eq("organization_id", filters.organizationId)
+    .eq("organization_id", context.organization.id)
     .order("created_at", { ascending: false });
 
   if (filters.status) query = query.eq("status", filters.status as "open" | "rejected" | "draft" | "in_progress" | "pending_verification" | "verified" | "effectiveness_review" | "closed");

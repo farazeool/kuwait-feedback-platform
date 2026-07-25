@@ -234,7 +234,7 @@ export const ar: Record<MessageKey, string> = {
   "settings.security": "الأمان",
   "settings.alerts": "إعدادات التنبيهات",
   "settings.departments": "الأقسام",
-  "settings.touchpoints": "نقاط التجميع",
+  "settings.touchpoints": "نقاط التواصل",
   "settings.ratingScales": "مقاييس التقييم",
   "settings.nameEn": "الاسم بالإنجليزية",
   "settings.nameAr": "الاسم بالعربية",

@@ -20,8 +20,9 @@ export async function listDepartments() {
 export async function getDepartment(departmentId: string) {
   const context = await getAppAccessContext();
   if (!context) throw new Error("Authentication required");
+  if (!context.organization) notFound();
   const supabase = await createSupabaseServerClient();
-  const { data } = await supabase.from("departments").select("*").eq("id", departmentId).maybeSingle();
+  const { data } = await supabase.from("departments").select("*").eq("id", departmentId).eq("organization_id", context.organization.id).maybeSingle();
   if (!data) notFound();
   return { context, department: data };
 }
