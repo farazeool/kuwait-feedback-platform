@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { updateCorrectiveActionStatus, addCorrectiveActionComment, deleteCorrectiveAction } from "@/features/corrective-actions/actions";
-import { getCorrectiveAction, getFilterOptions } from "@/features/corrective-actions/server";
-import { getMessages, type Locale } from "@/lib/i18n/messages";
+import { getCorrectiveAction } from "@/features/corrective-actions/server";
 import { formatKuwaitDate, formatKuwaitDateTime } from "@/lib/datetime/kuwait";
 
 const controlClass = "rounded-lg border border-border px-3 py-2 text-sm";
@@ -37,8 +36,6 @@ function PriorityBadge({ priority }: { priority: string }) {
 export default async function CorrectiveActionDetailPage({ params, searchParams }: { params: Promise<{ actionId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const [{ actionId }, notice] = await Promise.all([params, searchParams]);
   const detail = await getCorrectiveAction(actionId);
-  const m = getMessages(detail.context.profile.locale as Locale);
-  const filterOpts = await getFilterOptions();
 
   const canEdit = detail.context.profile.platformRole === "platform_admin" ||
     detail.action.assigned_owner_id === detail.context.user.id ||

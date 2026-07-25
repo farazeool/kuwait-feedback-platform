@@ -1,8 +1,7 @@
 import { notFound } from "next/navigation";
 import { getCorrectiveAction } from "@/features/corrective-actions/server";
-import { getEvidenceForEntity, getEffectivenessReviewsForAction, getFilterOptions } from "@/features/evidence/server";
+import { getEvidenceForEntity, getEffectivenessReviewsForAction } from "@/features/evidence/server";
 import { submitEffectivenessReview } from "@/features/evidence/actions";
-import { getMessages, type Locale } from "@/lib/i18n/messages";
 import { formatKuwaitDate, formatKuwaitDateTime } from "@/lib/datetime/kuwait";
 import Link from "next/link";
 
@@ -44,9 +43,6 @@ export default async function EffectivenessReviewPage({
 }) {
   const [{ actionId }, notice] = await Promise.all([params, searchParams]);
   const { context, action } = await getCorrectiveAction(actionId);
-  const m = getMessages(context.profile.locale as Locale);
-  const filterOpts = await getFilterOptions();
-
   const canReview = context.profile.platformRole === "platform_admin" ||
     ["organization_owner", "organization_admin", "location_manager"].includes(context.membership?.role ?? "");
 
@@ -60,8 +56,6 @@ export default async function EffectivenessReviewPage({
   const pendingEvidence = evidence.filter((e) => e.verification_status === "pending" || e.verification_status === "more_evidence_required");
   const hasUnverified = pendingEvidence.length > 0;
   const latestReview = reviews.length > 0 ? reviews[0] : null;
-  const hasExistingReview = latestReview !== null;
-
   return (
     <div className="grid gap-6 max-w-4xl">
       <header className="flex flex-wrap items-start justify-between gap-4">

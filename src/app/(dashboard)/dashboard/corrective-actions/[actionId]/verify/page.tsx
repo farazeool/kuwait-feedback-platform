@@ -1,9 +1,7 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { getCorrectiveAction } from "@/features/corrective-actions/server";
 import { getEvidenceForEntity } from "@/features/evidence/server";
 import { verifyEvidence } from "@/features/evidence/actions";
-import { getMessages, type Locale } from "@/lib/i18n/messages";
 import { formatKuwaitDate, formatKuwaitDateTime } from "@/lib/datetime/kuwait";
 
 const statusColors: Record<string, string> = {
@@ -66,7 +64,6 @@ export default async function CorrectiveActionVerifyPage({
 }) {
   const [{ actionId }, notice] = await Promise.all([params, searchParams]);
   const detail = await getCorrectiveAction(actionId);
-  const m = getMessages(detail.context.profile.locale as Locale);
 
   const evidence = await getEvidenceForEntity("corrective_action", actionId);
 

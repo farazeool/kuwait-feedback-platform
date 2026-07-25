@@ -1,7 +1,6 @@
 import Link from "next/link";
 
 import { listCorrectiveActions, getFilterOptions } from "@/features/corrective-actions/server";
-import { getMessages } from "@/lib/i18n/messages";
 import { formatKuwaitDateTime as formatKuwaitDate } from "@/lib/datetime/kuwait";
 
 const controlClass = "rounded-lg border border-border px-3 py-2 text-sm";
@@ -36,7 +35,6 @@ export default async function CorrectiveActionsPage({ searchParams }: { searchPa
     dueDateTo: params.dueDateTo,
     page: params.page ? Number(params.page) : 1,
   });
-  const m = getMessages(context.profile.locale);
   const filterOptions = await getFilterOptions();
 
   return (

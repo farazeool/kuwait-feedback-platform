@@ -1,6 +1,5 @@
 import { createCorrectiveAction } from "@/features/corrective-actions/actions";
 import { getFilterOptions } from "@/features/corrective-actions/server";
-import { getMessages } from "@/lib/i18n/messages";
 
 export default async function NewCorrectiveActionPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const params = await searchParams;
