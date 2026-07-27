@@ -67,10 +67,6 @@ export default async function EvidenceDetailPage({
   const m = getMessages(detail.context.profile.locale as Locale);
   const filterOpts = await getFilterOptions();
 
-  const canEdit = detail.context.profile.platformRole === "platform_admin" ||
-    detail.evidence.uploaded_by === detail.context.user.id ||
-    ["organization_owner", "organization_admin", "location_manager"].includes(detail.context.membership?.role ?? "");
-
   const canVerify = detail.context.profile.platformRole === "platform_admin" ||
     ["organization_owner", "organization_admin", "location_manager"].includes(detail.context.membership?.role ?? "");
 
@@ -127,7 +123,6 @@ export default async function EvidenceDetailPage({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {canEdit && <Link className="rounded-lg border border-border px-4 py-2 font-medium" href={`/dashboard/evidence/${evidenceId}/edit`}>Edit</Link>}
           {isPlatformAdmin && (
             <form action={deleteEvidence}>
               <input type="hidden" name="evidenceId" value={evidenceId} />

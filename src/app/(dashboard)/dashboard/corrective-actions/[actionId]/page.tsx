@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { updateCorrectiveActionStatus, addCorrectiveActionComment, deleteCorrectiveAction } from "@/features/corrective-actions/actions";
 import { getCorrectiveAction } from "@/features/corrective-actions/server";
 import { formatKuwaitDate, formatKuwaitDateTime } from "@/lib/datetime/kuwait";
@@ -54,7 +53,6 @@ export default async function CorrectiveActionDetailPage({ params, searchParams 
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {canEdit && <Link className="rounded-lg border border-border px-4 py-2 font-medium" href={`/dashboard/corrective-actions/${actionId}/edit`}>Edit</Link>}
           {isAdmin && <form action={deleteCorrectiveAction}><input type="hidden" name="actionId" value={actionId} /><button className="rounded-lg border border-red-300 bg-red-50 px-4 py-2 font-medium text-red-700 hover:bg-red-100">Delete</button></form>}
         </div>
       </header>

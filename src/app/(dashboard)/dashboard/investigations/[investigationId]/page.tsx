@@ -51,7 +51,6 @@ export default async function InvestigationDetailPage({ params, searchParams }: 
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {canEdit && <Link className="rounded-lg border border-border px-4 py-2 font-medium" href={`/dashboard/investigations/${investigationId}/edit`}>Edit</Link>}
           {isAdmin && (
             <form action={deleteInvestigation}>
               <input type="hidden" name="investigationId" value={investigationId} />
