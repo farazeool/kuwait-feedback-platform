@@ -94,15 +94,25 @@ export async function createAssignment(formData: FormData) {
   const supabase = sb(await createSupabaseServerClient());
   const v = parsed.data;
 
-  const targetCol = v.targetType === "employee" ? "assigned_employee_id" :
-    v.targetType === "location" ? "assigned_location_id" : "assigned_touchpoint_id";
+  const fkCols =
+    v.kind === "fk"
+      ? {
+          [v.targetType === "employee"
+            ? "assigned_employee_id"
+            : v.targetType === "location"
+              ? "assigned_location_id"
+              : "assigned_touchpoint_id"]: v.targetId,
+          subject_type: v.targetType,
+          subject_id: v.targetId,
+        }
+      : { subject_type: v.subjectType, subject_id: v.subjectId };
 
   const { error } = await supabase.from("distribution_assignments").insert({
     organization_id: ctx.organization.id,
     template_id: v.templateId,
-    survey_id: v.surveyId,
+    survey_id: v.surveyId ?? null,
     campaign_id: v.campaignId || null,
-    [targetCol]: v.targetId,
+    ...fkCols,
     metadata: v.metadata,
     expires_at: v.expiresAt || null,
     created_by: ctx.user.id,

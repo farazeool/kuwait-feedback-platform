@@ -5,6 +5,10 @@ import { listTemplates, listAssignments } from "@/features/distribution/template
 import { renderEmailSignatureHtml } from "@/features/distribution/renderers/email";
 import { archiveTemplate, bulkAssign, revokeAssignment } from "@/features/distribution/actions";
 import { CopyLinkButton } from "@/components/surveys/copy-link-button";
+import { getSignatureSubjectReport } from "@/features/distribution/report";
+import { resolveAnalyticsRange } from "@/features/analytics/dates";
+import { MetricCard } from "@/components/analytics/metric-card";
+import { AccessibleBarChart } from "@/components/analytics/bar-chart";
 
 export default async function EmailSignaturesPage({
   searchParams,
@@ -19,6 +23,23 @@ export default async function EmailSignaturesPage({
     requireOrganizationManagementContext(),
   ]);
   const env = getServerEnv();
+
+  let reportData = null;
+  if (tab === "reports") {
+    const range = resolveAnalyticsRange({ preset: notice.preset ?? "30d", from: notice.from, to: notice.to });
+    try {
+      reportData = await getSignatureSubjectReport({
+        organizationId: ctx.organization!.id,
+        startAt: range.start,
+        endAt: range.end,
+        subjectType: notice.subjectType,
+        templateId: notice.templateId,
+        locationId: notice.locationId,
+      });
+    } catch {
+      reportData = { subjects: [], totals: { count: 0, avg_rating: null } };
+    }
+  }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const orgName = (ctx.organization as any)?.name_en ?? (ctx.organization?.nameEn ?? "Organization");
   const appUrl = env.NEXT_PUBLIC_APP_URL;
@@ -51,6 +72,10 @@ export default async function EmailSignaturesPage({
         <Link href="/dashboard/settings/channels/email-signatures?tab=assignments"
           className={`rounded-lg px-4 py-2 text-sm font-semibold ${tab === "assignments" ? "bg-white text-foreground shadow-sm" : "text-muted"}`}>
           Assignments ({assignmentsResult.assignments.length})
+        </Link>
+        <Link href="/dashboard/settings/channels/email-signatures?tab=reports"
+          className={`rounded-lg px-4 py-2 text-sm font-semibold ${tab === "reports" ? "bg-white text-foreground shadow-sm" : "text-muted"}`}>
+          Reports
         </Link>
         <Link href="/dashboard/settings/channels/email-signatures?tab=setup"
           className={`rounded-lg px-4 py-2 text-sm font-semibold ${tab === "setup" ? "bg-white text-foreground shadow-sm" : "text-muted"}`}>
@@ -136,6 +161,59 @@ export default async function EmailSignaturesPage({
               )}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {tab === "reports" && (
+        <div className="grid gap-6">
+          {/* Date filter */}
+          <div className="flex flex-wrap gap-2">
+            {[
+              { key: "7d", label: "Last 7 days" },
+              { key: "30d", label: "Last 30 days" },
+              { key: "90d", label: "Last 90 days" },
+            ].map(({ key, label }) => (
+              <Link
+                key={key}
+                href={`/dashboard/settings/channels/email-signatures?tab=reports&preset=${key}`}
+                className={`rounded-lg border px-3 py-1.5 text-xs font-medium ${notice.preset === key || (!notice.preset && key === "30d") ? "border-brand bg-brand/10 text-brand" : "border-border text-muted hover:border-brand"}`}
+              >
+                {label}
+              </Link>
+            ))}
+          </div>
+
+          {/* Headline metrics */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <MetricCard
+              label="Total ratings"
+              value={String(reportData?.totals?.count ?? 0)}
+            />
+            <MetricCard
+              label="Average rating"
+              value={reportData?.totals?.avg_rating != null ? `${reportData.totals.avg_rating} / 5` : "—"}
+            />
+          </div>
+
+          {/* Per-subject bar chart */}
+          {reportData && reportData.subjects.length > 0 ? (
+            <div className="rounded-xl border border-border bg-white p-6">
+              <h2 className="mb-4 text-base font-semibold text-foreground">Ratings by subject</h2>
+              <AccessibleBarChart
+                title="Average rating by subject"
+                suffix=" / 5"
+                items={reportData.subjects.map((s) => ({
+                  label: s.label,
+                  value: s.avg_rating ?? 0,
+                  detail: `${s.count} rating${s.count === 1 ? "" : "s"}`,
+                }))}
+              />
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-border p-12 text-center text-sm text-muted">
+              No rating data for this period.
+            </div>
+          )}
         </div>
       )}
 

@@ -20,17 +20,36 @@ export const distributionTemplateSchema = z.object({
 
 export type DistributionTemplateInput = z.infer<typeof distributionTemplateSchema>;
 
-export const distributionAssignmentSchema = z.object({
+const assignmentBase = z.object({
   templateId: z.string().uuid(),
-  surveyId: z.string().uuid(),
+  surveyId: z.string().uuid().nullable().optional(),
   campaignId: z.string().uuid().nullable().optional(),
-  targetType: z.enum(ASSIGNMENT_TARGETS),
-  targetId: z.string().uuid(),
   metadata: z.record(z.string(), z.unknown()).optional().default({}),
   expiresAt: z.string().datetime().nullable().optional(),
 });
 
+export const distributionAssignmentSchema = z.discriminatedUnion("kind", [
+  assignmentBase.extend({
+    kind: z.literal("fk"),
+    targetType: z.enum(ASSIGNMENT_TARGETS),
+    targetId: z.string().uuid(),
+  }),
+  assignmentBase.extend({
+    kind: z.literal("generic"),
+    subjectType: z.string().min(1).max(64),
+    subjectId: z.string().min(1).max(200),
+  }),
+]);
+
 export type DistributionAssignmentInput = z.infer<typeof distributionAssignmentSchema>;
+
+const TOKEN_REGEX = /^[a-zA-Z0-9-]{24,128}$/;
+export const ratingSubmissionSchema = z.object({
+  token: z.string().regex(TOKEN_REGEX),
+  rating: z.number().int().min(1).max(5),
+  nonce: z.string().regex(/^[a-f0-9]{36}$/),
+  website: z.string().max(0).optional(),
+});
 
 export const emailRenderConfigSchema = z.object({
   ratingStyle: z.enum(["emoji", "star", "three_option", "yes_no"]).default("emoji"),

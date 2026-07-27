@@ -23,11 +23,14 @@ export interface DistributionAssignment {
   id: string;
   organization_id: string;
   template_id: string;
-  survey_id: string;
+  survey_id: string | null;
   campaign_id: string | null;
   assigned_employee_id: string | null;
   assigned_location_id: string | null;
   assigned_touchpoint_id: string | null;
+  subject_type: string | null;
+  subject_id: string | null;
+  revoked_at: string | null;
   public_token: string;
   status: string;
   expires_at: string | null;
@@ -38,6 +41,24 @@ export interface DistributionAssignment {
   created_at: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
+}
+
+export function resolveSubjectLabel(
+  assignment: Pick<DistributionAssignment, "subject_type" | "subject_id" | "metadata"> & {
+    employee?: { display_name?: string } | null;
+    location?: { name_en?: string } | null;
+    touchpoint?: { name_en?: string } | null;
+  },
+): string {
+  const metaLabel = (assignment.metadata as Record<string, unknown>)?.label;
+  if (typeof metaLabel === "string" && metaLabel) return metaLabel;
+  if (assignment.employee?.display_name) return assignment.employee.display_name;
+  if (assignment.location?.name_en) return assignment.location.name_en;
+  if (assignment.touchpoint?.name_en) return assignment.touchpoint.name_en;
+  if (assignment.subject_type && assignment.subject_id) {
+    return `${assignment.subject_type}: ${assignment.subject_id}`;
+  }
+  return "Unknown";
 }
 
 export async function listTemplates(channel?: string) {
