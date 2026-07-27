@@ -35,49 +35,41 @@ export async function GET(
   const { assignmentId: token } = await params;
 
   const fontEntry = getFont();
-  const fonts = fontEntry ? [{ name: "Inter", data: fontEntry, weight: 400 as const }] : [];
+  // When our bundled Inter font is absent, omit `fonts` entirely so @vercel/og
+  // falls back to its built-in default font. Passing an empty array disables all
+  // fonts and throws "No fonts are loaded".
+  const fonts = fontEntry ? [{ name: "Inter", data: fontEntry, weight: 400 as const }] : undefined;
 
-  const placeholderResponse = () =>
-    new ImageResponse(buildPlaceholderBadge(W, H), { width: W, height: H, fonts });
-
-  if (!TOKEN_RE.test(token)) {
-    return new NextResponse(placeholderResponse().body, {
+  const pngResponse = async (element: ReturnType<typeof buildPlaceholderBadge>, cacheSeconds = 300) => {
+    const img = new ImageResponse(element, { width: W, height: H, fonts });
+    const buf = await img.arrayBuffer();
+    return new NextResponse(buf, {
       status: 200,
       headers: {
         "Content-Type": "image/png",
-        "Cache-Control": "public, max-age=60, s-maxage=60",
+        "Cache-Control": `public, max-age=${cacheSeconds}, s-maxage=${cacheSeconds}`,
         "X-Content-Type-Options": "nosniff",
       },
     });
+  };
+
+  if (!TOKEN_RE.test(token)) {
+    return pngResponse(buildPlaceholderBadge(W, H), 60);
   }
 
   const supabase = sb(createSupabaseAnonymousClient());
-  const { data: assignment } = await supabase
-    .from("distribution_assignments")
-    .select("status, expires_at, template:distribution_templates!template_id(render_config)")
-    .eq("public_token", token)
-    .single();
+  // anon has no SELECT on distribution_assignments (by design). Resolve the
+  // badge via a read-only SECURITY DEFINER RPC that returns only {active, render_config}.
+  const { data: badge } = await supabase.rpc("get_signature_badge", {
+    p_public_token: token,
+  });
 
-  const isInactive =
-    !assignment ||
-    assignment.status === "revoked" ||
-    assignment.status === "expired" ||
-    (assignment.expires_at && new Date(assignment.expires_at) < new Date());
-
-  const renderConfig = (assignment?.template?.render_config ?? {}) as Record<string, unknown>;
+  const isInactive = !badge || badge.active !== true;
+  const renderConfig = (badge?.render_config ?? {}) as Record<string, unknown>;
 
   const element = isInactive
     ? buildPlaceholderBadge(W, H)
     : buildSignatureBadge({ config: renderConfig, width: W, height: H });
 
-  const img = new ImageResponse(element, { width: W, height: H, fonts });
-
-  return new NextResponse(img.body, {
-    status: 200,
-    headers: {
-      "Content-Type": "image/png",
-      "Cache-Control": "public, max-age=300, s-maxage=300",
-      "X-Content-Type-Options": "nosniff",
-    },
-  });
+  return pngResponse(element, isInactive ? 60 : 300);
 }
