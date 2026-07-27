@@ -6,17 +6,24 @@ import { requireOrganizationManagementContext } from "@/lib/auth/context";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { distributionTemplateSchema, distributionAssignmentSchema } from "./schema";
 
+// The distribution template/assignment UI lives on the email-signatures channel
+// page, which switches views via the `tab` query param. Templates are the
+// default tab; assignments require `?tab=assignments`.
+const CHANNEL_URL = "/dashboard/settings/channels/email-signatures";
+const TEMPLATES_URL = CHANNEL_URL;
+const ASSIGNMENTS_URL = `${CHANNEL_URL}?tab=assignments`;
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const sb = (s: any) => s;
 
 export async function createTemplate(formData: FormData) {
   const ctx = await requireOrganizationManagementContext();
-  if (!ctx.organization) redirect("/dashboard/distribution/templates?error=denied");
+  if (!ctx.organization) redirect(`${TEMPLATES_URL}?error=denied`);
 
   let input: unknown;
-  try { input = JSON.parse(String(formData.get("template") ?? "")); } catch { redirect("/dashboard/distribution/templates?error=invalid"); }
+  try { input = JSON.parse(String(formData.get("template") ?? "")); } catch { redirect(`${TEMPLATES_URL}?error=invalid`); }
   const parsed = distributionTemplateSchema.safeParse(input);
-  if (!parsed.success) redirect("/dashboard/distribution/templates?error=invalid");
+  if (!parsed.success) redirect(`${TEMPLATES_URL}?error=invalid`);
 
   const supabase = sb(await createSupabaseServerClient());
   const v = parsed.data;
@@ -32,20 +39,20 @@ export async function createTemplate(formData: FormData) {
     created_by: ctx.user.id,
   });
 
-  redirect(error ? `/dashboard/distribution/templates?error=creation_failed` : `/dashboard/distribution/templates?created=1`);
+  redirect(error ? `${TEMPLATES_URL}?error=creation_failed` : `${TEMPLATES_URL}?created=1`);
 }
 
 export async function updateTemplate(formData: FormData) {
   const ctx = await requireOrganizationManagementContext();
-  if (!ctx.organization) redirect("/dashboard/distribution/templates?error=denied");
+  if (!ctx.organization) redirect(`${TEMPLATES_URL}?error=denied`);
 
   const templateId = formData.get("templateId") as string;
-  if (!templateId) redirect("/dashboard/distribution/templates?error=invalid");
+  if (!templateId) redirect(`${TEMPLATES_URL}?error=invalid`);
 
   let input: unknown;
-  try { input = JSON.parse(String(formData.get("template") ?? "")); } catch { redirect("/dashboard/distribution/templates?error=invalid"); }
+  try { input = JSON.parse(String(formData.get("template") ?? "")); } catch { redirect(`${TEMPLATES_URL}?error=invalid`); }
   const parsed = distributionTemplateSchema.safeParse(input);
-  if (!parsed.success) redirect("/dashboard/distribution/templates?error=invalid");
+  if (!parsed.success) redirect(`${TEMPLATES_URL}?error=invalid`);
 
   const supabase = sb(await createSupabaseServerClient());
   const v = parsed.data;
@@ -63,26 +70,26 @@ export async function updateTemplate(formData: FormData) {
     .eq("id", templateId)
     .eq("organization_id", ctx.organization.id);
 
-  redirect(error ? `/dashboard/distribution/templates?error=update_failed` : `/dashboard/distribution/templates?updated=1`);
+  redirect(error ? `${TEMPLATES_URL}?error=update_failed` : `${TEMPLATES_URL}?updated=1`);
 }
 
 export async function archiveTemplate(formData: FormData) {
   const ctx = await requireOrganizationManagementContext();
   const templateId = formData.get("templateId") as string;
-  if (!ctx.organization || !templateId) redirect("/dashboard/distribution/templates?error=invalid");
+  if (!ctx.organization || !templateId) redirect(`${TEMPLATES_URL}?error=invalid`);
   const supabase = sb(await createSupabaseServerClient());
   await supabase.from("distribution_templates").update({ is_active: false }).eq("id", templateId).eq("organization_id", ctx.organization.id);
-  redirect("/dashboard/distribution/templates?updated=1");
+  redirect(`${TEMPLATES_URL}?updated=1`);
 }
 
 export async function createAssignment(formData: FormData) {
   const ctx = await requireOrganizationManagementContext();
-  if (!ctx.organization) redirect("/dashboard/distribution/assignments?error=denied");
+  if (!ctx.organization) redirect(`${ASSIGNMENTS_URL}&error=denied`);
 
   let input: unknown;
-  try { input = JSON.parse(String(formData.get("assignment") ?? "")); } catch { redirect("/dashboard/distribution/assignments?error=invalid"); }
+  try { input = JSON.parse(String(formData.get("assignment") ?? "")); } catch { redirect(`${ASSIGNMENTS_URL}&error=invalid`); }
   const parsed = distributionAssignmentSchema.safeParse(input);
-  if (!parsed.success) redirect("/dashboard/distribution/assignments?error=invalid");
+  if (!parsed.success) redirect(`${ASSIGNMENTS_URL}&error=invalid`);
 
   const supabase = sb(await createSupabaseServerClient());
   const v = parsed.data;
@@ -101,21 +108,21 @@ export async function createAssignment(formData: FormData) {
     created_by: ctx.user.id,
   });
 
-  redirect(error ? `/dashboard/distribution/assignments?error=creation_failed` : `/dashboard/distribution/assignments?created=1`);
+  redirect(error ? `${ASSIGNMENTS_URL}&error=creation_failed` : `${ASSIGNMENTS_URL}&assigned=1`);
 }
 
 export async function revokeAssignment(formData: FormData) {
   const ctx = await requireOrganizationManagementContext();
   const assignmentId = formData.get("assignmentId") as string;
-  if (!ctx.organization || !assignmentId) redirect("/dashboard/distribution/assignments?error=invalid");
+  if (!ctx.organization || !assignmentId) redirect(`${ASSIGNMENTS_URL}&error=invalid`);
   const supabase = sb(await createSupabaseServerClient());
   await supabase.from("distribution_assignments").update({ status: "revoked" }).eq("id", assignmentId).eq("organization_id", ctx.organization.id);
-  redirect("/dashboard/distribution/assignments?revoked=1");
+  redirect(`${ASSIGNMENTS_URL}&revoked=1`);
 }
 
 export async function bulkAssign(formData: FormData) {
   const ctx = await requireOrganizationManagementContext();
-  if (!ctx.organization) redirect("/dashboard/distribution/assignments?error=denied");
+  if (!ctx.organization) redirect(`${ASSIGNMENTS_URL}&error=denied`);
 
   const templateId = formData.get("templateId") as string;
   const surveyId = formData.get("surveyId") as string;
@@ -126,7 +133,7 @@ export async function bulkAssign(formData: FormData) {
   const locationIds = locationIdsRaw ? locationIdsRaw.split(",").filter(Boolean) : [];
 
   if (!templateId || !surveyId || (employeeIds.length === 0 && locationIds.length === 0)) {
-    redirect("/dashboard/distribution/assignments?error=invalid");
+    redirect(`${ASSIGNMENTS_URL}&error=invalid`);
   }
 
   const supabase = sb(await createSupabaseServerClient());
@@ -140,5 +147,5 @@ export async function bulkAssign(formData: FormData) {
     p_location_ids: locationIds.length > 0 ? locationIds : null,
   });
 
-  redirect(error ? "/dashboard/distribution/assignments?error=failed" : "/dashboard/distribution/assignments?assigned=1");
+  redirect(error ? `${ASSIGNMENTS_URL}&error=failed` : `${ASSIGNMENTS_URL}&assigned=1`);
 }

@@ -78,7 +78,7 @@ export default async function EmailSignaturesPage({
                 </div>
                 <div className="mb-3 rounded-lg border border-border bg-white p-3 text-xs leading-relaxed" dangerouslySetInnerHTML={{ __html: html }} />
                 <div className="flex flex-wrap gap-1.5">
-                  <Link href={`/dashboard/distribution/templates/${tpl.id}/edit`} className="rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:border-brand">Edit</Link>
+                  <Link href={`/dashboard/settings/channels/email-signatures/${tpl.id}/edit`} className="rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:border-brand">Edit</Link>
                   {tpl.is_active && (
                     <form action={archiveTemplate} className="inline">
                       <input type="hidden" name="templateId" value={tpl.id} />

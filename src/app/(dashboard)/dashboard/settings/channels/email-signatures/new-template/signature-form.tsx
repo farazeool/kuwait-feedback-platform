@@ -1,29 +1,37 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { createTemplate } from "@/features/distribution/actions";
+import { createTemplate, updateTemplate } from "@/features/distribution/actions";
+import type { DistributionTemplate } from "@/features/distribution/templates";
 
 interface SignatureFormProps {
-  surveys: Array<{ id: string; title_en: string; title_ar: string }>;
+  surveys?: Array<{ id: string; title_en: string; title_ar: string }>;
+  template?: DistributionTemplate;
 }
 
-export function SignatureForm({ surveys }: SignatureFormProps) {
-  const [templateName, setTemplateName] = useState("");
-  const [headingEn, setHeadingEn] = useState("How was your experience?");
-  const [headingAr, setHeadingAr] = useState("كيف كانت تجربتك؟");
-  const [descriptionEn, setDescriptionEn] = useState("");
-  const [descriptionAr, setDescriptionAr] = useState("");
-  const [ratingStyle, setRatingStyle] = useState("emoji");
-  const [brandColor, setBrandColor] = useState("#2563eb");
-  const [iconSize, setIconSize] = useState("medium");
-  const [alignment, setAlignment] = useState("left");
-  const [showBusinessName, setShowBusinessName] = useState(true);
-  const [showPrivacyNotice, setShowPrivacyNotice] = useState(false);
-  const [privacyNoticeEn, setPrivacyNoticeEn] = useState("");
-  const [privacyNoticeAr, setPrivacyNoticeAr] = useState("");
-  const [layout, setLayout] = useState("horizontal");
-  const [autoSubmitPositive, setAutoSubmitPositive] = useState(true);
-  const [followUpEnabled, setFollowUpEnabled] = useState(true);
+export function SignatureForm({ template }: SignatureFormProps) {
+  const isEdit = Boolean(template);
+  const rc = (template?.render_config ?? {}) as Record<string, unknown>;
+  const cfg = (template?.config ?? {}) as Record<string, unknown>;
+  const str = (value: unknown, fallback: string) => (typeof value === "string" ? value : fallback);
+  const bool = (value: unknown, fallback: boolean) => (typeof value === "boolean" ? value : fallback);
+
+  const [templateName, setTemplateName] = useState(template?.template_name ?? "");
+  const [headingEn, setHeadingEn] = useState(str(rc.headingEn, "How was your experience?"));
+  const [headingAr, setHeadingAr] = useState(str(rc.headingAr, "كيف كانت تجربتك؟"));
+  const [descriptionEn, setDescriptionEn] = useState(str(rc.descriptionEn, ""));
+  const [descriptionAr, setDescriptionAr] = useState(str(rc.descriptionAr, ""));
+  const [ratingStyle, setRatingStyle] = useState(str(rc.ratingStyle, "emoji"));
+  const [brandColor, setBrandColor] = useState(str(rc.brandColor, "#2563eb"));
+  const [iconSize, setIconSize] = useState(str(rc.iconSize, "medium"));
+  const [alignment, setAlignment] = useState(str(rc.alignment, "left"));
+  const [showBusinessName, setShowBusinessName] = useState(bool(rc.showBusinessName, true));
+  const [showPrivacyNotice, setShowPrivacyNotice] = useState(bool(rc.showPrivacyNotice, false));
+  const [privacyNoticeEn, setPrivacyNoticeEn] = useState(str(rc.privacyNoticeEn, ""));
+  const [privacyNoticeAr, setPrivacyNoticeAr] = useState(str(rc.privacyNoticeAr, ""));
+  const [layout, setLayout] = useState(str(rc.layout, "horizontal"));
+  const [autoSubmitPositive, setAutoSubmitPositive] = useState(bool(cfg.autoSubmitPositive, true));
+  const [followUpEnabled, setFollowUpEnabled] = useState(bool(cfg.followUpEnabled, true));
 
   const previewEmoji = ratingStyle === "emoji" ? "😊 🙂 😐 ☹ 😡" :
     ratingStyle === "star" ? "★★★★★" :
@@ -34,6 +42,8 @@ export function SignatureForm({ surveys }: SignatureFormProps) {
       channel: "email",
       templateName,
       description: descriptionEn,
+      // Preserve the existing default flag when editing (the form has no control for it).
+      isDefault: template?.is_default ?? false,
       config: { followUpEnabled, autoSubmitPositive },
       renderConfig: {
         ratingStyle, headingEn, headingAr, descriptionEn, descriptionAr,
@@ -42,8 +52,13 @@ export function SignatureForm({ surveys }: SignatureFormProps) {
       },
     });
     formData.set("template", payload);
-    await createTemplate(formData);
-  }, [templateName, headingEn, headingAr, descriptionEn, descriptionAr, ratingStyle, brandColor, iconSize, alignment, showBusinessName, showPrivacyNotice, privacyNoticeEn, privacyNoticeAr, layout, autoSubmitPositive, followUpEnabled]);
+    if (isEdit && template) {
+      formData.set("templateId", template.id);
+      await updateTemplate(formData);
+    } else {
+      await createTemplate(formData);
+    }
+  }, [isEdit, template, templateName, headingEn, headingAr, descriptionEn, descriptionAr, ratingStyle, brandColor, iconSize, alignment, showBusinessName, showPrivacyNotice, privacyNoticeEn, privacyNoticeAr, layout, autoSubmitPositive, followUpEnabled]);
 
   return (
     <form action={handleSubmit} className="grid gap-5 rounded-xl border border-border bg-white p-6">
@@ -147,7 +162,9 @@ export function SignatureForm({ surveys }: SignatureFormProps) {
         </div>
       </div>
 
-      <button type="submit" className="rounded-lg bg-brand px-5 py-2 text-sm font-semibold text-white">Create template</button>
+      <button type="submit" className="rounded-lg bg-brand px-5 py-2 text-sm font-semibold text-white">
+        {isEdit ? "Save changes" : "Create template"}
+      </button>
     </form>
   );
 }
