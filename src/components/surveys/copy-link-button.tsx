@@ -5,13 +5,20 @@ import { useState } from "react";
 type CopyLinkButtonProps = {
   value: string;
   labelEn: string;
-  labelAr: string;
+  labelAr?: string;
   copiedLabelEn: string;
-  copiedLabelAr: string;
+  copiedLabelAr?: string;
 };
 
 export function CopyLinkButton({ value, labelEn, labelAr, copiedLabelEn, copiedLabelAr }: CopyLinkButtonProps) {
   const [copied, setCopied] = useState(false);
+  const label = copied
+    ? copiedLabelAr
+      ? `${copiedLabelEn} · ${copiedLabelAr}`
+      : copiedLabelEn
+    : labelAr
+      ? `${labelEn} · ${labelAr}`
+      : labelEn;
   return (
     <button
       type="button"
@@ -22,7 +29,7 @@ export function CopyLinkButton({ value, labelEn, labelAr, copiedLabelEn, copiedL
         window.setTimeout(() => setCopied(false), 1500);
       }}
     >
-      {copied ? `${copiedLabelEn} · ${copiedLabelAr}` : `${labelEn} · ${labelAr}`}
+      {label}
     </button>
   );
 }

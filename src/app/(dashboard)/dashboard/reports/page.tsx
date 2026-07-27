@@ -3,6 +3,7 @@ import Link from "next/link";
 import { listAvailableSurveys, generateMonthlyReport } from "@/features/reports/server";
 import { MetricCard } from "@/components/analytics/metric-card";
 import { AccessibleBarChart } from "@/components/analytics/bar-chart";
+import { PrintButton } from "@/components/surveys/print-button";
 import { getMessages } from "@/lib/i18n/messages";
 
 type ReportData = {
@@ -290,12 +291,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
                 >
                   Location summaries CSV
                 </Link>
-                <button
-                  onClick={() => window.print()}
-                  className="rounded-lg bg-brand px-4 py-2 font-semibold text-white"
-                >
-                  Print / Save as PDF
-                </button>
+                <PrintButton labelEn="Print / Save as PDF" />
               </div>
             </div>
 

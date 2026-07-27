@@ -4,6 +4,7 @@ import { getServerEnv } from "@/lib/env/server";
 import { listTemplates, listAssignments } from "@/features/distribution/templates";
 import { renderEmailSignatureHtml } from "@/features/distribution/renderers/email";
 import { archiveTemplate, bulkAssign, revokeAssignment } from "@/features/distribution/actions";
+import { CopyLinkButton } from "@/components/surveys/copy-link-button";
 
 export default async function EmailSignaturesPage({
   searchParams,
@@ -118,7 +119,7 @@ export default async function EmailSignaturesPage({
                     <td className="max-w-[200px] truncate px-4 py-2.5 font-mono text-[10px] text-muted">{link}</td>
                     <td className="px-4 py-2.5">
                       <div className="flex flex-wrap gap-1.5">
-                        <button onClick={() => navigator.clipboard.writeText(link)} className="rounded-lg border border-border px-2 py-1 text-[10px] font-medium hover:border-brand">Copy</button>
+                        <CopyLinkButton value={link} labelEn="Copy" copiedLabelEn="Copied" />
                         {a.status === "active" && (
                           <form action={revokeAssignment} className="inline">
                             <input type="hidden" name="assignmentId" value={a.id as string} />
