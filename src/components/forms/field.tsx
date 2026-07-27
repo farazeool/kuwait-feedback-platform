@@ -1,3 +1,5 @@
+"use client";
+
 import type { InputHTMLAttributes, SelectHTMLAttributes } from "react";
 
 const inputClass = "min-h-10 rounded-lg border border-border bg-white px-3 py-2 text-sm font-normal text-foreground outline-none transition-colors placeholder:text-muted/60 focus:border-brand focus:ring-2 focus:ring-brand/15";
