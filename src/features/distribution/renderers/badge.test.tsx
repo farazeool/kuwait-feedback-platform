@@ -29,10 +29,11 @@ describe("buildSignatureBadge", () => {
     expect(String(el.props.style.borderLeft)).toContain("#2563eb");
   });
 
-  it("renders the neutral inactive copy when no rating is supplied", () => {
+  it("renders the invitation (heading, no rating text) when no rating is supplied", () => {
     const el = buildSignatureBadge({ config: { brandColor: "#006c5b" } });
-    expect(textOf(el)).toContain("This link is no longer active");
+    expect(textOf(el)).toContain("How was your experience?");
     expect(textOf(el)).not.toContain("/ 5");
+    expect(textOf(el)).not.toContain("This link is no longer active");
   });
 });
 
