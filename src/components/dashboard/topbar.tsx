@@ -1,3 +1,4 @@
+import { SubmitButton } from "@/components/ui/submit-button";
 import { signOut } from "@/features/auth/actions";
 import { getMessages, type Locale } from "@/lib/i18n/messages";
 
@@ -34,9 +35,9 @@ export function DashboardTopbar({
           <p className="text-xs capitalize text-muted">{role.replaceAll("_", " ")}</p>
         </div>
         <form action={signOut}>
-          <button className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted transition-colors hover:border-brand hover:text-foreground" type="submit">
+          <SubmitButton className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted transition-colors hover:border-brand hover:text-foreground disabled:cursor-not-allowed disabled:opacity-70" pendingLabel={messages["auth.signOut"]}>
             {messages["auth.signOut"]}
-          </button>
+          </SubmitButton>
         </form>
       </div>
     </header>

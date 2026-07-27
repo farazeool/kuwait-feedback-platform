@@ -297,4 +297,10 @@ body {
   .kiosk-rating-btn {
     transition: none !important;
   }
+
+  /* Disable Tailwind's pulse/spin utilities (skeletons, loading spinners) */
+  .animate-pulse,
+  .animate-spin {
+    animation: none !important;
+  }
 }

@@ -254,10 +254,13 @@ export function PublicSurveyForm({
                 )}
               </div>
               {/* Language toggle */}
-              <div className="flex shrink-0 gap-1 self-start rounded-full bg-white/10 p-1">
+              <div className="flex shrink-0 gap-1 self-start rounded-full bg-white/10 p-1" role="group" aria-label={isArabic ? "اختيار اللغة" : "Select language"}>
                 <button
                   type="button"
                   onClick={() => setLocale("en")}
+                  aria-label="English"
+                  aria-pressed={locale === "en"}
+                  title="English"
                   className={`rounded-full px-4 py-2 text-sm font-semibold transition-all ${
                     locale === "en" ? "bg-white/25 text-white" : "text-white/70 hover:text-white"
                   }`}
@@ -267,6 +270,9 @@ export function PublicSurveyForm({
                 <button
                   type="button"
                   onClick={() => setLocale("ar")}
+                  aria-label="العربية"
+                  aria-pressed={locale === "ar"}
+                  title="العربية"
                   className={`rounded-full px-4 py-2 text-sm font-semibold transition-all ${
                     locale === "ar" ? "bg-white/25 text-white" : "text-white/70 hover:text-white"
                   }`}
@@ -369,7 +375,7 @@ export function PublicSurveyForm({
             >
               {state === "submitting" ? (
                 <span className="flex items-center justify-center gap-2">
-                  <svg className="size-5 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <svg className="size-5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" opacity="0.25" />
                     <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
                   </svg>
@@ -377,7 +383,7 @@ export function PublicSurveyForm({
                 </span>
               ) : (
                 <span className="flex items-center justify-center gap-2">
-                  <svg viewBox="0 0 24 24" fill="none" className="size-5">
+                  <svg viewBox="0 0 24 24" fill="none" className="size-5" aria-hidden="true">
                     <path d="M22 2L11 13" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                     <path d="M22 2L15 22l-4-9-9-4 20-7z" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>

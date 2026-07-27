@@ -1,3 +1,4 @@
+import { SubmitButton } from "@/components/ui/submit-button";
 import { updateResponseWorkflow } from "@/features/responses/actions";
 import { getResponseDetail } from "@/features/responses/server";
 import { formatKuwaitDateTime } from "@/lib/datetime/kuwait";
@@ -185,7 +186,7 @@ export default async function ResponseDetailPage({ params, searchParams }: { par
             Add internal note
             <textarea name="note" maxLength={2000} className="min-h-28 rounded-lg border border-border p-3" />
           </label>
-          <button className="justify-self-start rounded-lg bg-brand px-5 py-3 font-semibold text-white">Save workflow</button>
+          <SubmitButton pendingLabel="Saving…" className="justify-self-start rounded-lg bg-brand px-5 py-3 font-semibold text-white transition-colors hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-70">Save workflow</SubmitButton>
         </form>
       ) : (
         <p className="rounded-xl bg-background p-4 text-sm text-muted">Your role has read-only response workflow access.</p>

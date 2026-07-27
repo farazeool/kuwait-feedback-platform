@@ -1,1 +1,12 @@
-export default function ResponseLoading() { return <div role="status" className="grid animate-pulse gap-5"><div className="h-10 w-52 rounded-xl bg-border" /><div className="h-20 rounded-2xl bg-border" /><div className="h-72 rounded-2xl bg-border" /></div>; }
+import { SkeletonFilters, SkeletonHeader, SkeletonTable } from "@/components/ui/skeleton";
+
+export default function ResponseLoading() {
+  return (
+    <div role="status" aria-label="Loading responses" className="grid gap-6">
+      <SkeletonHeader withAction />
+      <SkeletonFilters fields={6} />
+      <SkeletonTable rows={8} cols={7} />
+      <span className="sr-only">Loading responses…</span>
+    </div>
+  );
+}

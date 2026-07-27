@@ -1,1 +1,12 @@
-export default function SurveyListLoading() { return <div role="status" className="grid animate-pulse gap-5"><div className="h-10 w-52 rounded-xl bg-border" /><div className="h-20 rounded-2xl bg-border" /><div className="h-72 rounded-2xl bg-border" /></div>; }
+import { SkeletonFilters, SkeletonHeader, SkeletonTable } from "@/components/ui/skeleton";
+
+export default function SurveyListLoading() {
+  return (
+    <div role="status" aria-label="Loading surveys" className="grid gap-6">
+      <SkeletonHeader withAction />
+      <SkeletonFilters fields={3} />
+      <SkeletonTable rows={6} cols={5} />
+      <span className="sr-only">Loading surveys…</span>
+    </div>
+  );
+}
