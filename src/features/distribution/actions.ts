@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 
 import { requireOrganizationManagementContext } from "@/lib/auth/context";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -102,12 +103,10 @@ export async function createAssignment(formData: FormData) {
             : v.targetType === "location"
               ? "assigned_location_id"
               : "assigned_touchpoint_id"]: v.targetId,
-          subject_type: v.targetType,
-          subject_id: v.targetId,
         }
       : { subject_type: v.subjectType, subject_id: v.subjectId };
 
-  const { error } = await supabase.from("distribution_assignments").insert({
+  const payload = {
     organization_id: ctx.organization.id,
     template_id: v.templateId,
     survey_id: v.surveyId ?? null,
@@ -116,9 +115,32 @@ export async function createAssignment(formData: FormData) {
     metadata: v.metadata,
     expires_at: v.expiresAt || null,
     created_by: ctx.user.id,
-  });
+  };
 
-  redirect(error ? `${ASSIGNMENTS_URL}&error=creation_failed` : `${ASSIGNMENTS_URL}&assigned=1`);
+  const { error } = await supabase.from("distribution_assignments").insert(payload);
+
+  if (error) {
+    const safeError = {
+      code: error?.code ?? null,
+      message: error?.message ?? (error instanceof Error ? error.message : String(error)),
+      details: error?.details ?? null,
+      hint: error?.hint ?? null,
+      constraint: (error as { constraint?: string })?.constraint ?? null,
+    };
+
+    console.error("[createAssignment] Database error", safeError);
+
+    // Check for duplicate constraint violation
+    if (error.code === "23505" && error.message?.includes("da_template_employee_unique")) {
+      redirect(`${ASSIGNMENTS_URL}&error=duplicate`);
+    }
+
+    redirect(`${ASSIGNMENTS_URL}&error=creation_failed`);
+  }
+
+  // Revalidate the assignments page to show the new assignment
+  revalidatePath(CHANNEL_URL);
+  redirect(`${ASSIGNMENTS_URL}&assigned=1`);
 }
 
 export async function revokeAssignment(formData: FormData) {

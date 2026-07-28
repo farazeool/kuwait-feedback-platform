@@ -7,10 +7,12 @@ import { archiveTemplate, revokeAssignment } from "@/features/distribution/actio
 import { CopyLinkButton } from "@/components/surveys/copy-link-button";
 import { CopySignatureButton } from "@/components/distribution/copy-signature-button";
 import { ViewHtmlCode } from "@/components/distribution/view-html-code";
+import { CreateAssignmentButton } from "@/components/distribution/create-assignment-button";
 import { getSignatureSubjectReport } from "@/features/distribution/report";
 import { resolveAnalyticsRange } from "@/features/analytics/dates";
 import { MetricCard } from "@/components/analytics/metric-card";
 import { AccessibleBarChart } from "@/components/analytics/bar-chart";
+import { listTeam } from "@/features/team/server";
 
 export default async function EmailSignaturesPage({
   searchParams,
@@ -19,10 +21,11 @@ export default async function EmailSignaturesPage({
 }) {
   const notice = await searchParams;
   const tab = notice.tab ?? "templates";
-  const [templatesResult, assignmentsResult, ctx] = await Promise.all([
+  const [templatesResult, assignmentsResult, ctx, teamResult] = await Promise.all([
     listTemplates("email"),
     listAssignments(),
     requireOrganizationManagementContext(),
+    listTeam({ page: "1" }).catch(() => ({ members: [] })),
   ]);
   const env = getServerEnv();
 
@@ -56,7 +59,8 @@ export default async function EmailSignaturesPage({
       {notice.updated ? <p className="rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800">Template updated.</p> : null}
       {notice.assigned ? <p className="rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800">Signatures assigned.</p> : null}
       {notice.revoked ? <p className="rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800">Signature revoked.</p> : null}
-      {notice.error ? <p role="alert" className="rounded-xl bg-red-50 p-4 text-sm text-red-800">An error occurred. Please try again.</p> : null}
+      {notice.error === "duplicate" ? <p role="alert" className="rounded-xl bg-amber-50 p-4 text-sm text-amber-800">This employee already has an active assignment for this template.</p> : null}
+      {notice.error && notice.error !== "duplicate" ? <p role="alert" className="rounded-xl bg-red-50 p-4 text-sm text-red-800">An error occurred. Please try again.</p> : null}
 
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -130,7 +134,17 @@ export default async function EmailSignaturesPage({
       )}
 
       {tab === "assignments" && (
-        <div className="grid gap-4">
+        <>
+          {assignmentsResult.assignments.length > 0 && (
+            <div className="flex justify-end">
+              <CreateAssignmentButton
+                employees={teamResult.members ?? []}
+                templates={templatesResult.templates}
+                variant="header"
+              />
+            </div>
+          )}
+          <div className="grid gap-4">
           {assignmentsResult.assignments.map((a: Record<string, unknown>) => {
             const link = `${appUrl}/feedback/l/${a.public_token}`;
             const employee = a.employee as Record<string, unknown> | undefined;
@@ -202,13 +216,19 @@ export default async function EmailSignaturesPage({
               </div>
             );
           })}
-          {assignmentsResult.assignments.length === 0 && (
-            <div className="rounded-xl border border-dashed border-border p-12 text-center text-sm text-muted">
-              <p className="font-semibold">No assignments yet</p>
-              <p className="mt-1">Create an assignment to generate employee-specific signatures.</p>
-            </div>
-          )}
-        </div>
+            {assignmentsResult.assignments.length === 0 && (
+              <div className="rounded-xl border border-dashed border-border p-12 text-center text-sm text-muted">
+                <p className="font-semibold">No assignments yet</p>
+                <p className="mt-1">Create an assignment to generate employee-specific signatures.</p>
+                <CreateAssignmentButton
+                  employees={teamResult.members ?? []}
+                  templates={templatesResult.templates}
+                  variant="empty-state"
+                />
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       {tab === "reports" && (
