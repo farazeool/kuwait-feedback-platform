@@ -15,11 +15,12 @@
 -- assignment per subject+template, so grouping by da.id preserves per-subject
 -- semantics while keeping the subqueries simple.
 --
--- NOTE (unchanged, intentionally): avg_rating is still the plain average of the
--- normalized 1–5 integer, and totals.avg_rating is still the unweighted average of
--- per-subject averages. Whether/how to account for mixed rating scales
--- (three_option 1/2/3 vs yes_no 1/5 vs full 1–5) is a product decision and is left
--- as-is here; this migration only removes the cartesian duplication defect.
+-- NOTE: avg_rating is the plain average of the normalized 1–5 integer.
+-- Cross-scale blending is intentionally unsupported: averaging yes_no (1/5)
+-- with three_option (1/2/3) or full 5-point ratings produces a meaningless
+-- number. Always filter by p_template_id when a single rating scale is
+-- required. Do not remove this constraint without adding per-scale
+-- normalization (e.g. 0–1 percentage) or segmented columns first.
 
 create or replace function public.get_signature_subject_report(
   p_organization_id uuid,
@@ -61,6 +62,9 @@ begin
                        ),
       'template_id',   da.template_id,
       'count',         count(re.id),
+      -- Plain avg of the normalized 1–5 rating. Callers MUST filter by
+      -- p_template_id to keep a single rating scale; cross-scale blending is
+      -- intentionally unsupported (see migration header).
       'avg_rating',    round(avg(re.rating), 2),
       -- per-rating distribution as a scalar subquery (no cross join)
       'distribution',  (

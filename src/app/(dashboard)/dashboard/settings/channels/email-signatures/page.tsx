@@ -26,7 +26,11 @@ export default async function EmailSignaturesPage({
   const env = getServerEnv();
 
   let reportData = null;
-  if (tab === "reports") {
+  // A template must be selected before fetching report data. Mixing templates
+  // with different rating scales (yes_no / three_option / full 5-point) into a
+  // single average is intentionally unsupported for pilot — see report.ts and
+  // migration 20260727000002.
+  if (tab === "reports" && notice.templateId) {
     const range = resolveAnalyticsRange({ preset: notice.preset ?? "30d", from: notice.from, to: notice.to });
     try {
       reportData = await getSignatureSubjectReport({
@@ -170,53 +174,81 @@ export default async function EmailSignaturesPage({
 
       {tab === "reports" && (
         <div className="grid gap-6">
-          {/* Date filter */}
-          <div className="flex flex-wrap gap-2">
-            {[
-              { key: "7d", label: "Last 7 days" },
-              { key: "30d", label: "Last 30 days" },
-              { key: "90d", label: "Last 90 days" },
-            ].map(({ key, label }) => (
-              <Link
-                key={key}
-                href={`/dashboard/settings/channels/email-signatures?tab=reports&preset=${key}`}
-                className={`rounded-lg border px-3 py-1.5 text-xs font-medium ${notice.preset === key || (!notice.preset && key === "30d") ? "border-brand bg-brand/10 text-brand" : "border-border text-muted hover:border-brand"}`}
-              >
-                {label}
-              </Link>
-            ))}
+          {/* Filters: template selector (required) + date preset */}
+          <div className="grid gap-3">
+            {/* Template selector — a template must be chosen before data loads,
+                so ratings from templates with different rating scales are never
+                blended into one average. */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-medium text-muted">Template:</span>
+              {templatesResult.templates.map((t) => (
+                <Link
+                  key={t.id}
+                  href={`/dashboard/settings/channels/email-signatures?tab=reports&templateId=${t.id}&preset=${notice.preset ?? "30d"}`}
+                  className={`rounded-lg border px-3 py-1.5 text-xs font-medium ${notice.templateId === t.id ? "border-brand bg-brand/10 text-brand" : "border-border text-muted hover:border-brand"}`}
+                >
+                  {t.template_name}
+                </Link>
+              ))}
+              {templatesResult.templates.length === 0 && (
+                <span className="text-xs text-muted">No templates yet.</span>
+              )}
+            </div>
+            {/* Date presets — only shown once a template is selected */}
+            {notice.templateId && (
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { key: "7d", label: "Last 7 days" },
+                  { key: "30d", label: "Last 30 days" },
+                  { key: "90d", label: "Last 90 days" },
+                ].map(({ key, label }) => (
+                  <Link
+                    key={key}
+                    href={`/dashboard/settings/channels/email-signatures?tab=reports&templateId=${notice.templateId}&preset=${key}`}
+                    className={`rounded-lg border px-3 py-1.5 text-xs font-medium ${notice.preset === key || (!notice.preset && key === "30d") ? "border-brand bg-brand/10 text-brand" : "border-border text-muted hover:border-brand"}`}
+                  >
+                    {label}
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Headline metrics */}
-          <div className="grid gap-4 sm:grid-cols-2">
-            <MetricCard
-              label="Total ratings"
-              value={String(reportData?.totals?.count ?? 0)}
-            />
-            <MetricCard
-              label="Average rating"
-              value={reportData?.totals?.avg_rating != null ? `${reportData.totals.avg_rating} / 5` : "—"}
-            />
-          </div>
-
-          {/* Per-subject bar chart */}
-          {reportData && reportData.subjects.length > 0 ? (
-            <div className="rounded-xl border border-border bg-white p-6">
-              <h2 className="mb-4 text-base font-semibold text-foreground">Ratings by subject</h2>
-              <AccessibleBarChart
-                title="Average rating by subject"
-                suffix=" / 5"
-                items={reportData.subjects.map((s) => ({
-                  label: s.label,
-                  value: s.avg_rating ?? 0,
-                  detail: `${s.count} rating${s.count === 1 ? "" : "s"}`,
-                }))}
-              />
+          {!notice.templateId ? (
+            <div className="rounded-xl border border-dashed border-border p-12 text-center text-sm text-muted">
+              Select a template above to view ratings. Each template uses a single rating scale, so averages are only meaningful within one template.
             </div>
           ) : (
-            <div className="rounded-xl border border-dashed border-border p-12 text-center text-sm text-muted">
-              No rating data for this period.
-            </div>
+            <>
+              {/* Headline metrics */}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <MetricCard label="Total ratings" value={String(reportData?.totals?.count ?? 0)} />
+                <MetricCard
+                  label="Average rating"
+                  value={reportData?.totals?.avg_rating != null ? `${reportData.totals.avg_rating} / 5` : "—"}
+                />
+              </div>
+
+              {/* Per-subject bar chart */}
+              {reportData && reportData.subjects.length > 0 ? (
+                <div className="rounded-xl border border-border bg-white p-6">
+                  <h2 className="mb-4 text-base font-semibold text-foreground">Ratings by subject</h2>
+                  <AccessibleBarChart
+                    title="Average rating by subject"
+                    suffix=" / 5"
+                    items={reportData.subjects.map((s) => ({
+                      label: s.label,
+                      value: s.avg_rating ?? 0,
+                      detail: `${s.count} rating${s.count === 1 ? "" : "s"}`,
+                    }))}
+                  />
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-border p-12 text-center text-sm text-muted">
+                  No rating data for this period.
+                </div>
+              )}
+            </>
           )}
         </div>
       )}

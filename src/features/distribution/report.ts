@@ -19,6 +19,10 @@ export interface SubjectRatingReport {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const sb = (s: any) => s;
 
+// NOTE: pass templateId to keep the report scoped to a single rating scale.
+// Cross-scale blending (yes_no vs three_option vs full 5-point) is intentionally
+// unsupported for pilot — the reports UI requires a template selection before
+// showing aggregate numbers. See migration 20260727000002.
 export async function getSignatureSubjectReport(params: {
   organizationId: string;
   startAt: string;
