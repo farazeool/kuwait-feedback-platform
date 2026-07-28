@@ -3,9 +3,10 @@ import { requireOrganizationManagementContext } from "@/lib/auth/context";
 import { getServerEnv } from "@/lib/env/server";
 import { listTemplates, listAssignments } from "@/features/distribution/templates";
 import { renderEmailSignatureHtml } from "@/features/distribution/renderers/email";
-import { archiveTemplate, bulkAssign, revokeAssignment } from "@/features/distribution/actions";
+import { archiveTemplate, revokeAssignment } from "@/features/distribution/actions";
 import { CopyLinkButton } from "@/components/surveys/copy-link-button";
-import { CopySnippetButton } from "@/components/distribution/copy-snippet-button";
+import { CopySignatureButton } from "@/components/distribution/copy-signature-button";
+import { ViewHtmlCode } from "@/components/distribution/view-html-code";
 import { getSignatureSubjectReport } from "@/features/distribution/report";
 import { resolveAnalyticsRange } from "@/features/analytics/dates";
 import { MetricCard } from "@/components/analytics/metric-card";
@@ -129,46 +130,84 @@ export default async function EmailSignaturesPage({
       )}
 
       {tab === "assignments" && (
-        <div className="overflow-x-auto rounded-xl border border-border bg-white">
-          <table className="w-full min-w-[800px] text-sm">
-            <thead className="bg-surface-muted text-xs font-medium uppercase tracking-wide text-muted">
-              <tr><th className="px-4 py-2.5 text-start">Target</th><th className="px-4 py-2.5 text-start">Template</th><th className="px-4 py-2.5 text-start">Status</th><th className="px-4 py-2.5 text-start">Clicks</th><th className="px-4 py-2.5 text-start">Responses</th><th className="px-4 py-2.5 text-start">Link</th><th className="px-4 py-2.5 text-start">Actions</th></tr>
-            </thead>
-            <tbody>
-              {assignmentsResult.assignments.map((a: Record<string, unknown>) => {
-                const link = `${appUrl}/feedback/l/${a.public_token}`;
-                const employee = a.employee as Record<string, unknown> | undefined;
-                const template = a.template as Record<string, unknown> | undefined;
-                return (
-                  <tr key={a.id as string} className="border-t border-border">
-                    <td className="px-4 py-2.5">{String(employee?.displayName ?? (a.assigned_location_id ? "Location" : "Unknown"))}</td>
-                    <td className="px-4 py-2.5">{String(template?.template_name ?? "—")}</td>
-                    <td className="px-4 py-2.5"><span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${a.status === "active" ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>{a.status as string}</span></td>
-                    <td className="px-4 py-2.5 tabular-nums">{a.click_count as number}</td>
-                    <td className="px-4 py-2.5 tabular-nums">{a.response_count as number}</td>
-                    <td className="max-w-[200px] truncate px-4 py-2.5 font-mono text-[10px] text-muted">{link}</td>
-                    <td className="px-4 py-2.5">
-                      <div className="flex flex-wrap gap-1.5">
-                        <CopyLinkButton value={link} labelEn="Copy link" copiedLabelEn="Copied!" />
-                        {a.status === "active" && (
-                          <CopySnippetButton appUrl={appUrl} publicToken={a.public_token as string} />
-                        )}
-                        {a.status === "active" && (
-                          <form action={revokeAssignment} className="inline">
-                            <input type="hidden" name="assignmentId" value={a.id as string} />
-                            <button className="rounded-lg border border-red-200 px-2 py-1 text-[10px] font-medium text-red-700 hover:border-red-400">Revoke</button>
-                          </form>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-              {assignmentsResult.assignments.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-muted">No assignments yet.</td></tr>
-              )}
-            </tbody>
-          </table>
+        <div className="grid gap-4">
+          {assignmentsResult.assignments.map((a: Record<string, unknown>) => {
+            const link = `${appUrl}/feedback/l/${a.public_token}`;
+            const employee = a.employee as Record<string, unknown> | undefined;
+            const template = a.template as Record<string, unknown> | undefined;
+            const templateRecord = templatesResult.templates.find((t) => t.id === a.template_id);
+            const html = templateRecord
+              ? renderEmailSignatureHtml(templateRecord, a.public_token as string, appUrl, orgName)
+              : "";
+            const plainText = templateRecord
+              ? `${orgName}\nHow was your experience?\nRate us: ${link}`
+              : "";
+
+            return (
+              <div key={a.id as string} className="rounded-xl border border-border bg-white p-5">
+                <div className="mb-4 flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-foreground">
+                        {String(employee?.display_name ?? (a.assigned_location_id ? "Location" : "Unknown"))}
+                      </h3>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${a.status === "active" ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500"}`}
+                      >
+                        {a.status as string}
+                      </span>
+                    </div>
+                    <p className="mt-0.5 text-xs text-muted">
+                      Template: {String(template?.template_name ?? "—")} • {a.response_count as number} response
+                      {(a.response_count as number) === 1 ? "" : "s"} • {a.click_count as number} click
+                      {(a.click_count as number) === 1 ? "" : "s"}
+                    </p>
+                  </div>
+                  {a.status === "active" && (
+                    <form action={revokeAssignment}>
+                      <input type="hidden" name="assignmentId" value={a.id as string} />
+                      <button
+                        type="submit"
+                        className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-700 hover:border-red-400"
+                      >
+                        Revoke
+                      </button>
+                    </form>
+                  )}
+                </div>
+
+                {a.status === "active" && html && (
+                  <>
+                    <div className="mb-4 rounded-lg border border-border bg-gray-50 p-4">
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Signature Preview</p>
+                      <div
+                        className="rounded-lg border border-border bg-white p-3 text-sm"
+                        dangerouslySetInnerHTML={{ __html: html }}
+                      />
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      <CopySignatureButton html={html} plainText={plainText} label="Copy signature" />
+                      <CopyLinkButton value={link} labelEn="Copy link" copiedLabelEn="Copied!" />
+                      <ViewHtmlCode html={html} title={`Signature HTML for ${String(employee?.display_name ?? "Assignment")}`} />
+                    </div>
+                  </>
+                )}
+
+                {a.status !== "active" && (
+                  <div className="rounded-lg border border-dashed border-border p-4 text-center text-sm text-muted">
+                    This assignment is {a.status as string}. The signature cannot be copied.
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          {assignmentsResult.assignments.length === 0 && (
+            <div className="rounded-xl border border-dashed border-border p-12 text-center text-sm text-muted">
+              <p className="font-semibold">No assignments yet</p>
+              <p className="mt-1">Create an assignment to generate employee-specific signatures.</p>
+            </div>
+          )}
         </div>
       )}
 
