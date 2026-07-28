@@ -1,5 +1,17 @@
 import type { DistributionTemplate } from "../templates";
 
+/**
+ * Escape HTML special characters to prevent XSS
+ */
+function escapeHtml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 export function renderEmailSignatureHtml(
   template: DistributionTemplate,
   publicToken: string,
@@ -42,16 +54,16 @@ export function renderEmailSignatureHtml(
   }
 
   const descriptionRow = description
-    ? `<tr><td style="padding:0 0 4px 0;font-size:12px;color:#666;${alignStyle}">${description}</td></tr>`
+    ? `<tr><td style="padding:0 0 4px 0;font-size:12px;color:#666;${alignStyle}">${escapeHtml(description)}</td></tr>`
     : "";
   const privacyRow = showPrivacyNotice && privacyNotice
-    ? `<tr><td style="padding:4px 0 0 0;font-size:10px;color:#999;${alignStyle}">${privacyNotice}</td></tr>`
+    ? `<tr><td style="padding:4px 0 0 0;font-size:10px;color:#999;${alignStyle}">${escapeHtml(privacyNotice)}</td></tr>`
     : "";
 
   return `<!-- Feedback Distribution Link - Channel: email -->
 <table cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,Helvetica,sans-serif;${alignStyle}">
-${showBusinessName ? `<tr><td style="padding:0 0 2px 0;font-size:13px;font-weight:600;color:#333;${alignStyle}">${orgName}</td></tr>` : ""}
-<tr><td style="padding:0 0 4px 0;font-size:13px;color:#333;${alignStyle}">${heading}</td></tr>
+${showBusinessName ? `<tr><td style="padding:0 0 2px 0;font-size:13px;font-weight:600;color:#333;${alignStyle}">${escapeHtml(orgName)}</td></tr>` : ""}
+<tr><td style="padding:0 0 4px 0;font-size:13px;color:#333;${alignStyle}">${escapeHtml(heading)}</td></tr>
 ${descriptionRow}
 <tr><td style="padding:4px 0 2px 0;${alignStyle}">${ratingHtml}</td></tr>
 ${privacyRow}
