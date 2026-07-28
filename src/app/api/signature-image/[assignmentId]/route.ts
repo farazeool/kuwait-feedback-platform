@@ -32,7 +32,11 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ assignmentId: string }> },
 ) {
-  const { assignmentId: token } = await params;
+  const { assignmentId: rawParam } = await params;
+  // Email snippets reference the badge as `/api/signature-image/{token}.png` so
+  // the URL looks like a static image to clients and caches. Strip a trailing
+  // `.png` before validating — the token itself never contains a dot.
+  const token = rawParam.replace(/\.png$/i, "");
 
   const fontEntry = getFont();
   // When our bundled Inter font is absent, omit `fonts` entirely so @vercel/og

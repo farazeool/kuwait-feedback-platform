@@ -5,6 +5,7 @@ import { listTemplates, listAssignments } from "@/features/distribution/template
 import { renderEmailSignatureHtml } from "@/features/distribution/renderers/email";
 import { archiveTemplate, bulkAssign, revokeAssignment } from "@/features/distribution/actions";
 import { CopyLinkButton } from "@/components/surveys/copy-link-button";
+import { CopySnippetButton } from "@/components/distribution/copy-snippet-button";
 import { getSignatureSubjectReport } from "@/features/distribution/report";
 import { resolveAnalyticsRange } from "@/features/analytics/dates";
 import { MetricCard } from "@/components/analytics/metric-card";
@@ -144,7 +145,10 @@ export default async function EmailSignaturesPage({
                     <td className="max-w-[200px] truncate px-4 py-2.5 font-mono text-[10px] text-muted">{link}</td>
                     <td className="px-4 py-2.5">
                       <div className="flex flex-wrap gap-1.5">
-                        <CopyLinkButton value={link} labelEn="Copy" copiedLabelEn="Copied" />
+                        <CopyLinkButton value={link} labelEn="Copy link" copiedLabelEn="Copied!" />
+                        {a.status === "active" && (
+                          <CopySnippetButton appUrl={appUrl} publicToken={a.public_token as string} />
+                        )}
                         {a.status === "active" && (
                           <form action={revokeAssignment} className="inline">
                             <input type="hidden" name="assignmentId" value={a.id as string} />
