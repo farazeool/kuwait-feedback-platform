@@ -30,7 +30,7 @@ export function renderEmailSignatureHtml(
   const privacyNotice = (rc.privacyNoticeEn as string) ?? "";
   const fontSize = iconSize === "large" ? "28" : iconSize === "small" ? "18" : "22";
   const alignStyle = alignment === "center" ? "text-align:center;" : alignment === "right" ? "text-align:right;" : "text-align:left;";
-  const feedbackUrl = `${appUrl}/feedback/l/${publicToken}`;
+  const feedbackUrl = `${appUrl}/f/${publicToken}`;
   const encodedUrl = feedbackUrl.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
 
   let ratingHtml = "";
@@ -74,6 +74,6 @@ export function renderEmailSignaturePlainText(publicToken: string, appUrl: strin
   const rc = (template.render_config ?? {}) as Record<string, unknown>;
   const heading = (rc.headingEn as string) ?? "How was your experience?";
   const description = (rc.descriptionEn as string) ?? "";
-  const feedbackUrl = `${appUrl}/feedback/l/${publicToken}`;
+  const feedbackUrl = `${appUrl}/f/${publicToken}`;
   return `${orgName}\n${heading}\n${description ? description + "\n" : ""}\nHow did we do? Rate us here: ${feedbackUrl}`;
 }

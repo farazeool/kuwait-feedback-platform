@@ -37,7 +37,8 @@ export async function POST(request: NextRequest) {
   try { input = JSON.parse(raw); } catch { return genericOk(); }
 
   const parsed = ratingSubmissionSchema.safeParse(input);
-  if (!parsed.success || parsed.data.website !== "") return genericOk();
+  // Honeypot check: website field must be empty string or undefined (backward compatible)
+  if (!parsed.success || (parsed.data.website ?? "") !== "") return genericOk();
 
   const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   const fingerprint = createSubmissionFingerprint(env.SUBMISSION_FINGERPRINT_SECRET, {

@@ -8,7 +8,7 @@ export async function submitRating(input: {
     const res = await fetch("/api/feedback/rate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(input),
+      body: JSON.stringify({ ...input, website: "" }),
     });
     if (!res.ok) return { ok: false };
     return (await res.json()) as { ok: boolean };

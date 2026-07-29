@@ -33,12 +33,18 @@ export default function RatingForm({
   token,
   nonce,
   ratingStyle,
+  initialRating,
 }: {
   token: string;
   nonce: string;
   ratingStyle: string;
+  initialRating?: string;
 }) {
-  const [selected, setSelected] = useState<number | null>(null);
+  // Parse and validate initial rating from query param (1-5)
+  const parsedInitial = initialRating ? parseInt(initialRating, 10) : null;
+  const validInitial = parsedInitial && parsedInitial >= 1 && parsedInitial <= 5 ? parsedInitial : null;
+
+  const [selected, setSelected] = useState<number | null>(validInitial);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -48,9 +54,11 @@ export default function RatingForm({
     if (submitted || loading) return;
     setSelected(value);
     setLoading(true);
-    await submitRating({ token, rating: value, nonce });
-    setSubmitted(true);
+    const result = await submitRating({ token, rating: value, nonce });
     setLoading(false);
+    if (result.ok) {
+      setSubmitted(true);
+    }
   }
 
   if (submitted) {

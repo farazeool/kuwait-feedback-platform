@@ -163,7 +163,7 @@ describe("renderEmailSignatureHtml", () => {
       "Test Org",
     );
 
-    expect(html).toContain("https://preview.example.test/feedback/l/test-token-123");
+    expect(html).toContain("https://preview.example.test/f/test-token-123");
     expect(html).not.toContain("http://localhost");
   });
 
@@ -335,7 +335,7 @@ describe("renderEmailSignaturePlainText", () => {
 
     expect(text).toContain("Test Org");
     expect(text).toContain("How was your experience?");
-    expect(text).toContain("https://app.test/feedback/l/test-token");
+    expect(text).toContain("https://app.test/f/test-token");
   });
 
   it("includes description when present", () => {
@@ -357,6 +357,6 @@ describe("renderEmailSignaturePlainText", () => {
       baseTemplate,
     );
 
-    expect(text).toContain("https://preview.example.test/feedback/l/test-token-456");
+    expect(text).toContain("https://preview.example.test/f/test-token-456");
   });
 });
