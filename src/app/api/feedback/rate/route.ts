@@ -23,7 +23,9 @@ export async function POST(request: NextRequest) {
     return genericOk();
   }
   const declaredLength = Number(request.headers.get("content-length") ?? 0);
-  if (declaredLength > MAX_SUBMISSION_BODY_BYTES) return genericOk();
+  if (declaredLength > MAX_SUBMISSION_BODY_BYTES) {
+    return genericOk();
+  }
 
   let raw: string | null = "";
   try {
@@ -31,10 +33,16 @@ export async function POST(request: NextRequest) {
   } catch {
     return genericOk();
   }
-  if (raw === null || !isWithinSubmissionBodyLimit(raw, declaredLength)) return genericOk();
+  if (raw === null || !isWithinSubmissionBodyLimit(raw, declaredLength)) {
+    return genericOk();
+  }
 
   let input: unknown;
-  try { input = JSON.parse(raw); } catch { return genericOk(); }
+  try {
+    input = JSON.parse(raw);
+  } catch {
+    return genericOk();
+  }
 
   const parsed = ratingSubmissionSchema.safeParse(input);
   // Honeypot check: website field must be empty string or undefined (backward compatible)
@@ -49,7 +57,7 @@ export async function POST(request: NextRequest) {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = createSupabaseAnonymousClient() as any;
-  const { error } = await supabase.rpc("record_rating", {
+  const { data, error } = await supabase.rpc("record_rating", {
     p_public_token: parsed.data.token,
     p_rating: parsed.data.rating,
     p_nonce: parsed.data.nonce,
@@ -58,8 +66,24 @@ export async function POST(request: NextRequest) {
   });
 
   if (error) {
-    const err = error as { code?: string };
-    if (err.code === "P0001") return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    const err = error as { code?: string; message?: string };
+    if (err.code === "P0001") {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+    // Database/RPC failure: return non-success without exposing internals
+    return NextResponse.json(
+      { ok: false, error: "Unable to record feedback" },
+      { status: 503 }
+    );
+  }
+
+  // Verify actual persistence occurred
+  if (data?.recorded !== true) {
+    // RPC succeeded but rating was not persisted (invalid/consumed nonce, expired token, etc.)
+    return NextResponse.json(
+      { ok: false, error: "Unable to record feedback" },
+      { status: 409 }
+    );
   }
 
   return NextResponse.json({ ok: true });
