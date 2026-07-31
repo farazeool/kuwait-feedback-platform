@@ -7,6 +7,31 @@ export type Json =
   | Json[]
 
 export type Database = {
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       alert_configurations: {
@@ -682,8 +707,11 @@ export type Database = {
           organization_id: string
           public_token: string
           response_count: number
+          revoked_at: string | null
           status: string
-          survey_id: string
+          subject_id: string | null
+          subject_type: string | null
+          survey_id: string | null
           template_id: string
           updated_at: string
         }
@@ -703,8 +731,11 @@ export type Database = {
           organization_id: string
           public_token?: string
           response_count?: number
+          revoked_at?: string | null
           status?: string
-          survey_id: string
+          subject_id?: string | null
+          subject_type?: string | null
+          survey_id?: string | null
           template_id: string
           updated_at?: string
         }
@@ -724,8 +755,11 @@ export type Database = {
           organization_id?: string
           public_token?: string
           response_count?: number
+          revoked_at?: string | null
           status?: string
-          survey_id?: string
+          subject_id?: string | null
+          subject_type?: string | null
+          survey_id?: string | null
           template_id?: string
           updated_at?: string
         }
@@ -1083,6 +1117,70 @@ export type Database = {
             columns: ["verified_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feedback_rating_nonces: {
+        Row: {
+          assignment_id: string
+          consumed_at: string | null
+          expires_at: string
+          issued_at: string
+          nonce_hash: string
+        }
+        Insert: {
+          assignment_id: string
+          consumed_at?: string | null
+          expires_at: string
+          issued_at?: string
+          nonce_hash: string
+        }
+        Update: {
+          assignment_id?: string
+          consumed_at?: string | null
+          expires_at?: string
+          issued_at?: string
+          nonce_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_rating_nonces_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "distribution_assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feedback_rating_rate_limits: {
+        Row: {
+          assignment_id: string
+          expires_at: string
+          fingerprint_hash: string
+          request_count: number
+          window_started_at: string
+        }
+        Insert: {
+          assignment_id: string
+          expires_at: string
+          fingerprint_hash: string
+          request_count?: number
+          window_started_at: string
+        }
+        Update: {
+          assignment_id?: string
+          expires_at?: string
+          fingerprint_hash?: string
+          request_count?: number
+          window_started_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_rating_rate_limits_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "distribution_assignments"
             referencedColumns: ["id"]
           },
         ]
@@ -1565,6 +1663,171 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kiosk_config_history: {
+        Row: {
+          change_reason: string | null
+          changed_at: string
+          changed_by: string | null
+          id: string
+          kiosk_device_id: string
+          new_status: Database["public"]["Enums"]["kiosk_status"] | null
+          new_survey_id: string | null
+          organization_id: string
+          previous_status: Database["public"]["Enums"]["kiosk_status"] | null
+          previous_survey_id: string | null
+        }
+        Insert: {
+          change_reason?: string | null
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          kiosk_device_id: string
+          new_status?: Database["public"]["Enums"]["kiosk_status"] | null
+          new_survey_id?: string | null
+          organization_id: string
+          previous_status?: Database["public"]["Enums"]["kiosk_status"] | null
+          previous_survey_id?: string | null
+        }
+        Update: {
+          change_reason?: string | null
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          kiosk_device_id?: string
+          new_status?: Database["public"]["Enums"]["kiosk_status"] | null
+          new_survey_id?: string | null
+          organization_id?: string
+          previous_status?: Database["public"]["Enums"]["kiosk_status"] | null
+          previous_survey_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kiosk_config_history_kiosk_device_id_fkey"
+            columns: ["kiosk_device_id"]
+            isOneToOne: false
+            referencedRelation: "kiosk_devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kiosk_config_history_new_survey_id_fkey"
+            columns: ["new_survey_id"]
+            isOneToOne: false
+            referencedRelation: "surveys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kiosk_config_history_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kiosk_config_history_previous_survey_id_fkey"
+            columns: ["previous_survey_id"]
+            isOneToOne: false
+            referencedRelation: "surveys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kiosk_devices: {
+        Row: {
+          access_token: string
+          app_version: string | null
+          branding: Json
+          channel: Database["public"]["Enums"]["kiosk_channel"]
+          created_at: string
+          created_by: string | null
+          default_language: string
+          device_identifier: string | null
+          device_model: string | null
+          device_name: string
+          id: string
+          idle_timeout_seconds: number
+          last_response_at: string | null
+          last_seen_at: string | null
+          location_id: string
+          notes: string | null
+          organization_id: string
+          os_version: string | null
+          status: Database["public"]["Enums"]["kiosk_status"]
+          survey_id: string | null
+          total_responses: number
+          updated_at: string
+        }
+        Insert: {
+          access_token?: string
+          app_version?: string | null
+          branding?: Json
+          channel?: Database["public"]["Enums"]["kiosk_channel"]
+          created_at?: string
+          created_by?: string | null
+          default_language?: string
+          device_identifier?: string | null
+          device_model?: string | null
+          device_name: string
+          id?: string
+          idle_timeout_seconds?: number
+          last_response_at?: string | null
+          last_seen_at?: string | null
+          location_id: string
+          notes?: string | null
+          organization_id: string
+          os_version?: string | null
+          status?: Database["public"]["Enums"]["kiosk_status"]
+          survey_id?: string | null
+          total_responses?: number
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string
+          app_version?: string | null
+          branding?: Json
+          channel?: Database["public"]["Enums"]["kiosk_channel"]
+          created_at?: string
+          created_by?: string | null
+          default_language?: string
+          device_identifier?: string | null
+          device_model?: string | null
+          device_name?: string
+          id?: string
+          idle_timeout_seconds?: number
+          last_response_at?: string | null
+          last_seen_at?: string | null
+          location_id?: string
+          notes?: string | null
+          organization_id?: string
+          os_version?: string | null
+          status?: Database["public"]["Enums"]["kiosk_status"]
+          survey_id?: string | null
+          total_responses?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kiosk_devices_location_fk"
+            columns: ["location_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "kiosk_devices_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kiosk_devices_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "surveys"
             referencedColumns: ["id"]
           },
         ]
@@ -2055,6 +2318,54 @@ export type Database = {
             columns: ["survey_id"]
             isOneToOne: false
             referencedRelation: "surveys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rating_events: {
+        Row: {
+          assignment_id: string
+          created_at: string
+          id: string
+          ip_hash: string | null
+          nonce_ref: string
+          organization_id: string
+          rating: number
+          user_agent: string | null
+        }
+        Insert: {
+          assignment_id: string
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          nonce_ref: string
+          organization_id: string
+          rating: number
+          user_agent?: string | null
+        }
+        Update: {
+          assignment_id?: string
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          nonce_ref?: string
+          organization_id?: string
+          rating?: number
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rating_events_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "distribution_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rating_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -3054,6 +3365,24 @@ export type Database = {
         }
         Returns: boolean
       }
+      consume_rating_rate_limit: {
+        Args: {
+          p_assignment_id: string
+          p_fingerprint_hash: string
+          p_limit?: number
+          p_window_seconds?: number
+        }
+        Returns: boolean
+      }
+      consume_token_click_rate_limit: {
+        Args: {
+          p_fingerprint: string
+          p_max_clicks: number
+          p_public_token: string
+          p_window_seconds: number
+        }
+        Returns: boolean
+      }
       create_department: {
         Args: {
           p_location_id: string
@@ -3061,6 +3390,17 @@ export type Database = {
           p_name_en: string
           p_organization_id: string
           p_slug: string
+        }
+        Returns: string
+      }
+      create_kiosk_device: {
+        Args: {
+          p_device_identifier?: string
+          p_device_name: string
+          p_location_id: string
+          p_notes?: string
+          p_organization_id: string
+          p_survey_id?: string
         }
         Returns: string
       }
@@ -3271,6 +3611,19 @@ export type Database = {
         Returns: Json
       }
       get_invitation_public: { Args: { p_token: string }; Returns: Json }
+      get_kiosk_config: {
+        Args: { p_access_token: string }
+        Returns: {
+          branding: Json
+          default_language: string
+          device_id: string
+          device_name: string
+          idle_timeout_seconds: number
+          last_config_change: string
+          status: Database["public"]["Enums"]["kiosk_status"]
+          survey_public_slug: string
+        }[]
+      }
       get_kpi_dashboard: {
         Args: {
           p_channel?: string
@@ -3312,6 +3665,18 @@ export type Database = {
         }
         Returns: Json
       }
+      get_signature_badge: { Args: { p_public_token: string }; Returns: Json }
+      get_signature_subject_report: {
+        Args: {
+          p_end_at: string
+          p_location_id?: string
+          p_organization_id: string
+          p_start_at: string
+          p_subject_type?: string
+          p_template_id?: string
+        }
+        Returns: Json
+      }
       get_survey_question_analytics: {
         Args: {
           p_end_at: string
@@ -3332,6 +3697,43 @@ export type Database = {
         Returns: Json
       }
       is_platform_admin: { Args: never; Returns: boolean }
+      issue_rating_nonce: {
+        Args: { p_fingerprint_hash?: string; p_public_token: string }
+        Returns: Json
+      }
+      list_kiosk_devices: {
+        Args: {
+          p_location_id?: string
+          p_organization_id: string
+          p_status?: Database["public"]["Enums"]["kiosk_status"]
+        }
+        Returns: {
+          app_version: string
+          branding: Json
+          channel: Database["public"]["Enums"]["kiosk_channel"]
+          created_at: string
+          default_language: string
+          device_identifier: string
+          device_model: string
+          device_name: string
+          id: string
+          idle_timeout_seconds: number
+          last_response_at: string
+          last_seen_at: string
+          location_id: string
+          location_name_ar: string
+          location_name_en: string
+          notes: string
+          organization_id: string
+          os_version: string
+          status: Database["public"]["Enums"]["kiosk_status"]
+          survey_id: string
+          survey_title_ar: string
+          survey_title_en: string
+          total_responses: number
+          updated_at: string
+        }[]
+      }
       list_team_invitations: {
         Args: { p_organization_id: string }
         Returns: Json
@@ -3414,6 +3816,20 @@ export type Database = {
         }
         Returns: undefined
       }
+      record_kiosk_response: {
+        Args: { p_access_token: string }
+        Returns: boolean
+      }
+      record_rating: {
+        Args: {
+          p_fingerprint_hash?: string
+          p_nonce: string
+          p_public_token: string
+          p_rating: number
+          p_user_agent?: string
+        }
+        Returns: Json
+      }
       remove_organization_member: {
         Args: { p_membership_id: string }
         Returns: undefined
@@ -3428,6 +3844,17 @@ export type Database = {
           invited_locale: Database["public"]["Enums"]["locale_code"]
           invited_role: Database["public"]["Enums"]["app_role"]
           personal_message: string
+        }[]
+      }
+      resolve_kiosk_attribution: {
+        Args: { p_access_token: string }
+        Returns: {
+          channel: Database["public"]["Enums"]["kiosk_channel"]
+          device_id: string
+          location_id: string
+          organization_id: string
+          status: Database["public"]["Enums"]["kiosk_status"]
+          survey_id: string
         }[]
       }
       revoke_organization_invitation: {
@@ -3533,6 +3960,30 @@ export type Database = {
           p_status: string
         }
         Returns: undefined
+      }
+      update_kiosk_device: {
+        Args: {
+          p_branding?: Json
+          p_change_reason?: string
+          p_clear_survey?: boolean
+          p_default_language?: string
+          p_device_id: string
+          p_device_name?: string
+          p_idle_timeout_seconds?: number
+          p_notes?: string
+          p_status?: Database["public"]["Enums"]["kiosk_status"]
+          p_survey_id?: string
+        }
+        Returns: boolean
+      }
+      update_kiosk_heartbeat: {
+        Args: {
+          p_access_token: string
+          p_app_version?: string
+          p_device_model?: string
+          p_os_version?: string
+        }
+        Returns: boolean
       }
       update_location_v2: {
         Args: {
@@ -3712,6 +4163,14 @@ export type Database = {
         | "waiting_verification"
         | "closed"
       invitation_delivery_status: "pending" | "captured" | "sent" | "failed"
+      kiosk_channel: "kiosk" | "tablet" | "qr"
+      kiosk_status:
+        | "active"
+        | "paused"
+        | "maintenance"
+        | "offline"
+        | "revoked"
+        | "archived"
       kpi_metric:
         | "satisfaction_pct"
         | "negative_feedback_pct"
@@ -3876,6 +4335,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       alert_rule_type: [
@@ -3948,6 +4410,15 @@ export const Constants = {
         "closed",
       ],
       invitation_delivery_status: ["pending", "captured", "sent", "failed"],
+      kiosk_channel: ["kiosk", "tablet", "qr"],
+      kiosk_status: [
+        "active",
+        "paused",
+        "maintenance",
+        "offline",
+        "revoked",
+        "archived",
+      ],
       kpi_metric: [
         "satisfaction_pct",
         "negative_feedback_pct",
@@ -3995,4 +4466,3 @@ export const Constants = {
     },
   },
 } as const
-

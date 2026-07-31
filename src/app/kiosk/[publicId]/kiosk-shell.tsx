@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PublicSurveyForm } from "@/components/feedback/public-survey-form";
 import type { PublicSurvey } from "@/features/public-feedback/schema";
+import { useKioskConfig } from "@/hooks/use-kiosk-config";
+import { KioskPausedScreen, KioskMaintenanceScreen } from "@/components/kiosk/kiosk-status-screens";
 
 interface KioskShellProps {
   survey: PublicSurvey;
@@ -23,6 +25,24 @@ export function KioskShell({ survey, session, touchpointToken }: KioskShellProps
   const [staffTestMode, setStaffTestMode] = useState(false);
   const isArabic = locale === "ar";
   const branding = survey.organization.branding;
+
+  // Kiosk device management - poll for config updates if touchpointToken provided
+  const { config: kioskConfig } = useKioskConfig({
+    accessToken: touchpointToken || null,
+    onConfigChange: (newSlug) => {
+      // Survey changed remotely - reload the page to get new survey
+      if (newSlug) {
+        window.location.href = `/kiosk/${newSlug}?t=${touchpointToken}`;
+      }
+    },
+    onStatusChange: (newStatus) => {
+      // Status changed - the UI will automatically show paused/maintenance screen
+      console.log("Kiosk status changed:", newStatus);
+    },
+  });
+
+  // Check if kiosk is paused or in maintenance
+  const kioskStatus = kioskConfig?.status || "active";
 
   const pick = (value: { en: string | null; ar: string | null }) =>
     isArabic ? value.ar || value.en || "" : value.en || "";
@@ -97,6 +117,29 @@ export function KioskShell({ survey, session, touchpointToken }: KioskShellProps
       if (idleTimerRef.current) window.clearTimeout(idleTimerRef.current);
     };
   }, []);
+
+  // ========== STATUS SCREENS ==========
+  // Show paused screen if kiosk is paused
+  if (touchpointToken && kioskStatus === "paused") {
+    return (
+      <KioskPausedScreen
+        locale={locale}
+        branding={branding}
+        organizationName={survey.organization.name}
+      />
+    );
+  }
+
+  // Show maintenance screen if kiosk is in maintenance
+  if (touchpointToken && kioskStatus === "maintenance") {
+    return (
+      <KioskMaintenanceScreen
+        locale={locale}
+        branding={branding}
+        organizationName={survey.organization.name}
+      />
+    );
+  }
 
   // ========== WELCOME SCREEN ==========
   if (phase === "welcome") {

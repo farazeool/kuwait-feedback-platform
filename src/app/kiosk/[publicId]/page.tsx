@@ -1,4 +1,3 @@
-import { PublicSurveyForm } from "@/components/feedback/public-survey-form";
 import { createPublicFeedbackSession, getPublicSurvey } from "@/features/public-feedback/server";
 import { KioskShell } from "./kiosk-shell";
 
