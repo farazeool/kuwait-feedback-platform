@@ -1,6 +1,21 @@
 import type { DistributionTemplate } from "../templates";
 
 /**
+ * Emoji rating scale, ordered worst (index 0) to best (index 4).
+ *
+ * The 1-5 rating is derived from the array position as `index + 1`, so the
+ * visual left-to-right order always matches the recorded value. Keep this
+ * ordering aligned with the badge renderer, where rating 5 is the best score.
+ */
+const EMOJI_SCALE = [
+  { entity: "&#128545;", label: "Very dissatisfied" },
+  { entity: "&#128542;", label: "Dissatisfied" },
+  { entity: "&#128528;", label: "Neutral" },
+  { entity: "&#128578;", label: "Satisfied" },
+  { entity: "&#128522;", label: "Very satisfied" },
+] as const;
+
+/**
  * Escape HTML special characters to prevent XSS
  */
 function escapeHtml(unsafe: string): string {
@@ -35,14 +50,16 @@ export function renderEmailSignatureHtml(
 
   let ratingHtml = "";
   if (ratingStyle === "emoji") {
-    ratingHtml = Array.from({ length: 5 }, (_, i) => {
-      const r = 5 - i;
-      return `<a href="${encodedUrl}?r=${r}" style="text-decoration:none;font-size:${fontSize}px;letter-spacing:4px;display:inline-block;padding:2px 0;" target="_blank">${["&#128545;", "&#128542;", "&#128528;", "&#128578;", "&#128522;"][i]}</a>`;
+    ratingHtml = EMOJI_SCALE.map(({ entity, label }, i) => {
+      const r = i + 1;
+      const safeLabel = escapeHtml(label);
+      return `<a href="${encodedUrl}?r=${r}" title="${safeLabel}" aria-label="${safeLabel}" style="text-decoration:none;font-size:${fontSize}px;letter-spacing:4px;display:inline-block;padding:2px 0;" target="_blank">${entity}</a>`;
     }).join("\n");
   } else if (ratingStyle === "star") {
     ratingHtml = Array.from({ length: 5 }, (_, i) => {
-      const r = 5 - i;
-      return `<a href="${encodedUrl}?r=${r}" style="text-decoration:none;color:${brandColor};font-size:${fontSize}px;display:inline-block;padding:2px;letter-spacing:2px;" target="_blank">&#9733;</a>`;
+      const r = i + 1;
+      const safeLabel = escapeHtml(`${r} of 5`);
+      return `<a href="${encodedUrl}?r=${r}" title="${safeLabel}" aria-label="${safeLabel}" style="text-decoration:none;color:${brandColor};font-size:${fontSize}px;display:inline-block;padding:2px;letter-spacing:2px;" target="_blank">&#9733;</a>`;
     }).join("\n");
   } else if (ratingStyle === "three_option") {
     ratingHtml = `<a href="${encodedUrl}?r=3" style="display:inline-block;background-color:#22c55e;color:#fff;padding:8px 18px;border-radius:6px;text-decoration:none;font-size:13px;font-weight:600;margin:2px;" target="_blank">Great</a>

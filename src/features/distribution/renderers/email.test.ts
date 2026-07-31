@@ -182,6 +182,32 @@ describe("renderEmailSignatureHtml", () => {
     expect(html).toContain("?r=1");
   });
 
+  it("pairs each emoji with the matching rating value (worst=1, best=5)", () => {
+    const html = renderEmailSignatureHtml(
+      { ...baseTemplate, render_config: { ...baseTemplate.render_config, ratingStyle: "emoji" } },
+      "tok",
+      "https://example.com",
+      "Acme",
+    );
+    // The angry face must submit 1 and the happy face must submit 5. Asserting
+    // only that "?r=5" and each emoji appear somewhere cannot catch inversion.
+    expect(html).toMatch(/\?r=1"[^>]*>&#128545;</);
+    expect(html).toMatch(/\?r=5"[^>]*>&#128522;</);
+    // Ratings appear in ascending left-to-right order.
+    expect(html.match(/\?r=(\d)/g)).toEqual(["?r=1", "?r=2", "?r=3", "?r=4", "?r=5"]);
+  });
+
+  it("pairs each star with the matching rating value in ascending order", () => {
+    const html = renderEmailSignatureHtml(
+      { ...baseTemplate, render_config: { ...baseTemplate.render_config, ratingStyle: "star" } },
+      "tok",
+      "https://example.com",
+      "Acme",
+    );
+    expect(html.match(/\?r=(\d)/g)).toEqual(["?r=1", "?r=2", "?r=3", "?r=4", "?r=5"]);
+    expect(html).toContain('title="5 of 5"');
+  });
+
   it("renders emoji rating style correctly", () => {
     const html = renderEmailSignatureHtml(
       baseTemplate,
