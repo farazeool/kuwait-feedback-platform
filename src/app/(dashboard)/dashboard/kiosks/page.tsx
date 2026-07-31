@@ -49,14 +49,22 @@ export default async function KiosksPage() {
     }
   }
 
+  // The dashboard layout already supplies the sidebar, topbar, page padding and
+  // the dir/lang wrapper, so this page only owns its own content stack. Match
+  // the "grid gap-6" + header idiom the sibling dashboard pages use.
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Kiosk Device Management</h1>
-        <p className="text-muted mt-2">
+    <div className="grid gap-6">
+      <header>
+        <p className="text-xs font-semibold uppercase tracking-wide text-brand">
+          Device fleet
+        </p>
+        <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground">
+          Kiosks
+        </h1>
+        <p className="mt-2 text-muted">
           Manage iPad kiosk devices, assign surveys, and monitor status across all locations.
         </p>
-      </div>
+      </header>
 
       {!organizationId ? (
         // A platform admin without an organization membership has no single

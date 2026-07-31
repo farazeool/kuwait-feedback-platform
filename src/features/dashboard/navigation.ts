@@ -26,6 +26,14 @@ export const DASHBOARD_NAVIGATION = [
     roles: ["platform_admin", "organization_owner", "organization_admin", "quality_manager"],
   },
   {
+    // Mirrors requireOrganizationManagementContext, which is the guard on
+    // /dashboard/kiosks. Keeping the two in sync avoids advertising a link that
+    // would only redirect back to /dashboard.
+    href: "/dashboard/kiosks",
+    label: "nav.kiosks",
+    roles: ["platform_admin", "organization_owner", "organization_admin", "quality_manager", "senior_management"],
+  },
+  {
     href: "/dashboard/evidence",
     label: "nav.evidence",
     roles: ["platform_admin", "organization_owner", "organization_admin", "quality_manager", "location_manager"],
