@@ -1,7 +1,13 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { createAssignment } from "@/features/distribution/actions";
+import {
+  decideAssignmentSubmission,
+  resolveAssignmentOutcome,
+  ASSIGNMENT_MESSAGES,
+} from "@/features/distribution/assignment-result";
 
 interface CreateAssignmentDialogProps {
   employees: Array<{ id: string; user_id: string; display_name: string; email: string }>;
@@ -10,6 +16,7 @@ interface CreateAssignmentDialogProps {
 }
 
 export function CreateAssignmentDialog({ employees, templates, onClose }: CreateAssignmentDialogProps) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [selectedEmployee, setSelectedEmployee] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState("");
@@ -21,28 +28,40 @@ export function CreateAssignmentDialog({ employees, templates, onClose }: Create
     e.preventDefault();
     setError("");
 
-    if (!selectedEmployee) {
-      setError("Please select an employee");
-      return;
-    }
-    if (!selectedTemplate) {
-      setError("Please select a template");
+    // Every gate — required fields and the in-flight guard that prevents a
+    // double submission — lives in the pure module.
+    const decision = decideAssignmentSubmission({
+      employeeId: selectedEmployee,
+      templateId: selectedTemplate,
+      isPending,
+    });
+    if (decision.action === "reject") {
+      setError(decision.message);
       return;
     }
 
     const formData = new FormData();
-    const assignment = {
-      kind: "fk" as const,
-      targetType: "employee" as const,
-      targetId: selectedEmployee,
-      templateId: selectedTemplate,
-      surveyId: null,
-      metadata: {},
-    };
-    formData.append("assignment", JSON.stringify(assignment));
+    formData.append("assignment", JSON.stringify(decision.payload));
 
-    startTransition(() => {
-      createAssignment(formData);
+    startTransition(async () => {
+      // The action now returns a structured result instead of redirecting, so a
+      // thrown error here is genuinely unexpected and maps to the generic
+      // message rather than closing the dialog.
+      let result: unknown;
+      try {
+        result = await createAssignment(formData);
+      } catch {
+        setError(ASSIGNMENT_MESSAGES.unknown);
+        return;
+      }
+
+      const outcome = resolveAssignmentOutcome(result);
+      if (!outcome.closeDialog) {
+        setError(outcome.message);
+        return;
+      }
+      if (outcome.refreshList) router.refresh();
+      onClose();
     });
   };
 

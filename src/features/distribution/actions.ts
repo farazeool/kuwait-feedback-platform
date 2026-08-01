@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { requireOrganizationManagementContext } from "@/lib/auth/context";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { distributionTemplateSchema, distributionAssignmentSchema } from "./schema";
+import type { CreateAssignmentResult } from "./assignment-result";
 
 // The distribution template/assignment UI lives on the email-signatures channel
 // page, which switches views via the `tab` query param. Templates are the
@@ -83,17 +84,47 @@ export async function archiveTemplate(formData: FormData) {
   redirect(`${TEMPLATES_URL}?updated=1`);
 }
 
-export async function createAssignment(formData: FormData) {
+export async function createAssignment(formData: FormData): Promise<CreateAssignmentResult> {
   const ctx = await requireOrganizationManagementContext();
-  if (!ctx.organization) redirect(`${ASSIGNMENTS_URL}&error=denied`);
+  if (!ctx.organization) return { ok: false, error: "denied" };
 
   let input: unknown;
-  try { input = JSON.parse(String(formData.get("assignment") ?? "")); } catch { redirect(`${ASSIGNMENTS_URL}&error=invalid`); }
+  try {
+    input = JSON.parse(String(formData.get("assignment") ?? ""));
+  } catch {
+    return { ok: false, error: "invalid" };
+  }
   const parsed = distributionAssignmentSchema.safeParse(input);
-  if (!parsed.success) redirect(`${ASSIGNMENTS_URL}&error=invalid`);
+  if (!parsed.success) return { ok: false, error: "invalid" };
 
   const supabase = sb(await createSupabaseServerClient());
   const v = parsed.data;
+  const organizationId = ctx.organization.id;
+
+  // Tenant guard: the template must belong to the caller's organization. The
+  // composite FK (da_template_org_fkey) also enforces this, but checking here
+  // turns a cross-tenant reference into a safe `invalid` instead of a generic
+  // database failure.
+  const { data: template } = await supabase
+    .from("distribution_templates")
+    .select("id")
+    .eq("id", v.templateId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+  if (!template) return { ok: false, error: "invalid" };
+
+  // Tenant guard for employee targets: assigned_employee_id references
+  // auth.users.id, which maps to organization_memberships.user_id. Membership —
+  // not profiles — is what proves the employee belongs to this organization.
+  if (v.kind === "fk" && v.targetType === "employee") {
+    const { data: membership } = await supabase
+      .from("organization_memberships")
+      .select("user_id")
+      .eq("organization_id", organizationId)
+      .eq("user_id", v.targetId)
+      .maybeSingle();
+    if (!membership) return { ok: false, error: "invalid" };
+  }
 
   const fkCols =
     v.kind === "fk"
@@ -107,7 +138,7 @@ export async function createAssignment(formData: FormData) {
       : { subject_type: v.subjectType, subject_id: v.subjectId };
 
   const payload = {
-    organization_id: ctx.organization.id,
+    organization_id: organizationId,
     template_id: v.templateId,
     survey_id: v.surveyId ?? null,
     campaign_id: v.campaignId || null,
@@ -117,30 +148,34 @@ export async function createAssignment(formData: FormData) {
     created_by: ctx.user.id,
   };
 
-  const { error } = await supabase.from("distribution_assignments").insert(payload);
+  const { data: created, error } = await supabase
+    .from("distribution_assignments")
+    .insert(payload)
+    .select("id")
+    .single();
 
   if (error) {
-    const safeError = {
+    // Logged server-side only. Nothing from the driver reaches the client.
+    console.error("[createAssignment] Database error", {
       code: error?.code ?? null,
       message: error?.message ?? (error instanceof Error ? error.message : String(error)),
       details: error?.details ?? null,
       hint: error?.hint ?? null,
       constraint: (error as { constraint?: string })?.constraint ?? null,
-    };
+    });
 
-    console.error("[createAssignment] Database error", safeError);
+    // SQLSTATE 23505 = unique_violation, raised by da_template_employee_unique
+    // when this employee already has an assignment for this template.
+    if (error.code === "23505") return { ok: false, error: "duplicate" };
 
-    // Check for duplicate constraint violation
-    if (error.code === "23505" && error.message?.includes("da_template_employee_unique")) {
-      redirect(`${ASSIGNMENTS_URL}&error=duplicate`);
-    }
-
-    redirect(`${ASSIGNMENTS_URL}&error=creation_failed`);
+    return { ok: false, error: "creation_failed" };
   }
 
-  // Revalidate the assignments page to show the new assignment
+  if (!created?.id) return { ok: false, error: "creation_failed" };
+
+  // Refresh the assignments list for the next render.
   revalidatePath(CHANNEL_URL);
-  redirect(`${ASSIGNMENTS_URL}&assigned=1`);
+  return { ok: true, assignmentId: created.id };
 }
 
 export async function revokeAssignment(formData: FormData) {
