@@ -4,6 +4,9 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { KioskStatus } from "@/lib/kiosk/status";
 
+// Loading state keys to prevent duplicate submissions
+type LoadingAction = "create" | `update:${string}` | `archive:${string}`;
+
 // Mirrors the flat column list returned by the list_kiosk_devices RPC. The RPC
 // returns localized text as separate *_en / *_ar columns rather than nested
 // JSON objects, so this shape must stay flat to match it.
@@ -37,6 +40,9 @@ export interface KioskSurvey {
 }
 
 interface KioskManagementProps {
+  // The create endpoint scopes the new device to this organization, so the
+  // server component must pass it down; without it every POST is rejected.
+  organizationId: string;
   devices: KioskDevice[];
   locations: KioskLocation[];
   surveys: KioskSurvey[];
@@ -50,7 +56,7 @@ function localizedLabel(en: string | null, ar: string | null): string {
   return en ?? ar ?? "";
 }
 
-export function KioskManagement({ devices, locations, surveys }: KioskManagementProps) {
+export function KioskManagement({ organizationId, devices, locations, surveys }: KioskManagementProps) {
   const router = useRouter();
   // Data arrives from the server component, so there is no client-side fetch on
   // mount. After a mutation we ask the router to re-render the server component,
@@ -61,6 +67,8 @@ export function KioskManagement({ devices, locations, surveys }: KioskManagement
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [actionError, setActionError] = useState<string | null>(null);
+  // Track in-flight operations to prevent duplicate submissions
+  const [loadingAction, setLoadingAction] = useState<LoadingAction | null>(null);
 
   function refresh() {
     startTransition(() => router.refresh());
@@ -68,6 +76,9 @@ export function KioskManagement({ devices, locations, surveys }: KioskManagement
 
   async function handleCreateDevice(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    // Prevent duplicate submissions
+    if (loadingAction === "create") return;
+
     // Capture the form before awaiting: React clears currentTarget once the
     // synchronous part of the event handler returns.
     const form = e.currentTarget;
@@ -77,21 +88,34 @@ export function KioskManagement({ devices, locations, surveys }: KioskManagement
     const surveyId = (formData.get("surveyId") as string) || null;
 
     setActionError(null);
+    setLoadingAction("create");
     try {
       const response = await fetch("/api/admin/kiosks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ deviceName, locationId, surveyId }),
+        body: JSON.stringify({ organizationId, deviceName, locationId, surveyId }),
       });
 
-      if (!response.ok) throw new Error("Failed to create device");
+      if (!response.ok) {
+        // Surface the API's reason instead of a generic message, otherwise a
+        // validation failure is indistinguishable from a network error.
+        const detail = await response
+          .json()
+          .then((body) => (body as { error?: string })?.error)
+          .catch(() => null);
+        throw new Error(detail || "Failed to create device");
+      }
 
       form.reset();
       setShowCreateForm(false);
       refresh();
     } catch (error) {
       console.error("Failed to create device:", error);
-      setActionError("Failed to create device. Please try again.");
+      setActionError(
+        error instanceof Error ? error.message : "Failed to create device. Please try again."
+      );
+    } finally {
+      setLoadingAction(null);
     }
   }
 
@@ -102,7 +126,12 @@ export function KioskManagement({ devices, locations, surveys }: KioskManagement
     notes?: string;
     changeReason?: string;
   }) {
+    // Prevent duplicate submissions
+    const actionKey: LoadingAction = `update:${deviceId}`;
+    if (loadingAction === actionKey) return;
+
     setActionError(null);
+    setLoadingAction(actionKey);
     try {
       const response = await fetch(`/api/admin/kiosks/${deviceId}`, {
         method: "PATCH",
@@ -110,32 +139,57 @@ export function KioskManagement({ devices, locations, surveys }: KioskManagement
         body: JSON.stringify(updates),
       });
 
-      if (!response.ok) throw new Error("Failed to update device");
+      if (!response.ok) {
+        const detail = await response
+          .json()
+          .then((body) => (body as { error?: string })?.error)
+          .catch(() => null);
+        throw new Error(detail || "Failed to update device");
+      }
 
       setSelectedDevice(null);
       refresh();
     } catch (error) {
       console.error("Failed to update device:", error);
-      setActionError("Failed to update device. Please try again.");
+      setActionError(
+        error instanceof Error ? error.message : "Failed to update device. Please try again."
+      );
+    } finally {
+      setLoadingAction(null);
     }
   }
 
   async function handleArchiveDevice(deviceId: string) {
+    // Prevent duplicate submissions
+    const actionKey: LoadingAction = `archive:${deviceId}`;
+    if (loadingAction === actionKey) return;
+
     if (!confirm("Are you sure you want to archive this device?")) return;
 
     setActionError(null);
+    setLoadingAction(actionKey);
     try {
       const response = await fetch(`/api/admin/kiosks/${deviceId}`, {
         method: "DELETE",
       });
 
-      if (!response.ok) throw new Error("Failed to archive device");
+      if (!response.ok) {
+        const detail = await response
+          .json()
+          .then((body) => (body as { error?: string })?.error)
+          .catch(() => null);
+        throw new Error(detail || "Failed to archive device");
+      }
 
       setSelectedDevice(null);
       refresh();
     } catch (error) {
       console.error("Failed to archive device:", error);
-      setActionError("Failed to archive device. Please try again.");
+      setActionError(
+        error instanceof Error ? error.message : "Failed to archive device. Please try again."
+      );
+    } finally {
+      setLoadingAction(null);
     }
   }
 
@@ -255,14 +309,16 @@ export function KioskManagement({ devices, locations, surveys }: KioskManagement
               <div className="flex gap-2 pt-2">
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  disabled={loadingAction === "create"}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Create Device
+                  {loadingAction === "create" ? "Creating..." : "Create Device"}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowCreateForm(false)}
-                  className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+                  disabled={loadingAction === "create"}
+                  className="px-4 py-2 border rounded-lg hover:bg-gray-50 disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -291,6 +347,7 @@ export function KioskManagement({ devices, locations, surveys }: KioskManagement
                   <option value="active">Active</option>
                   <option value="paused">Paused</option>
                   <option value="maintenance">Maintenance</option>
+                  <option value="revoked">Revoked</option>
                 </select>
               </div>
               <div>

@@ -1,9 +1,8 @@
 import { requireOrganizationManagementContext } from "@/lib/auth/context";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { KioskManagement } from "./kiosk-management";
-import type { KioskDevice, KioskLocation, KioskSurvey } from "./kiosk-management";
+import { KioskManagement, type KioskDevice, type KioskLocation, type KioskSurvey } from "@/app/(dashboard)/dashboard/kiosks/kiosk-management";
 
-export default async function KiosksPage() {
+export default async function KiosksChannelPage() {
   // Kiosk management is an organization-scoped admin surface, so reuse the same
   // guard as the other management pages. This also gives us the organization id
   // that list_kiosk_devices requires as its first argument.
@@ -49,20 +48,19 @@ export default async function KiosksPage() {
     }
   }
 
-  // The dashboard layout already supplies the sidebar, topbar, page padding and
-  // the dir/lang wrapper, so this page only owns its own content stack. Match
-  // the "grid gap-6" + header idiom the sibling dashboard pages use.
+  // This page is nested under Settings → Channels, so it uses a more focused
+  // header than the standalone Kiosks page.
   return (
     <div className="grid gap-6">
       <header>
         <p className="text-xs font-semibold uppercase tracking-wide text-brand">
-          Device fleet
+          Settings → Channels
         </p>
         <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground">
-          Kiosks
+          Kiosk Devices
         </h1>
         <p className="mt-2 text-muted">
-          Manage iPad kiosk devices, assign surveys, and monitor status across all locations.
+          Register and manage iPad kiosk devices for in-location feedback collection.
         </p>
       </header>
 

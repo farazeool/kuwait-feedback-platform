@@ -2,11 +2,19 @@ import Link from "next/link";
 import { getMessages } from "@/lib/i18n/messages";
 import { requireOrganizationManagementContext } from "@/lib/auth/context";
 import { listTemplates } from "@/features/distribution/templates";
+import { countKioskDevices } from "@/features/kiosk/count";
 
 export default async function ChannelsPage() {
   const context = await requireOrganizationManagementContext();
   const messages = getMessages(context.profile.locale);
-  const [templatesResult] = await Promise.all([listTemplates("email")]);
+  const organizationId = context.membership?.organizationId ?? null;
+
+  // The kiosk count is a cosmetic badge on the index card, so it is fetched
+  // alongside the templates and degrades to 0 rather than failing the page.
+  const [templatesResult, kioskCount] = await Promise.all([
+    listTemplates("email"),
+    countKioskDevices(organizationId),
+  ]);
 
   return (
     <div className="grid gap-6">
@@ -28,6 +36,19 @@ export default async function ChannelsPage() {
           <h3 className="font-semibold text-foreground group-hover:text-brand transition-colors">Email Signatures</h3>
           <p className="mt-1 text-xs text-muted">{templatesResult.templates.length} template{templatesResult.templates.length !== 1 ? "s" : ""}</p>
           <p className="mt-0.5 text-xs text-muted">Create and manage email signature feedback blocks</p>
+        </Link>
+
+        <Link href="/dashboard/settings/channels/kiosks"
+          className="rounded-xl border border-border bg-white p-6 transition-all hover:border-brand/40 hover:shadow-sm hover:-translate-y-0.5 group">
+          <div className="mb-3 grid size-10 place-items-center rounded-xl bg-brand/10 text-brand" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" className="size-5">
+              <rect x="5" y="2" width="14" height="20" rx="2" stroke="currentColor" strokeWidth="2"/>
+              <path d="M11 18h2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </div>
+          <h3 className="font-semibold text-foreground group-hover:text-brand transition-colors">Kiosks</h3>
+          <p className="mt-1 text-xs text-muted">{kioskCount} device{kioskCount !== 1 ? "s" : ""}</p>
+          <p className="mt-0.5 text-xs text-muted">Manage iPad kiosk devices, assign surveys, and monitor status</p>
         </Link>
 
         <Link href="/dashboard/settings/channels/campaigns"
