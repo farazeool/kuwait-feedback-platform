@@ -7,6 +7,7 @@ import { archiveTemplate, revokeAssignment } from "@/features/distribution/actio
 import { CopyLinkButton } from "@/components/surveys/copy-link-button";
 import { CopySignatureButton } from "@/components/distribution/copy-signature-button";
 import { ViewHtmlCode } from "@/components/distribution/view-html-code";
+import { InstallSignatureDialog } from "@/components/distribution/install-signature-dialog";
 import { CreateAssignmentButton } from "@/components/distribution/create-assignment-button";
 import { getSignatureSubjectReport } from "@/features/distribution/report";
 import { resolveAnalyticsRange } from "@/features/analytics/dates";
@@ -201,10 +202,16 @@ export default async function EmailSignaturesPage({
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                      <CopySignatureButton html={html} plainText={plainText} label="Copy signature" />
-                      <CopyLinkButton value={link} labelEn="Copy link" copiedLabelEn="Copied!" />
-                      <ViewHtmlCode html={html} title={`Signature HTML for ${String(employee?.display_name ?? "Assignment")}`} />
-                    </div>
+                       <InstallSignatureDialog
+                         html={html}
+                         plainText={plainText}
+                         feedbackLink={link}
+                         employeeName={String(employee?.display_name ?? "Assignment")}
+                       />
+                       <CopySignatureButton html={html} plainText={plainText} label="Copy signature" />
+                       <CopyLinkButton value={link} labelEn="Copy Feedback Link" copiedLabelEn="Copied!" />
+                       <ViewHtmlCode html={html} title={`Signature HTML for ${String(employee?.display_name ?? "Assignment")}`} />
+                     </div>
                   </>
                 )}
 

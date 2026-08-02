@@ -4165,6 +4165,7 @@ export type Database = {
       invitation_delivery_status: "pending" | "captured" | "sent" | "failed"
       kiosk_channel: "kiosk" | "tablet" | "qr"
       kiosk_status:
+        | "pending_activation"
         | "active"
         | "paused"
         | "maintenance"
@@ -4412,6 +4413,7 @@ export const Constants = {
       invitation_delivery_status: ["pending", "captured", "sent", "failed"],
       kiosk_channel: ["kiosk", "tablet", "qr"],
       kiosk_status: [
+        "pending_activation",
         "active",
         "paused",
         "maintenance",

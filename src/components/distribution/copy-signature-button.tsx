@@ -8,58 +8,60 @@ type Props = {
   label?: string;
 };
 
+export type CopyResult = "copied" | "failed";
+
 /**
  * Copy email signature to clipboard with both HTML and plain text MIME types.
  * Falls back to plain text if rich clipboard is unavailable.
+ * This is a pure function that can be tested independently.
+ */
+export async function copyToClipboard(html: string, plainText: string): Promise<CopyResult> {
+  try {
+    // Attempt rich clipboard write (text/html + text/plain)
+    if (typeof ClipboardItem !== "undefined" && navigator.clipboard?.write) {
+      const htmlBlob = new Blob([html], { type: "text/html" });
+      const textBlob = new Blob([plainText], { type: "text/plain" });
+      const item = new ClipboardItem({
+        "text/html": htmlBlob,
+        "text/plain": textBlob,
+      });
+      await navigator.clipboard.write([item]);
+      return "copied";
+    }
+
+    // Fallback: copy plain text only
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(plainText);
+      return "copied";
+    }
+
+    // Oldest fallback: execCommand
+    const ta = document.createElement("textarea");
+    ta.value = plainText;
+    ta.style.cssText = "position:fixed;top:-9999px;left:-9999px;opacity:0";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return ok ? "copied" : "failed";
+  } catch (err) {
+    console.error("Copy failed:", err);
+    return "failed";
+  }
+}
+
+/**
+ * Button component that copies email signature to clipboard.
+ * Uses the copyToClipboard function internally.
  */
 export function CopySignatureButton({ html, plainText, label = "Copy signature" }: Props) {
   const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
 
   const handleCopy = async () => {
-    try {
-      // Attempt rich clipboard write (text/html + text/plain)
-      if (typeof ClipboardItem !== "undefined" && navigator.clipboard?.write) {
-        const htmlBlob = new Blob([html], { type: "text/html" });
-        const textBlob = new Blob([plainText], { type: "text/plain" });
-        const item = new ClipboardItem({
-          "text/html": htmlBlob,
-          "text/plain": textBlob,
-        });
-        await navigator.clipboard.write([item]);
-        setState("copied");
-        setTimeout(() => setState("idle"), 2000);
-        return;
-      }
-
-      // Fallback: copy plain text only
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(plainText);
-        setState("copied");
-        setTimeout(() => setState("idle"), 2000);
-        return;
-      }
-
-      // Oldest fallback: execCommand
-      const ta = document.createElement("textarea");
-      ta.value = plainText;
-      ta.style.cssText = "position:fixed;top:-9999px;left:-9999px;opacity:0";
-      document.body.appendChild(ta);
-      ta.focus();
-      ta.select();
-      const ok = document.execCommand("copy");
-      document.body.removeChild(ta);
-      if (ok) {
-        setState("copied");
-        setTimeout(() => setState("idle"), 2000);
-      } else {
-        setState("failed");
-        setTimeout(() => setState("idle"), 3000);
-      }
-    } catch (err) {
-      console.error("Copy failed:", err);
-      setState("failed");
-      setTimeout(() => setState("idle"), 3000);
-    }
+    const result = await copyToClipboard(html, plainText);
+    setState(result);
+    setTimeout(() => setState("idle"), result === "copied" ? 2000 : 3000);
   };
 
   return (

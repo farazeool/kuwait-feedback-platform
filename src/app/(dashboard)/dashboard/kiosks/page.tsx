@@ -43,7 +43,9 @@ export default async function KiosksPage() {
       console.error("Failed to load kiosk management data:", firstError);
       loadError = "Kiosk data could not be loaded. Please retry.";
     } else {
-      devices = devicesResult.data ?? [];
+      // The list_kiosk_devices RPC returns a flattened view with activation status
+      // Cast through unknown because the generated types don't include the new RPC return type yet
+      devices = (devicesResult.data ?? []) as unknown as KioskDevice[];
       locations = locationsResult.data ?? [];
       surveys = surveysResult.data ?? [];
     }

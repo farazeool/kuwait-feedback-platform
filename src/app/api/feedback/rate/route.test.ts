@@ -388,7 +388,7 @@ describe("POST /api/feedback/rate", () => {
   });
 
   describe("Security validations", () => {
-    it("returns generic success for invalid origin", async () => {
+    it("returns generic rejection for invalid origin (no false Thank You)", async () => {
       vi.mocked(isAllowedSubmissionOrigin).mockReturnValue(false);
 
       const validToken = "securitytoken123456789ab";
@@ -404,12 +404,14 @@ describe("POST /api/feedback/rate", () => {
       const response = await POST(request);
       const json = await response.json();
 
+      // HTTP 200 to prevent information leakage about why request failed
       expect(response.status).toBe(200);
-      expect(json).toEqual({ ok: true });
+      // But ok: false so client does NOT show false Thank You screen
+      expect(json).toEqual({ ok: false });
       expect(createSupabaseAnonymousClient).not.toHaveBeenCalled();
     });
 
-    it("returns generic success for honeypot trap", async () => {
+    it("returns generic rejection for honeypot trap (no false Thank You)", async () => {
       const validToken = "honeypottoken1234567890";
       const validNonce = "fffffffffffffffffffffffffffffffff000";
 
@@ -430,8 +432,10 @@ describe("POST /api/feedback/rate", () => {
       const response = await POST(request);
       const json = await response.json();
 
+      // HTTP 200 to prevent information leakage about why request failed
       expect(response.status).toBe(200);
-      expect(json).toEqual({ ok: true });
+      // But ok: false so client does NOT show false Thank You screen
+      expect(json).toEqual({ ok: false });
       expect(createSupabaseAnonymousClient).not.toHaveBeenCalled();
     });
   });

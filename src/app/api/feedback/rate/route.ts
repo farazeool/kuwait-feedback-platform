@@ -90,5 +90,8 @@ export async function POST(request: NextRequest) {
 }
 
 function genericOk() {
-  return NextResponse.json({ ok: true });
+  // Return ok: false with HTTP 200 to prevent information leakage
+  // while ensuring the client does not show a false Thank You screen.
+  // Attackers cannot distinguish between success and security rejections.
+  return NextResponse.json({ ok: false });
 }

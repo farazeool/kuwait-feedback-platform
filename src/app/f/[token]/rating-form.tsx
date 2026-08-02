@@ -47,6 +47,7 @@ export default function RatingForm({
   const [selected, setSelected] = useState<number | null>(validInitial);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const options = EMOJI_OPTIONS[ratingStyle] ?? EMOJI_OPTIONS.emoji;
 
@@ -54,10 +55,13 @@ export default function RatingForm({
     if (submitted || loading) return;
     setSelected(value);
     setLoading(true);
+    setError(null);
     const result = await submitRating({ token, rating: value, nonce });
     setLoading(false);
     if (result.ok) {
       setSubmitted(true);
+    } else {
+      setError("Unable to submit feedback. Please try again.");
     }
   }
 
@@ -67,6 +71,25 @@ export default function RatingForm({
         <p className="text-2xl">✅</p>
         <p className="mt-2 font-semibold text-foreground">Thank you!</p>
         <p className="mt-1 text-sm text-muted">Your feedback has been recorded.</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="mt-6 text-center">
+        <p className="text-2xl">⚠️</p>
+        <p className="mt-2 font-semibold text-foreground">Something went wrong</p>
+        <p className="mt-1 text-sm text-muted">{error}</p>
+        <button
+          onClick={() => {
+            setError(null);
+            setSelected(null);
+          }}
+          className="mt-4 rounded-lg border border-border bg-white px-4 py-2 text-sm font-medium text-foreground hover:bg-gray-50"
+        >
+          Try again
+        </button>
       </div>
     );
   }

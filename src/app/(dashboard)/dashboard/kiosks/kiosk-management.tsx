@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import type { KioskStatus } from "@/lib/kiosk/status";
 
 // Loading state keys to prevent duplicate submissions
-type LoadingAction = "create" | `update:${string}` | `archive:${string}`;
+type LoadingAction = "create" | `update:${string}` | `archive:${string}` | `activate:${string}`;
 
 // Mirrors the flat column list returned by the list_kiosk_devices RPC. The RPC
 // returns localized text as separate *_en / *_ar columns rather than nested
@@ -15,15 +15,20 @@ export interface KioskDevice {
   device_name: string;
   device_identifier: string | null;
   status: KioskStatus;
+  activation_status: "pending_activation" | "activated";
   survey_id: string | null;
   survey_title_en: string | null;
   survey_title_ar: string | null;
+  location_id: string | null;
   location_name_en: string | null;
   location_name_ar: string | null;
   last_seen_at: string | null;
+  activated_at: string | null;
   last_response_at: string | null;
   total_responses: number;
   created_at: string;
+  activation_code: string | null;
+  activation_code_expires_at: string | null;
 }
 
 export interface KioskLocation {
@@ -39,6 +44,12 @@ export interface KioskSurvey {
   public_slug: string;
 }
 
+interface ActivationInfo {
+  code: string;
+  activation_url: string;
+  expires_at: string;
+}
+
 interface KioskManagementProps {
   // The create endpoint scopes the new device to this organization, so the
   // server component must pass it down; without it every POST is rejected.
@@ -46,6 +57,18 @@ interface KioskManagementProps {
   devices: KioskDevice[];
   locations: KioskLocation[];
   surveys: KioskSurvey[];
+}
+
+// Online threshold: 90 seconds
+const ONLINE_THRESHOLD_MS = 90 * 1000;
+
+/**
+ * Determines if a device is online based on last_seen_at
+ */
+function isDeviceOnline(lastSeenAt: string | null): boolean {
+  if (!lastSeenAt) return false;
+  const lastSeen = new Date(lastSeenAt).getTime();
+  return Date.now() - lastSeen < ONLINE_THRESHOLD_MS;
 }
 
 /**
@@ -69,6 +92,9 @@ export function KioskManagement({ organizationId, devices, locations, surveys }:
   const [actionError, setActionError] = useState<string | null>(null);
   // Track in-flight operations to prevent duplicate submissions
   const [loadingAction, setLoadingAction] = useState<LoadingAction | null>(null);
+  // Activation state
+  const [activationInfo, setActivationInfo] = useState<ActivationInfo | null>(null);
+  const [showActivationDialog, setShowActivationDialog] = useState(false);
 
   function refresh() {
     startTransition(() => router.refresh());
@@ -121,7 +147,8 @@ export function KioskManagement({ organizationId, devices, locations, surveys }:
 
   async function handleUpdateDevice(deviceId: string, updates: {
     deviceName?: string;
-    surveyId?: string | null;
+    surveyId?: string | null | undefined;
+    locationId?: string | null | undefined;
     status?: string;
     notes?: string;
     changeReason?: string;
@@ -193,6 +220,45 @@ export function KioskManagement({ organizationId, devices, locations, surveys }:
     }
   }
 
+  const handleGenerateActivation = useCallback(async (deviceId: string) => {
+    const actionKey: LoadingAction = `activate:${deviceId}`;
+    if (loadingAction === actionKey) return;
+
+    setActionError(null);
+    setLoadingAction(actionKey);
+    try {
+      const response = await fetch(`/api/admin/kiosks/${deviceId}/activation`, {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        const detail = await response
+          .json()
+          .then((body) => (body as { error?: string })?.error)
+          .catch(() => null);
+        throw new Error(detail || "Failed to generate activation code");
+      }
+
+      const data = await response.json() as ActivationInfo;
+      setActivationInfo(data);
+      setShowActivationDialog(true);
+      refresh();
+    } catch (error) {
+      console.error("Failed to generate activation:", error);
+      setActionError(
+        error instanceof Error ? error.message : "Failed to generate activation code. Please try again."
+      );
+    } finally {
+      setLoadingAction(null);
+    }
+  }, [loadingAction]);
+
+  const handleCopyActivationLink = useCallback(() => {
+    if (activationInfo?.activation_url) {
+      navigator.clipboard.writeText(activationInfo.activation_url);
+    }
+  }, [activationInfo]);
+
   const filteredDevices = devices.filter(device => {
     const needle = searchTerm.toLowerCase();
     const matchesSearch =
@@ -207,14 +273,29 @@ export function KioskManagement({ organizationId, devices, locations, surveys }:
       case "active": return "bg-green-100 text-green-800";
       case "paused": return "bg-yellow-100 text-yellow-800";
       case "maintenance": return "bg-orange-100 text-orange-800";
-      case "offline": return "bg-gray-100 text-gray-800";
-      case "archived": return "bg-red-100 text-red-800";
+      case "revoked": return "bg-red-100 text-red-800";
+      case "archived": return "bg-gray-100 text-gray-800";
       default: return "bg-gray-100 text-gray-800";
     }
   };
 
+  const getActivationStatusColor = (status: string) => {
+    switch (status) {
+      case "activated": return "bg-green-100 text-green-800";
+      case "pending_activation": return "bg-yellow-100 text-yellow-800";
+      default: return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getConnectionStatusColor = (device: KioskDevice) => {
+    if (device.activation_status !== "activated") return "bg-gray-100 text-gray-400";
+    return isDeviceOnline(device.last_seen_at) 
+      ? "bg-green-100 text-green-800" 
+      : "bg-gray-100 text-gray-600";
+  };
+
   const getStatusLabel = (status: string) => {
-    return status.charAt(0).toUpperCase() + status.slice(1);
+    return status.split("_").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
   };
 
   const formatDate = (dateStr: string | null) => {
@@ -228,6 +309,11 @@ export function KioskManagement({ organizationId, devices, locations, surveys }:
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`;
     return `${Math.floor(diffMins / 1440)}d ago`;
+  };
+
+  const formatDateTime = (dateStr: string | null) => {
+    if (!dateStr) return "N/A";
+    return new Date(dateStr).toLocaleString();
   };
 
   return (
@@ -257,7 +343,7 @@ export function KioskManagement({ organizationId, devices, locations, surveys }:
             <option value="active">Active</option>
             <option value="paused">Paused</option>
             <option value="maintenance">Maintenance</option>
-            <option value="offline">Offline</option>
+            <option value="revoked">Revoked</option>
           </select>
         </div>
         <button
@@ -296,7 +382,7 @@ export function KioskManagement({ organizationId, devices, locations, surveys }:
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Assign Survey (Optional)</label>
+                <label className="block text-sm font-medium mb-1">Assign Survey</label>
                 <select name="surveyId" className="w-full px-3 py-2 border rounded-lg">
                   <option value="">None</option>
                   {surveys.map(survey => (
@@ -328,14 +414,105 @@ export function KioskManagement({ organizationId, devices, locations, surveys }:
         </div>
       )}
 
+      {/* Activation dialog */}
+      {showActivationDialog && activationInfo && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h2 className="text-xl font-bold mb-4">Activation Ready</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Activation Code</label>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 px-3 py-2 bg-gray-100 rounded-lg font-mono text-lg tracking-widest text-center">
+                    {activationInfo.code}
+                  </code>
+                  <button
+                    onClick={() => navigator.clipboard.writeText(activationInfo.code)}
+                    className="px-3 py-2 border rounded-lg hover:bg-gray-50"
+                    title="Copy code"
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Activation Link</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={activationInfo.activation_url}
+                    className="flex-1 px-3 py-2 bg-gray-100 rounded-lg text-sm"
+                  />
+                  <button
+                    onClick={handleCopyActivationLink}
+                    className="px-3 py-2 border rounded-lg hover:bg-gray-50 whitespace-nowrap"
+                  >
+                    Copy Link
+                  </button>
+                </div>
+              </div>
+              <div className="text-sm text-gray-500">
+                <p>This code expires at: {formatDateTime(activationInfo.expires_at)}</p>
+                <p className="mt-1">Open the link on the target device to activate it.</p>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button
+                  onClick={() => {
+                    setShowActivationDialog(false);
+                    setActivationInfo(null);
+                  }}
+                  className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Edit device modal */}
       {selectedDevice && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h2 className="text-xl font-bold mb-4">Edit {selectedDevice.device_name}</h2>
+          <div className="bg-white rounded-lg p-6 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl font-bold mb-4">{selectedDevice.device_name}</h2>
             <div className="space-y-4">
+              {/* Activation Status Section */}
+              <div className="border rounded-lg p-4 bg-gray-50">
+                <h3 className="font-medium mb-2">Activation Status</h3>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getActivationStatusColor(selectedDevice.activation_status)}`}>
+                    {getStatusLabel(selectedDevice.activation_status)}
+                  </span>
+                  {selectedDevice.activation_status === "activated" && (
+                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getConnectionStatusColor(selectedDevice)}`}>
+                      {isDeviceOnline(selectedDevice.last_seen_at) ? "Online" : "Offline"}
+                    </span>
+                  )}
+                </div>
+                {selectedDevice.activated_at && (
+                  <p className="text-sm text-gray-600">Activated: {formatDateTime(selectedDevice.activated_at)}</p>
+                )}
+                {selectedDevice.last_seen_at && selectedDevice.activation_status === "activated" && (
+                  <p className="text-sm text-gray-600">Last Seen: {formatDate(selectedDevice.last_seen_at)}</p>
+                )}
+                {selectedDevice.activation_status === "pending_activation" && (
+                  <button
+                    onClick={() => {
+                      handleGenerateActivation(selectedDevice.id);
+                    }}
+                    disabled={loadingAction === `activate:${selectedDevice.id}`}
+                    className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                  >
+                    {loadingAction === `activate:${selectedDevice.id}` ? "Generating..." : "Generate Activation Code"}
+                  </button>
+                )}
+              </div>
+
+              {/* Lifecycle Status */}
               <div>
-                <label className="block text-sm font-medium mb-1">Status</label>
+                <label className="block text-sm font-medium mb-1">Lifecycle Status</label>
                 <select
                   defaultValue={selectedDevice.status}
                   onChange={(e) => handleUpdateDevice(selectedDevice.id, {
@@ -350,6 +527,28 @@ export function KioskManagement({ organizationId, devices, locations, surveys }:
                   <option value="revoked">Revoked</option>
                 </select>
               </div>
+
+              {/* Location */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Location</label>
+                <select
+                  defaultValue={selectedDevice.location_id || ""}
+                  onChange={(e) => handleUpdateDevice(selectedDevice.id, {
+                    locationId: e.target.value || null,
+                    changeReason: "Location changed",
+                  })}
+                  className="w-full px-3 py-2 border rounded-lg"
+                >
+                  <option value="">Not assigned</option>
+                  {locations.map(loc => (
+                    <option key={loc.id} value={loc.id}>
+                      {localizedLabel(loc.name_en, loc.name_ar)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Assigned Survey */}
               <div>
                 <label className="block text-sm font-medium mb-1">Assigned Survey</label>
                 <select
@@ -368,6 +567,8 @@ export function KioskManagement({ organizationId, devices, locations, surveys }:
                   ))}
                 </select>
               </div>
+
+              {/* Actions */}
               <div className="flex gap-2 pt-2">
                 <button
                   onClick={() => setSelectedDevice(null)}
@@ -388,14 +589,16 @@ export function KioskManagement({ organizationId, devices, locations, surveys }:
       )}
 
       {/* Devices table */}
-      <div className="border rounded-lg overflow-hidden">
-        <table className="w-full">
+      <div className="border rounded-lg overflow-x-auto">
+        <table className="w-full min-w-[900px]">
           <thead className="bg-gray-50">
             <tr>
               <th className="px-4 py-3 text-left text-sm font-medium">Device</th>
               <th className="px-4 py-3 text-left text-sm font-medium">Location</th>
               <th className="px-4 py-3 text-left text-sm font-medium">Survey</th>
-              <th className="px-4 py-3 text-left text-sm font-medium">Status</th>
+              <th className="px-4 py-3 text-left text-sm font-medium">Lifecycle</th>
+              <th className="px-4 py-3 text-left text-sm font-medium">Activation</th>
+              <th className="px-4 py-3 text-left text-sm font-medium">Connection</th>
               <th className="px-4 py-3 text-left text-sm font-medium">Last Seen</th>
               <th className="px-4 py-3 text-left text-sm font-medium">Responses</th>
               <th className="px-4 py-3 text-left text-sm font-medium">Actions</th>
@@ -404,8 +607,8 @@ export function KioskManagement({ organizationId, devices, locations, surveys }:
           <tbody className="divide-y">
             {filteredDevices.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
-                  No devices found. Click &quot;Add Device&quot; to get started.
+                <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
+                  No devices found. Click {'"'}Add Device{'"'} to get started.
                 </td>
               </tr>
             ) : (
@@ -418,7 +621,9 @@ export function KioskManagement({ organizationId, devices, locations, surveys }:
                     )}
                   </td>
                   <td className="px-4 py-3 text-sm">
-                    {localizedLabel(device.location_name_en, device.location_name_ar)}
+                    {localizedLabel(device.location_name_en, device.location_name_ar) || (
+                      <span className="text-gray-400">Not assigned</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-sm">
                     {device.survey_id ? (
@@ -432,15 +637,40 @@ export function KioskManagement({ organizationId, devices, locations, surveys }:
                       {getStatusLabel(device.status)}
                     </span>
                   </td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getActivationStatusColor(device.activation_status)}`}>
+                      {device.activation_status === "activated" ? "Activated" : "Pending"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    {device.activation_status === "activated" ? (
+                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getConnectionStatusColor(device)}`}>
+                        {isDeviceOnline(device.last_seen_at) ? "Online" : "Offline"}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400 text-xs">—</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-sm">{formatDate(device.last_seen_at)}</td>
                   <td className="px-4 py-3 text-sm">{device.total_responses}</td>
                   <td className="px-4 py-3">
-                    <button
-                      onClick={() => setSelectedDevice(device)}
-                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                    >
-                      Edit
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setSelectedDevice(device)}
+                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                      >
+                        Edit
+                      </button>
+                      {device.activation_status === "pending_activation" && (
+                        <button
+                          onClick={() => handleGenerateActivation(device.id)}
+                          disabled={loadingAction === `activate:${device.id}`}
+                          className="text-green-600 hover:text-green-800 text-sm font-medium disabled:opacity-50"
+                        >
+                          Activate
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))
@@ -456,21 +686,21 @@ export function KioskManagement({ organizationId, devices, locations, surveys }:
           <div className="text-2xl font-bold">{devices.length}</div>
         </div>
         <div className="border rounded-lg p-4">
-          <div className="text-sm text-gray-500">Active</div>
+          <div className="text-sm text-gray-500">Activated</div>
           <div className="text-2xl font-bold text-green-600">
-            {devices.filter(d => d.status === "active").length}
+            {devices.filter(d => d.activation_status === "activated").length}
+          </div>
+        </div>
+        <div className="border rounded-lg p-4">
+          <div className="text-sm text-gray-500">Online Now</div>
+          <div className="text-2xl font-bold text-blue-600">
+            {devices.filter(d => d.activation_status === "activated" && isDeviceOnline(d.last_seen_at)).length}
           </div>
         </div>
         <div className="border rounded-lg p-4">
           <div className="text-sm text-gray-500">Total Responses</div>
           <div className="text-2xl font-bold">
             {devices.reduce((sum, d) => sum + d.total_responses, 0)}
-          </div>
-        </div>
-        <div className="border rounded-lg p-4">
-          <div className="text-sm text-gray-500">Offline</div>
-          <div className="text-2xl font-bold text-gray-600">
-            {devices.filter(d => d.status === "offline").length}
           </div>
         </div>
       </div>

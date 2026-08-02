@@ -10,6 +10,7 @@ describe("KioskStatus", () => {
   describe("KIOSK_STATUSES", () => {
     it("contains all expected statuses", () => {
       expect(KIOSK_STATUSES).toEqual([
+        "pending_activation",
         "active",
         "paused",
         "maintenance",
@@ -19,13 +20,14 @@ describe("KioskStatus", () => {
       ]);
     });
 
-    it("has exactly 6 statuses", () => {
-      expect(KIOSK_STATUSES).toHaveLength(6);
+    it("has exactly 7 statuses", () => {
+      expect(KIOSK_STATUSES).toHaveLength(7);
     });
   });
 
   describe("isKioskStatus", () => {
     it("returns true for valid statuses", () => {
+      expect(isKioskStatus("pending_activation")).toBe(true);
       expect(isKioskStatus("active")).toBe(true);
       expect(isKioskStatus("paused")).toBe(true);
       expect(isKioskStatus("maintenance")).toBe(true);
@@ -61,13 +63,14 @@ describe("KioskStatus", () => {
   describe("kioskStatusList", () => {
     it("returns comma-separated list of statuses", () => {
       expect(kioskStatusList()).toBe(
-        "active, paused, maintenance, offline, revoked, archived"
+        "pending_activation, active, paused, maintenance, offline, revoked, archived"
       );
     });
 
     it("is useful for error messages", () => {
       const invalidStatus = "unknown";
       const error = `Invalid status. Expected one of: ${kioskStatusList()}`;
+      expect(error).toContain("pending_activation");
       expect(error).toContain("active");
       expect(error).toContain("archived");
     });

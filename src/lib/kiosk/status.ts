@@ -7,6 +7,7 @@ import type { Database } from "@/types/database";
 export type KioskStatus = Database["public"]["Enums"]["kiosk_status"];
 
 export const KIOSK_STATUSES: readonly KioskStatus[] = [
+  "pending_activation",
   "active",
   "paused",
   "maintenance",
