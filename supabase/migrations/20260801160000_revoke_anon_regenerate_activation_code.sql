@@ -1,0 +1,45 @@
+-- Revoke `anon` EXECUTE on regenerate_activation_code(uuid, uuid, uuid).
+--
+-- Additive. No earlier migration is edited.
+--
+-- Why this is needed
+-- ------------------
+-- 20260801150000 hardened the admin kiosk RPCs but deliberately EXCLUDED
+-- regenerate_activation_code, on the stated assumption that it was already
+-- "the one admin RPC `anon` cannot reach" because 20260801100000 had hardened
+-- it. That assumption was true when 100000 ran, but it went stale two
+-- migrations later:
+--
+--   20260801130000 DROPs the overloaded 2-arg form and recreates the 3-arg
+--   function to resolve the PGRST203 ambiguity. DROP discards the ACL, and the
+--   project-level default privileges
+--     ALTER DEFAULT PRIVILEGES IN SCHEMA public
+--       GRANT ALL ON FUNCTIONS TO postgres, anon, authenticated, service_role;
+--   re-granted EXECUTE to `anon` on the freshly created function.
+--
+--   130000 does issue `REVOKE EXECUTE ... FROM PUBLIC`, but that only removes
+--   the PUBLIC pseudo-role grant. The default-privileges grant to `anon` is a
+--   DIRECT grant on a named role, and a REVOKE FROM PUBLIC does not remove it.
+--
+-- Verified against the newly provisioned production project after applying the
+-- full chain: every other admin RPC reported anon_exec = f, while
+-- regenerate_activation_code reported anon_exec = t. This migration closes
+-- that gap so the deployed state matches the documented intent of 150000.
+--
+-- Impact of the exposure being closed
+-- -----------------------------------
+-- The function does gate internally on auth.uid() and rejects a mismatched
+-- p_user_id unless the caller is service_role, so an anon caller received an
+-- authorization error rather than an activation code. The exposure was an
+-- unauthenticated error oracle and unnecessary attack surface on a
+-- credential-minting RPC, not a confirmed data leak. It is removed regardless:
+-- an anon role has no legitimate reason to reach an admin RPC.
+--
+-- Legitimate callers are unaffected. The application invokes this RPC with a
+-- user session (role `authenticated`) from
+-- src/app/api/admin/kiosks/[id]/activation/route.ts, and server-side contexts
+-- use service_role. Neither loses access below.
+
+revoke all on function public.regenerate_activation_code(uuid, uuid, uuid) from public;
+revoke all on function public.regenerate_activation_code(uuid, uuid, uuid) from anon;
+grant execute on function public.regenerate_activation_code(uuid, uuid, uuid) to authenticated;
