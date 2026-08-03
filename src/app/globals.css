@@ -47,6 +47,101 @@
   --font-sans: var(--font-inter, Inter), var(--font-noto-arabic, "Noto Sans Arabic"), ui-sans-serif, system-ui, sans-serif;
 }
 
+/* ==========================================================================
+   Review & More — public marketing brand
+   --------------------------------------------------------------------------
+   The operational workspace (InstaView) keeps its established green `--brand`
+   palette; these `--rm-*` tokens are namespaced so the public brand can be
+   deep maroon without repainting dashboard or kiosk surfaces. One scale, one
+   set of radii and shadows, reused by every marketing section.
+   ========================================================================== */
+:root {
+  --rm-maroon: #6b2233;
+  --rm-maroon-deep: #4a1723;
+  --rm-maroon-soft: #f7edef;
+  --rm-charcoal: #241f22;
+  --rm-ink: #3d3438;
+  --rm-offwhite: #faf7f4;
+  --rm-paper: #ffffff;
+  --rm-stone: #e8e1da;
+  --rm-stone-deep: #8a7f77;
+  --rm-gold: #a87b3c;
+  --rm-gold-soft: #f5eddf;
+
+  --rm-radius: 0.875rem;
+  --rm-radius-lg: 1.25rem;
+  --rm-shadow-sm: 0 1px 2px rgba(36, 31, 34, 0.06), 0 1px 3px rgba(36, 31, 34, 0.04);
+  --rm-shadow: 0 4px 16px rgba(36, 31, 34, 0.07), 0 1px 3px rgba(36, 31, 34, 0.05);
+  --rm-shadow-lg: 0 18px 48px rgba(36, 31, 34, 0.1), 0 2px 8px rgba(36, 31, 34, 0.05);
+}
+
+@theme inline {
+  --color-rm-maroon: var(--rm-maroon);
+  --color-rm-maroon-deep: var(--rm-maroon-deep);
+  --color-rm-maroon-soft: var(--rm-maroon-soft);
+  --color-rm-charcoal: var(--rm-charcoal);
+  --color-rm-ink: var(--rm-ink);
+  --color-rm-offwhite: var(--rm-offwhite);
+  --color-rm-paper: var(--rm-paper);
+  --color-rm-stone: var(--rm-stone);
+  --color-rm-stone-deep: var(--rm-stone-deep);
+  --color-rm-gold: var(--rm-gold);
+  --color-rm-gold-soft: var(--rm-gold-soft);
+  --radius-rm: var(--rm-radius);
+  --radius-rm-lg: var(--rm-radius-lg);
+  --shadow-rm-sm: var(--rm-shadow-sm);
+  --shadow-rm: var(--rm-shadow);
+  --shadow-rm-lg: var(--rm-shadow-lg);
+}
+
+/* Marketing focus ring, so the maroon brand keeps a visible focus state. */
+.rm-scope *:focus-visible {
+  outline: 2px solid var(--rm-maroon);
+  outline-offset: 2px;
+}
+
+/* Scroll-reveal: content is visible by default and only animates when the
+   observer marks it, so text is never hidden if JavaScript fails to run. */
+@keyframes rm-reveal {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.rm-reveal[data-revealed="false"] {
+  opacity: 0;
+}
+
+.rm-reveal[data-revealed="true"] {
+  animation: rm-reveal 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes rm-status-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.85); }
+}
+
+.rm-status-pulse {
+  animation: rm-status-pulse 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rm-reveal[data-revealed="false"],
+  .rm-reveal[data-revealed="true"] {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .rm-status-pulse {
+    animation: none !important;
+  }
+
+  html {
+    scroll-behavior: auto !important;
+  }
+}
+
+
 body {
   background: var(--background);
   color: var(--foreground);
