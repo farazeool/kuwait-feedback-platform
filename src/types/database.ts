@@ -1738,12 +1738,21 @@ export type Database = {
       kiosk_devices: {
         Row: {
           access_token: string
+          activated_at: string | null
+          activation_code_consumed_at: string | null
+          activation_code_expires_at: string | null
+          activation_code_hash: string | null
           app_version: string | null
           branding: Json
           channel: Database["public"]["Enums"]["kiosk_channel"]
+          config_version: number | null
           created_at: string
           created_by: string | null
+          credential_issued_at: string | null
+          credential_revoked_at: string | null
+          credential_version: number
           default_language: string
+          device_credential_hash: string | null
           device_identifier: string | null
           device_model: string | null
           device_name: string
@@ -1762,12 +1771,21 @@ export type Database = {
         }
         Insert: {
           access_token?: string
+          activated_at?: string | null
+          activation_code_consumed_at?: string | null
+          activation_code_expires_at?: string | null
+          activation_code_hash?: string | null
           app_version?: string | null
           branding?: Json
           channel?: Database["public"]["Enums"]["kiosk_channel"]
+          config_version?: number | null
           created_at?: string
           created_by?: string | null
+          credential_issued_at?: string | null
+          credential_revoked_at?: string | null
+          credential_version?: number
           default_language?: string
+          device_credential_hash?: string | null
           device_identifier?: string | null
           device_model?: string | null
           device_name: string
@@ -1786,12 +1804,21 @@ export type Database = {
         }
         Update: {
           access_token?: string
+          activated_at?: string | null
+          activation_code_consumed_at?: string | null
+          activation_code_expires_at?: string | null
+          activation_code_hash?: string | null
           app_version?: string | null
           branding?: Json
           channel?: Database["public"]["Enums"]["kiosk_channel"]
+          config_version?: number | null
           created_at?: string
           created_by?: string | null
+          credential_issued_at?: string | null
+          credential_revoked_at?: string | null
+          credential_version?: number
           default_language?: string
+          device_credential_hash?: string | null
           device_identifier?: string | null
           device_model?: string | null
           device_name?: string
@@ -1824,10 +1851,73 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "kiosk_devices_survey_id_fkey"
-            columns: ["survey_id"]
+            foreignKeyName: "kiosk_devices_survey_fk"
+            columns: ["survey_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "surveys"
+            referencedColumns: ["id", "organization_id"]
+          },
+        ]
+      }
+      kiosk_enrollment_sessions: {
+        Row: {
+          created_at: string
+          created_by: string
+          exchange_attempt_count: number
+          expires_at: string
+          failure_reason: string | null
+          id: string
+          kiosk_device_id: string
+          opened_at: string | null
+          organization_id: string
+          revoked_at: string | null
+          token_hash: string
+          updated_at: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          exchange_attempt_count?: number
+          expires_at: string
+          failure_reason?: string | null
+          id?: string
+          kiosk_device_id: string
+          opened_at?: string | null
+          organization_id: string
+          revoked_at?: string | null
+          token_hash: string
+          updated_at?: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          exchange_attempt_count?: number
+          expires_at?: string
+          failure_reason?: string | null
+          id?: string
+          kiosk_device_id?: string
+          opened_at?: string | null
+          organization_id?: string
+          revoked_at?: string | null
+          token_hash?: string
+          updated_at?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kiosk_enrollment_sessions_device_fk"
+            columns: ["kiosk_device_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "kiosk_devices"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "kiosk_enrollment_sessions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -3301,6 +3391,21 @@ export type Database = {
         Args: { p_token: string }
         Returns: string
       }
+      activate_kiosk_device: {
+        Args: {
+          p_activation_code: string
+          p_app_version?: string
+          p_device_model?: string
+          p_os_version?: string
+        }
+        Returns: {
+          device_credential: string
+          device_id: string
+          organization_id: string
+          success: boolean
+          survey_public_slug: string
+        }[]
+      }
       assert_analytics_scope:
         | {
             Args: {
@@ -3473,6 +3578,27 @@ export type Database = {
         Args: { p_organization_id: string }
         Returns: number
       }
+      exchange_kiosk_enrollment_token: {
+        Args: { p_raw_token: string }
+        Returns: {
+          branding: Json
+          default_language: string
+          device_name: string
+          idle_timeout_seconds: number
+          kiosk_device_id: string
+          organization_id: string
+          raw_device_credential: string
+          survey_id: string
+        }[]
+      }
+      generate_activation_code: {
+        Args: never
+        Returns: {
+          code: string
+          code_hash: string
+        }[]
+      }
+      generate_kiosk_access_token: { Args: never; Returns: string }
       get_alert_severity_breakdown: {
         Args: {
           p_end_at: string
@@ -3611,10 +3737,24 @@ export type Database = {
         Returns: Json
       }
       get_invitation_public: { Args: { p_token: string }; Returns: Json }
+      get_kiosk_activation_details: {
+        Args: { p_device_id: string; p_organization_id: string }
+        Returns: {
+          activated_at: string
+          activation_code: string
+          activation_code_consumed_at: string
+          activation_code_expires_at: string
+          device_name: string
+          id: string
+          is_activated: boolean
+          status: Database["public"]["Enums"]["kiosk_status"]
+        }[]
+      }
       get_kiosk_config: {
         Args: { p_access_token: string }
         Returns: {
           branding: Json
+          config_version: number
           default_language: string
           device_id: string
           device_name: string
@@ -3622,6 +3762,19 @@ export type Database = {
           last_config_change: string
           status: Database["public"]["Enums"]["kiosk_status"]
           survey_public_slug: string
+        }[]
+      }
+      get_kiosk_enrollment_session_details: {
+        Args: { p_kiosk_device_id: string }
+        Returns: {
+          created_at: string
+          created_by: string
+          expires_at: string
+          opened_at: string
+          revoked_at: string
+          session_id: string
+          status: string
+          used_at: string
         }[]
       }
       get_kpi_dashboard: {
@@ -3696,42 +3849,52 @@ export type Database = {
         }
         Returns: Json
       }
+      hash_credential: { Args: { p_credential: string }; Returns: string }
+      is_kiosk_online: {
+        Args: { p_last_seen_at: string; p_threshold_seconds?: number }
+        Returns: boolean
+      }
       is_platform_admin: { Args: never; Returns: boolean }
+      issue_kiosk_enrollment_session: {
+        Args: { p_kiosk_device_id: string; p_ttl_minutes?: number }
+        Returns: {
+          expires_at: string
+          raw_token: string
+          session_id: string
+          superseded_previous: boolean
+        }[]
+      }
       issue_rating_nonce: {
         Args: { p_fingerprint_hash?: string; p_public_token: string }
         Returns: Json
       }
+      kiosk_admin_can_manage_org: {
+        Args: { p_organization_id: string }
+        Returns: boolean
+      }
+      kiosk_generate_raw_token: { Args: never; Returns: string }
+      kiosk_hash_token: { Args: { p_raw: string }; Returns: string }
       list_kiosk_devices: {
-        Args: {
-          p_location_id?: string
-          p_organization_id: string
-          p_status?: Database["public"]["Enums"]["kiosk_status"]
-        }
+        Args: { p_organization_id: string }
         Returns: {
-          app_version: string
-          branding: Json
-          channel: Database["public"]["Enums"]["kiosk_channel"]
+          activated_at: string
+          activation_code_expires_at: string
+          activation_status: string
           created_at: string
-          default_language: string
           device_identifier: string
-          device_model: string
           device_name: string
+          has_activation_code: boolean
           id: string
-          idle_timeout_seconds: number
           last_response_at: string
           last_seen_at: string
           location_id: string
           location_name_ar: string
           location_name_en: string
-          notes: string
-          organization_id: string
-          os_version: string
-          status: Database["public"]["Enums"]["kiosk_status"]
+          status: string
           survey_id: string
           survey_title_ar: string
           survey_title_en: string
           total_responses: number
-          updated_at: string
         }[]
       }
       list_team_invitations: {
@@ -3748,6 +3911,10 @@ export type Database = {
           p_search?: string
         }
         Returns: Json
+      }
+      mark_kiosk_enrollment_session_opened: {
+        Args: { p_raw_token: string }
+        Returns: boolean
       }
       organization_role: {
         Args: { p_organization_id: string }
@@ -3830,6 +3997,24 @@ export type Database = {
         }
         Returns: Json
       }
+      reenroll_kiosk_device: {
+        Args: { p_device_id: string; p_organization_id: string }
+        Returns: {
+          activation_code: string
+          activation_code_expires_at: string
+        }[]
+      }
+      regenerate_activation_code: {
+        Args: {
+          p_device_id: string
+          p_organization_id: string
+          p_user_id?: string
+        }
+        Returns: {
+          activation_code: string
+          activation_code_expires_at: string
+        }[]
+      }
       remove_organization_member: {
         Args: { p_membership_id: string }
         Returns: undefined
@@ -3855,6 +4040,17 @@ export type Database = {
           organization_id: string
           status: Database["public"]["Enums"]["kiosk_status"]
           survey_id: string
+        }[]
+      }
+      revoke_kiosk_credential: {
+        Args: { p_device_id: string; p_organization_id: string }
+        Returns: boolean
+      }
+      revoke_kiosk_enrollment_session: {
+        Args: { p_kiosk_device_id: string }
+        Returns: {
+          outcome: string
+          session_id: string
         }[]
       }
       revoke_organization_invitation: {
@@ -4102,6 +4298,14 @@ export type Database = {
       user_can_access_location: {
         Args: { p_location_id: string; p_user_id: string }
         Returns: boolean
+      }
+      validate_kiosk_device_credential: {
+        Args: { p_raw_credential: string }
+        Returns: {
+          credential_version: number
+          kiosk_device_id: string
+          organization_id: string
+        }[]
       }
     }
     Enums: {
