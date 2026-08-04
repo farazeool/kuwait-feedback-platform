@@ -239,8 +239,30 @@ export function KioskManagement({ organizationId, devices, locations, surveys }:
         throw new Error(detail || "Failed to generate activation code");
       }
 
-      const data = await response.json() as ActivationInfo;
-      setActivationInfo(data);
+      const data = await response.json() as Partial<ActivationInfo>;
+
+      // Do not open a "ready" dialog on a payload we cannot render. Previously
+      // any 200 opened the dialog, so a missing code/expiry surfaced as a blank
+      // Activation Code and an "N/A" expiry under an "Activation Ready" title.
+      const code = typeof data.code === "string" ? data.code.trim() : "";
+      const activationUrl =
+        typeof data.activation_url === "string" ? data.activation_url.trim() : "";
+      const expiresAt =
+        typeof data.expires_at === "string" ? data.expires_at : "";
+      const expiryIsValid =
+        expiresAt !== "" && !Number.isNaN(new Date(expiresAt).getTime());
+
+      if (!code || !activationUrl || !expiryIsValid) {
+        throw new Error(
+          "The activation code could not be read, so it was not applied. Please try again."
+        );
+      }
+
+      setActivationInfo({
+        code,
+        activation_url: activationUrl,
+        expires_at: expiresAt,
+      });
       setShowActivationDialog(true);
       refresh();
     } catch (error) {
@@ -455,6 +477,10 @@ export function KioskManagement({ organizationId, devices, locations, surveys }:
               <div className="text-sm text-gray-500">
                 <p>This code expires at: {formatDateTime(activationInfo.expires_at)}</p>
                 <p className="mt-1">Open the link on the target device to activate it.</p>
+                <p className="mt-1">
+                  This code is shown once and cannot be retrieved later. Generate a
+                  new one if it is lost.
+                </p>
               </div>
               <div className="flex gap-2 pt-2">
                 <button
