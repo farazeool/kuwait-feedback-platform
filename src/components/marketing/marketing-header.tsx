@@ -50,7 +50,9 @@ export function MarketingHeader() {
     <header className="sticky top-0 z-50 border-b border-[var(--rm-stone)] bg-[color-mix(in_srgb,var(--rm-paper)_92%,transparent)] backdrop-blur-sm">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-6 lg:px-8">
         <Link href="/" aria-label="Review & More home" className="rounded-md">
-          <ReviewAndMoreLogo />
+          {/* Above the fold on every marketing page — eager-load so it is not
+              discovered late by the lazy-loading heuristic. */}
+          <ReviewAndMoreLogo priority />
         </Link>
 
         <nav aria-label="Main" className="hidden lg:block">

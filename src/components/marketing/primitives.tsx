@@ -1,5 +1,7 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
+
 
 import { buildLoginUrl } from "@/lib/config/domains";
 
@@ -12,21 +14,42 @@ import { buildLoginUrl } from "@/lib/config/domains";
  * which is what keeps the site from drifting into several competing styles.
  */
 
-export function ReviewAndMoreLogo({ className = "", inverted = false }: { className?: string; inverted?: boolean }) {
-  const mark = inverted ? "var(--rm-offwhite)" : "var(--rm-maroon)";
-  const text = inverted ? "var(--rm-offwhite)" : "var(--rm-charcoal)";
+/**
+ * The official Review & More lockup.
+ *
+ * The artwork is the supplied brand file — it is never re-drawn in code, so the
+ * emblem, lettering and official ink colours stay exactly as the brand owner
+ * provided them. Two variants exist because the lockup is navy + red and would
+ * lose contrast on a dark surface:
+ *
+ *  - default   transparent lockup, for light surfaces
+ *  - inverted  the same lockup on its own white plate, for dark surfaces
+ *
+ * Intrinsic size is 600x157 (aspect 3.83); `next/image` reserves that ratio so
+ * there is no layout shift while the asset loads.
+ */
+export function ReviewAndMoreLogo({
+  className = "",
+  inverted = false,
+  priority = false,
+}: {
+  className?: string;
+  inverted?: boolean;
+  priority?: boolean;
+}) {
   return (
-    <span className={`inline-flex items-center gap-2.5 ${className}`}>
-      <svg viewBox="0 0 32 32" className="size-8 shrink-0" role="img" aria-label="Review and More">
-        <rect width="32" height="32" rx="9" fill={mark} />
-        <path d="M9 16.5l4 4 9.5-9.5" stroke={inverted ? "var(--rm-maroon)" : "#fff"} strokeWidth="2.75" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-      </svg>
-      <span className="text-[1.0625rem] font-semibold tracking-tight" style={{ color: text }}>
-        Review <span style={{ color: inverted ? "var(--rm-gold-soft)" : "var(--rm-maroon)" }}>&amp;</span> More
-      </span>
-    </span>
+    <Image
+      src={inverted ? "/brand/review-and-more-logo-on-dark.png" : "/brand/review-and-more-logo.png"}
+      alt="Review & More"
+      width={600}
+      height={157}
+      priority={priority}
+      sizes="(max-width: 640px) 150px, 190px"
+      className={`h-9 w-auto sm:h-10 ${inverted ? "rounded-md bg-white" : ""} ${className}`}
+    />
   );
 }
+
 
 /** Consistent section container: one max width, one horizontal rhythm. */
 export function Section({

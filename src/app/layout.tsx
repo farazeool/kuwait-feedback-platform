@@ -14,18 +14,21 @@ const notoSansArabic = Noto_Sans_Arabic({
   display: "swap",
 });
 
+/**
+ * Root metadata — the fallback for every route in the app.
+ *
+ * Individual routes override `title`/`description` (the marketing homepage sets
+ * its own canonical + Open Graph data). Icons are intentionally NOT declared
+ * here: `src/app/favicon.ico`, `icon.png` and `apple-icon.png` are picked up by
+ * the App Router file convention and hashed for cache-busting automatically.
+ */
 export const metadata: Metadata = {
   title: {
-    default: "Kuwait Feedback Platform",
-    template: "%s | Kuwait Feedback Platform",
+    default: "Review & More | Customer Feedback and Experience Management",
+    template: "%s | Review & More",
   },
   description:
-    "Multi-tenant customer feedback and branch insights for businesses in Kuwait.",
-  icons: {
-    icon: [
-      { url: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%230f6b4d'><circle cx='12' cy='12' r='10'/><path d='M8 12.5l3 3 7-7' stroke='white' stroke-width='2.5' fill='none'/></svg>", type: "image/svg+xml" },
-    ],
-  },
+    "Collect and manage customer feedback through kiosks, QR codes and employee email signatures. Connect every response to the right employee, location, survey and channel.",
 };
 
 export default function RootLayout({
