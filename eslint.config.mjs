@@ -13,6 +13,8 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "OmniRoute/**",
+    // Local agent tooling is deliberately untracked and outside application scope.
+    ".claude/**",
   ]),
 ]);
 

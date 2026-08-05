@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useTransition, useCallback } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { KioskStatus } from "@/lib/kiosk/status";
+import { EnrollmentSetupPanel } from "@/components/kiosk/enrollment-setup-panel";
 
 // Loading state keys to prevent duplicate submissions
-type LoadingAction = "create" | `update:${string}` | `archive:${string}` | `activate:${string}`;
+type LoadingAction = "create" | `update:${string}` | `archive:${string}`;
 
 // Mirrors the flat column list returned by the list_kiosk_devices RPC. The RPC
 // returns localized text as separate *_en / *_ar columns rather than nested
@@ -42,12 +43,6 @@ export interface KioskSurvey {
   title_en: string | null;
   title_ar: string | null;
   public_slug: string;
-}
-
-interface ActivationInfo {
-  code: string;
-  activation_url: string;
-  expires_at: string;
 }
 
 interface KioskManagementProps {
@@ -92,9 +87,7 @@ export function KioskManagement({ organizationId, devices, locations, surveys }:
   const [actionError, setActionError] = useState<string | null>(null);
   // Track in-flight operations to prevent duplicate submissions
   const [loadingAction, setLoadingAction] = useState<LoadingAction | null>(null);
-  // Activation state
-  const [activationInfo, setActivationInfo] = useState<ActivationInfo | null>(null);
-  const [showActivationDialog, setShowActivationDialog] = useState(false);
+  const [enrollmentDevice, setEnrollmentDevice] = useState<KioskDevice | null>(null);
 
   function refresh() {
     startTransition(() => router.refresh());
@@ -220,67 +213,6 @@ export function KioskManagement({ organizationId, devices, locations, surveys }:
     }
   }
 
-  const handleGenerateActivation = useCallback(async (deviceId: string) => {
-    const actionKey: LoadingAction = `activate:${deviceId}`;
-    if (loadingAction === actionKey) return;
-
-    setActionError(null);
-    setLoadingAction(actionKey);
-    try {
-      const response = await fetch(`/api/admin/kiosks/${deviceId}/activation`, {
-        method: "POST",
-      });
-
-      if (!response.ok) {
-        const detail = await response
-          .json()
-          .then((body) => (body as { error?: string })?.error)
-          .catch(() => null);
-        throw new Error(detail || "Failed to generate activation code");
-      }
-
-      const data = await response.json() as Partial<ActivationInfo>;
-
-      // Do not open a "ready" dialog on a payload we cannot render. Previously
-      // any 200 opened the dialog, so a missing code/expiry surfaced as a blank
-      // Activation Code and an "N/A" expiry under an "Activation Ready" title.
-      const code = typeof data.code === "string" ? data.code.trim() : "";
-      const activationUrl =
-        typeof data.activation_url === "string" ? data.activation_url.trim() : "";
-      const expiresAt =
-        typeof data.expires_at === "string" ? data.expires_at : "";
-      const expiryIsValid =
-        expiresAt !== "" && !Number.isNaN(new Date(expiresAt).getTime());
-
-      if (!code || !activationUrl || !expiryIsValid) {
-        throw new Error(
-          "The activation code could not be read, so it was not applied. Please try again."
-        );
-      }
-
-      setActivationInfo({
-        code,
-        activation_url: activationUrl,
-        expires_at: expiresAt,
-      });
-      setShowActivationDialog(true);
-      refresh();
-    } catch (error) {
-      console.error("Failed to generate activation:", error);
-      setActionError(
-        error instanceof Error ? error.message : "Failed to generate activation code. Please try again."
-      );
-    } finally {
-      setLoadingAction(null);
-    }
-  }, [loadingAction]);
-
-  const handleCopyActivationLink = useCallback(() => {
-    if (activationInfo?.activation_url) {
-      navigator.clipboard.writeText(activationInfo.activation_url);
-    }
-  }, [activationInfo]);
-
   const filteredDevices = devices.filter(device => {
     const needle = searchTerm.toLowerCase();
     const matchesSearch =
@@ -347,19 +279,19 @@ export function KioskManagement({ organizationId, devices, locations, surveys }:
       )}
 
       {/* Actions bar */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4 flex-1">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-1">
           <input
             type="search"
             placeholder="Search devices..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="px-4 py-2 border rounded-lg w-64"
+            className="min-h-11 w-full rounded-lg border px-4 py-2 sm:w-64"
           />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 border rounded-lg"
+            className="min-h-11 rounded-lg border px-4 py-2"
           >
             <option value="all">All Status</option>
             <option value="active">Active</option>
@@ -370,7 +302,7 @@ export function KioskManagement({ organizationId, devices, locations, surveys }:
         </div>
         <button
           onClick={() => setShowCreateForm(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          className="min-h-11 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
         >
           + Add Device
         </button>
@@ -436,77 +368,15 @@ export function KioskManagement({ organizationId, devices, locations, surveys }:
         </div>
       )}
 
-      {/* Activation dialog */}
-      {showActivationDialog && activationInfo && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h2 className="text-xl font-bold mb-4">Activation Ready</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Activation Code</label>
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 px-3 py-2 bg-gray-100 rounded-lg font-mono text-lg tracking-widest text-center">
-                    {activationInfo.code}
-                  </code>
-                  <button
-                    onClick={() => navigator.clipboard.writeText(activationInfo.code)}
-                    className="px-3 py-2 border rounded-lg hover:bg-gray-50"
-                    title="Copy code"
-                  >
-                    Copy
-                  </button>
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Activation Link</label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    readOnly
-                    value={activationInfo.activation_url}
-                    className="flex-1 px-3 py-2 bg-gray-100 rounded-lg text-sm"
-                  />
-                  <button
-                    onClick={handleCopyActivationLink}
-                    className="px-3 py-2 border rounded-lg hover:bg-gray-50 whitespace-nowrap"
-                  >
-                    Copy Link
-                  </button>
-                </div>
-              </div>
-              <div className="text-sm text-gray-500">
-                <p>This code expires at: {formatDateTime(activationInfo.expires_at)}</p>
-                <p className="mt-1">Open the link on the target device to activate it.</p>
-                <p className="mt-1">
-                  This code is shown once and cannot be retrieved later. Generate a
-                  new one if it is lost.
-                </p>
-              </div>
-              <div className="flex gap-2 pt-2">
-                <button
-                  onClick={() => {
-                    setShowActivationDialog(false);
-                    setActivationInfo(null);
-                  }}
-                  className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Edit device modal */}
       {selectedDevice && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold mb-4">{selectedDevice.device_name}</h2>
             <div className="space-y-4">
-              {/* Activation Status Section */}
+              {/* Device setup and connectivity */}
               <div className="border rounded-lg p-4 bg-gray-50">
-                <h3 className="font-medium mb-2">Activation Status</h3>
+                <h3 className="font-medium mb-2">Device setup</h3>
                 <div className="flex items-center gap-2 mb-3">
                   <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getActivationStatusColor(selectedDevice.activation_status)}`}>
                     {getStatusLabel(selectedDevice.activation_status)}
@@ -523,17 +393,7 @@ export function KioskManagement({ organizationId, devices, locations, surveys }:
                 {selectedDevice.last_seen_at && selectedDevice.activation_status === "activated" && (
                   <p className="text-sm text-gray-600">Last Seen: {formatDate(selectedDevice.last_seen_at)}</p>
                 )}
-                {selectedDevice.activation_status === "pending_activation" && (
-                  <button
-                    onClick={() => {
-                      handleGenerateActivation(selectedDevice.id);
-                    }}
-                    disabled={loadingAction === `activate:${selectedDevice.id}`}
-                    className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                  >
-                    {loadingAction === `activate:${selectedDevice.id}` ? "Generating..." : "Generate Activation Code"}
-                  </button>
-                )}
+                <button onClick={() => { setEnrollmentDevice(selectedDevice); setSelectedDevice(null); }} className="mt-3 min-h-11 rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700">Set up this device</button>
               </div>
 
               {/* Lifecycle Status */}
@@ -687,15 +547,7 @@ export function KioskManagement({ organizationId, devices, locations, surveys }:
                       >
                         Edit
                       </button>
-                      {device.activation_status === "pending_activation" && (
-                        <button
-                          onClick={() => handleGenerateActivation(device.id)}
-                          disabled={loadingAction === `activate:${device.id}`}
-                          className="text-green-600 hover:text-green-800 text-sm font-medium disabled:opacity-50"
-                        >
-                          Activate
-                        </button>
-                      )}
+                      <button onClick={() => setEnrollmentDevice(device)} className="min-h-11 text-sm font-medium text-green-700 hover:text-green-900">Set up</button>
                     </div>
                   </td>
                 </tr>
@@ -706,7 +558,7 @@ export function KioskManagement({ organizationId, devices, locations, surveys }:
       </div>
 
       {/* Summary stats */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div className="border rounded-lg p-4">
           <div className="text-sm text-gray-500">Total Devices</div>
           <div className="text-2xl font-bold">{devices.length}</div>
@@ -730,6 +582,7 @@ export function KioskManagement({ organizationId, devices, locations, surveys }:
           </div>
         </div>
       </div>
+      <EnrollmentSetupPanel kioskId={enrollmentDevice?.id ?? ""} kioskName={enrollmentDevice?.device_name ?? ""} open={Boolean(enrollmentDevice)} onClose={() => setEnrollmentDevice(null)} onUpdated={refresh} />
     </div>
   );
 }

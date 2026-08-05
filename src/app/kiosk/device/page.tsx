@@ -6,20 +6,20 @@ import Link from "next/link";
 export default async function KioskDevicePage() {
   const state = await getKioskDeviceState();
 
-  // No valid credential - show activation required
+  // No valid credential - enrollment is required.
   if (!state) {
     return (
       <main className="fixed inset-0 grid place-items-center bg-black px-5">
         <section className="max-w-md rounded-3xl border border-white/20 bg-white/5 p-8 text-center text-white">
-          <h1 className="text-2xl font-bold">Activation Required</h1>
+          <h1 className="text-2xl font-bold">Set up device</h1>
           <p className="mt-3 text-white/70">
-            This device is not activated. Please visit the activation page to set up this kiosk.
+            This device has not been set up. Ask an administrator for a setup QR code.
           </p>
           <Link
-            href="/kiosk/activate"
+            href="/kiosk/setup"
             className="mt-6 inline-block rounded-full bg-white px-6 py-3 font-semibold text-black"
           >
-            Activate Device
+            Set up device
           </Link>
         </section>
       </main>

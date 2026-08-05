@@ -1,9 +1,10 @@
-"use server-only";
+import "server-only";
 
 import { cookies } from "next/headers";
 import { createSupabaseAnonymousClient } from "@/lib/supabase/anonymous";
 import { publicSurveySchema } from "@/features/public-feedback/schema";
 import type { KioskStatus } from "@/lib/kiosk/status";
+import { validateDeviceCredential } from "@/features/kiosk/enrollment-server";
 
 export interface KioskDeviceState {
   device: {
@@ -63,7 +64,6 @@ interface KioskDeviceRow {
   survey_id: string | null;
   organization_id: string;
   last_seen_at: string | null;
-  credential_hash: string | null;
 }
 
 interface OrganizationRow {
@@ -99,14 +99,19 @@ export async function getKioskDeviceState(): Promise<KioskDeviceState | null> {
     return null;
   }
 
+  // Validation is service-role-only because the credential column is hash-only
+  // in v2. The raw cookie is never selected, logged, or forwarded to a client.
+  const validated = await validateDeviceCredential(credential);
+  if (!validated.ok || !validated.value) {
+    return null;
+  }
+
   const supabase = createSupabaseAnonymousClient();
 
-  // Look up device by credential hash
-  // Use type assertion since the migration adds these columns but types aren't regenerated
   const { data: device, error: deviceError } = await supabase
     .from("kiosk_devices")
-    .select("id, public_id, name, status, location_id, survey_id, organization_id, last_seen_at, credential_hash")
-    .eq("credential_hash" as never, credential)
+    .select("id, public_id, name, status, location_id, survey_id, organization_id, last_seen_at")
+    .eq("id", validated.value.kioskDeviceId)
     .maybeSingle() as { data: KioskDeviceRow | null; error: unknown };
 
   if (deviceError || !device) {

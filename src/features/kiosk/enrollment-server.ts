@@ -208,7 +208,7 @@ export async function markEnrollmentSessionOpened(
 export async function validateDeviceCredential(
   rawCredential: string,
 ): Promise<EnrollmentResult<ValidatedDeviceCredential | null>> {
-  if (typeof rawCredential !== "string" || rawCredential.length < 20) {
+  if (typeof rawCredential !== "string" || rawCredential.length < 8) {
     // Zero rows is how the SQL signals invalidity, so a too-short credential
     // is reported the same way rather than as a distinct, probe-able error.
     return { ok: true, value: null };
