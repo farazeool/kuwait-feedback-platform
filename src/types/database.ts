@@ -1673,9 +1673,9 @@ export type Database = {
           actor_user_id: string | null
           event_type: string
           id: string
-          kiosk_device_id: string | null
+          kiosk_device_id: string
           metadata: Json | null
-          occurred_at: string
+          occurred_at: string | null
           organization_id: string
         }
         Insert: {
@@ -1683,9 +1683,9 @@ export type Database = {
           actor_user_id?: string | null
           event_type: string
           id?: string
-          kiosk_device_id?: string | null
+          kiosk_device_id: string
           metadata?: Json | null
-          occurred_at?: string
+          occurred_at?: string | null
           organization_id: string
         }
         Update: {
@@ -1693,12 +1693,19 @@ export type Database = {
           actor_user_id?: string | null
           event_type?: string
           id?: string
-          kiosk_device_id?: string | null
+          kiosk_device_id?: string
           metadata?: Json | null
-          occurred_at?: string
+          occurred_at?: string | null
           organization_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "kiosk_activity_history_actor_user_id_fkey"
+            columns: ["actor_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "kiosk_activity_history_kiosk_device_id_fkey"
             columns: ["kiosk_device_id"]
@@ -1799,6 +1806,7 @@ export type Database = {
           config_version: number | null
           configuration_applied_at: string | null
           configuration_error: string | null
+          configuration_status: string | null
           configuration_updated_at: string | null
           created_at: string
           created_by: string | null
@@ -1842,6 +1850,7 @@ export type Database = {
           config_version?: number | null
           configuration_applied_at?: string | null
           configuration_error?: string | null
+          configuration_status?: string | null
           configuration_updated_at?: string | null
           created_at?: string
           created_by?: string | null
@@ -1885,6 +1894,7 @@ export type Database = {
           config_version?: number | null
           configuration_applied_at?: string | null
           configuration_error?: string | null
+          configuration_status?: string | null
           configuration_updated_at?: string | null
           created_at?: string
           created_by?: string | null
@@ -2042,13 +2052,12 @@ export type Database = {
           command_type: string
           created_at: string | null
           delivered_at: string | null
-          desired_config_version: number
+          desired_config_version: number | null
           expires_at: string
           failed_at: string | null
           failure_reason: string | null
           id: string
           idempotency_key: string
-          issued_at: string
           issued_by: string
           kiosk_device_id: string
           organization_id: string
@@ -2061,13 +2070,12 @@ export type Database = {
           command_type: string
           created_at?: string | null
           delivered_at?: string | null
-          desired_config_version: number
+          desired_config_version?: number | null
           expires_at: string
           failed_at?: string | null
           failure_reason?: string | null
           id?: string
           idempotency_key: string
-          issued_at?: string
           issued_by: string
           kiosk_device_id: string
           organization_id: string
@@ -2080,13 +2088,12 @@ export type Database = {
           command_type?: string
           created_at?: string | null
           delivered_at?: string | null
-          desired_config_version?: number
+          desired_config_version?: number | null
           expires_at?: string
           failed_at?: string | null
           failure_reason?: string | null
           id?: string
           idempotency_key?: string
-          issued_at?: string
           issued_by?: string
           kiosk_device_id?: string
           organization_id?: string
@@ -2094,6 +2101,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "kiosk_remote_commands_issued_by_fkey"
+            columns: ["issued_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "kiosk_remote_commands_kiosk_device_id_fkey"
             columns: ["kiosk_device_id"]
@@ -3714,6 +3728,19 @@ export type Database = {
         Args: { p_token: string }
         Returns: string
       }
+      acknowledge_kiosk_command: {
+        Args: {
+          p_command_id: string
+          p_failure_reason?: string
+          p_raw_credential: string
+          p_success: boolean
+        }
+        Returns: {
+          acknowledged_at: string
+          command_id: string
+          status: string
+        }[]
+      }
       acknowledge_kiosk_configuration: {
         Args: { p_config_version: number; p_raw_credential: string }
         Returns: {
@@ -3792,6 +3819,13 @@ export type Database = {
       }
       can_read_profile: { Args: { p_profile_id: string }; Returns: boolean }
       can_read_survey: { Args: { p_survey_id: string }; Returns: boolean }
+      cancel_kiosk_command: {
+        Args: { p_command_id: string }
+        Returns: {
+          command_id: string
+          status: string
+        }[]
+      }
       consume_invitation_rate_limit: {
         Args: { p_action: string; p_email: string; p_organization_id: string }
         Returns: undefined
@@ -3935,6 +3969,7 @@ export type Database = {
           survey_id: string
         }[]
       }
+      expire_kiosk_commands: { Args: never; Returns: number }
       generate_activation_code: {
         Args: never
         Returns: {
@@ -4256,6 +4291,20 @@ export type Database = {
         Returns: boolean
       }
       is_platform_admin: { Args: never; Returns: boolean }
+      issue_kiosk_command: {
+        Args: {
+          p_command_payload?: Json
+          p_command_type: string
+          p_idempotency_key?: string
+          p_kiosk_device_id: string
+        }
+        Returns: {
+          already_existed: boolean
+          command_id: string
+          desired_config_version: number
+          status: string
+        }[]
+      }
       issue_kiosk_enrollment_session: {
         Args: { p_kiosk_device_id: string; p_ttl_minutes?: number }
         Returns: {
@@ -4269,6 +4318,7 @@ export type Database = {
         Args: { p_fingerprint_hash?: string; p_public_token: string }
         Returns: Json
       }
+      kiosk_activity_summary: { Args: { p_metadata: Json }; Returns: string }
       kiosk_admin_can_manage_org: {
         Args: { p_organization_id: string }
         Returns: boolean
@@ -4282,6 +4332,46 @@ export type Database = {
       kiosk_sanitize_configuration_error: {
         Args: { p_error: string }
         Returns: string
+      }
+      list_eligible_surveys_for_kiosk: {
+        Args: { p_kiosk_device_id: string; p_organization_id: string }
+        Returns: {
+          id: string
+          is_current_applied: boolean
+          is_current_desired: boolean
+          public_slug: string
+          title_ar: string
+          title_en: string
+        }[]
+      }
+      list_kiosk_activity: {
+        Args: {
+          p_event_type?: string
+          p_from?: string
+          p_kiosk_device_id?: string
+          p_limit?: number
+          p_location_id?: string
+          p_offset?: number
+          p_organization_id: string
+          p_status?: string
+          p_to?: string
+        }
+        Returns: {
+          actor_display_name: string
+          actor_type: string
+          actor_user_id: string
+          event_type: string
+          id: string
+          kiosk_device_id: string
+          kiosk_device_name: string
+          location_id: string
+          location_name_ar: string
+          location_name_en: string
+          metadata_summary: string
+          occurred_at: string
+          status: string
+          total_count: number
+        }[]
       }
       list_kiosk_devices: {
         Args: { p_organization_id: string }
@@ -4304,6 +4394,56 @@ export type Database = {
           survey_title_ar: string
           survey_title_en: string
           total_responses: number
+        }[]
+      }
+      list_kiosk_fleet: {
+        Args: { p_organization_id: string }
+        Returns: {
+          activation_status: string
+          applied_config_version: number
+          applied_mode: string
+          applied_survey_id: string
+          applied_survey_title_ar: string
+          applied_survey_title_en: string
+          configuration_applied_at: string
+          configuration_error: string
+          configuration_status: string
+          configuration_updated_at: string
+          desired_config_version: number
+          desired_mode: string
+          desired_survey_id: string
+          desired_survey_title_ar: string
+          desired_survey_title_en: string
+          device_identifier: string
+          device_name: string
+          failed_command_count: number
+          has_credential: boolean
+          id: string
+          last_heartbeat_at: string
+          last_seen_at: string
+          last_successful_application_at: string
+          latest_command_created_at: string
+          latest_command_id: string
+          latest_command_idempotency_key: string
+          latest_command_status: string
+          latest_command_type: string
+          location_id: string
+          location_name_ar: string
+          location_name_en: string
+          online: boolean
+          pending_command_count: number
+          status: string
+        }[]
+      }
+      list_kiosk_pending_commands: {
+        Args: { p_raw_credential: string }
+        Returns: {
+          command_id: string
+          command_payload: Json
+          command_type: string
+          desired_config_version: number
+          expires_at: string
+          issued_at: string
         }[]
       }
       list_team_invitations: {
