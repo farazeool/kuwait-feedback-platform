@@ -146,11 +146,11 @@ values
 
 -- Three surveys: survey_a (used by device_a), survey_a2 (alternate for ack
 -- updates), survey_b (belongs to org_b so cross-org tests stay isolated).
-insert into public.surveys (id, organization_id, title_en, title_ar, status, created_by)
+insert into public.surveys (id, organization_id, location_id, title_en, title_ar, status, created_by)
 values
-  ((select v from t_ids where k = 'survey_a'),  (select v from t_ids where k = 'org_a'), 'Survey A',  'Survey A AR',  'published', (select v from t_ids where k = 'owner_a')),
-  ((select v from t_ids where k = 'survey_a2'), (select v from t_ids where k = 'org_a'), 'Survey A2', 'Survey A2 AR', 'published', (select v from t_ids where k = 'owner_a')),
-  ((select v from t_ids where k = 'survey_b'),  (select v from t_ids where k = 'org_b'), 'Survey B',  'Survey B AR',  'published', (select v from t_ids where k = 'owner_b'));
+  ((select v from t_ids where k = 'survey_a'),  (select v from t_ids where k = 'org_a'), (select v from t_ids where k = 'loc_a'), 'Survey A',  'Survey A AR',  'draft', (select v from t_ids where k = 'owner_a')),
+  ((select v from t_ids where k = 'survey_a2'), (select v from t_ids where k = 'org_a'), (select v from t_ids where k = 'loc_a'), 'Survey A2', 'Survey A2 AR', 'draft', (select v from t_ids where k = 'owner_a')),
+  ((select v from t_ids where k = 'survey_b'),  (select v from t_ids where k = 'org_b'), (select v from t_ids where k = 'loc_b'), 'Survey B',  'Survey B AR',  'draft', (select v from t_ids where k = 'owner_b'));
 
 -- =====================================================
 -- Memberships
@@ -179,8 +179,7 @@ values
 -- backfill of desired_* and applied_* columns has source data to copy.
 insert into public.kiosk_devices (
   id, organization_id, location_id, survey_id,
-  device_name, status, device_credential_hash, device_credential_prefix,
-  device_credential_issued_at,
+  device_name, status, device_credential_hash,
   last_seen_at, last_heartbeat_at
 ) values
   ((select v from t_ids where k = 'dev_a'),
@@ -190,8 +189,6 @@ insert into public.kiosk_devices (
    'Kiosk A',
    'active',
    public.kiosk_hash_token((select v from t_tokens where k = 'dev_a')),
-   'dev_a',
-   now() - interval '7 days',
    now() - interval '1 hour',
    now() - interval '1 hour'),
   ((select v from t_ids where k = 'dev_b'),
@@ -201,8 +198,6 @@ insert into public.kiosk_devices (
    'Kiosk B',
    'active',
    public.kiosk_hash_token((select v from t_tokens where k = 'dev_b')),
-   'dev_b',
-   now() - interval '7 days',
    now() - interval '2 hours',
    now() - interval '2 hours'),
   ((select v from t_ids where k = 'dev_c'),
@@ -212,8 +207,6 @@ insert into public.kiosk_devices (
    'Kiosk C (will be revoked)',
    'active',
    public.kiosk_hash_token((select v from t_tokens where k = 'dev_c')),
-   'dev_c',
-   now() - interval '7 days',
    now() - interval '3 hours',
    now() - interval '3 hours');-- =====================================================
 -- Role impersonators (set request.jwt.claims + set local role)
@@ -364,11 +357,11 @@ begin
 
   insert into public.kiosk_devices (
     id, organization_id, location_id, survey_id, device_name, status,
-    device_credential_hash, device_credential_prefix, device_credential_issued_at
+    device_credential_hash, device_credential_prefix
   ) values (
     gen_random_uuid(), v_org, v_loc, v_srv, 'Defaults probe', 'pending_activation',
     'hash-defaults-probe-' || extract(epoch from now())::text,
-    'defprobe', now()
+    'defprobe'
   )
   returning id into v_new;
 
@@ -421,22 +414,20 @@ $$;
 -- =====================================================
 -- SECTION 5: existing kiosk credential data remains intact
 -- =====================================================
--- The migration must not overwrite device_credential_hash, prefix, issued_at,
+-- The migration must not overwrite device_credential_hash, prefix,
 -- last_seen_at, or last_heartbeat_at on rows that already exist.
 do $$
 declare
   v_dev_a uuid;
   v_expected_prefix text;
   v_expected_hash text;
-  v_expected_issued timestamp;
   v_actual_hash text;
   v_actual_prefix text;
-  v_actual_issued timestamp;
 begin
   select v into v_dev_a from t_ids where k = 'dev_a';
 
-  select device_credential_prefix, device_credential_hash, device_credential_issued_at
-    into v_expected_prefix, v_expected_hash, v_expected_issued
+  select device_credential_prefix, device_credential_hash
+    into v_expected_prefix, v_expected_hash
     from public.kiosk_devices
     where id = v_dev_a;
 
@@ -445,9 +436,6 @@ begin
   end if;
   if v_expected_prefix is null then
     raise exception 'SECTION 5: device_credential_prefix is null after migration';
-  end if;
-  if v_expected_issued is null then
-    raise exception 'SECTION 5: device_credential_issued_at is null after migration';
   end if;
 
   -- Hash should match what kiosk_hash_token(dev_a token) returns. This proves
@@ -664,8 +652,7 @@ select pg_temp.expect_err(
 do $$
 begin
   update public.kiosk_devices
-     set status = 'revoked',
-         credential_revoked_at = now()
+     set status = 'revoked'
    where id = (select v from t_ids where k = 'dev_c');
 
   perform pg_temp.expect_err(
@@ -683,8 +670,7 @@ $$;
 do $$
 begin
   update public.kiosk_devices
-     set status = 'active',
-         credential_revoked_at = now()
+     set status = 'active'
    where id = (select v from t_ids where k = 'dev_c');
 
   perform pg_temp.expect_err(
@@ -1291,7 +1277,7 @@ begin
   select v into v_dev_c from t_ids where k = 'dev_c';
 
   update public.kiosk_devices
-     set status = 'archived', credential_revoked_at = null
+     set status = 'archived'
    where id = v_dev_c;
 
   perform pg_temp.expect_err(
