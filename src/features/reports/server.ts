@@ -129,6 +129,19 @@ export async function generateMonthlyReport(filters: ReportFilters) {
     ...(filters.locationId ? { p_location_id: filters.locationId } : {}),
   });
 
+  // Signature feedback follow-up sentiment
+  const { data: signatureSentiment } = await (supabase.rpc as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: Json | null }>)("get_signature_sentiment_report", {
+    p_organization_id: orgId,
+    p_start_at: base.p_start_at,
+    p_end_at: base.p_end_at,
+    ...(filters.locationId ? { p_location_id: filters.locationId } : {}),
+    p_employee_id: null,
+    p_sentiment: null,
+    p_identity_status: null,
+    p_contact_requested: null,
+    p_follow_up_completed: null,
+  });
+
   // Controlled record references from survey responses
   const { data: controlledRecordRefs } = await (supabase.rpc as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: Json[] | null }>)("get_controlled_record_references", {
     p_organization_id: orgId,
@@ -184,6 +197,7 @@ export async function generateMonthlyReport(filters: ReportFilters) {
       controlledRecordRefs: (controlledRecordRefs as Json[]) ?? [],
       targetStatus: (targetStatus as Json | null),
       trendCharts: (trendCharts as Json | null),
+      signatureSentiment: (signatureSentiment as Json | null),
       prevKpi: prevKpiData as Json | null,
       period: { startAt, endAt, prevStart, prevEnd },
     },

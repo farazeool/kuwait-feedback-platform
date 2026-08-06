@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { ratingSubmissionSchema } from "@/features/distribution/schema";
+import { ratingFollowupSubmissionSchema } from "@/features/distribution/schema";
 import {
   createSubmissionFingerprint,
   isAllowedSubmissionOrigin,
@@ -44,8 +44,7 @@ export async function POST(request: NextRequest) {
     return genericOk();
   }
 
-  const parsed = ratingSubmissionSchema.safeParse(input);
-  // Honeypot check: website field must be empty string or undefined (backward compatible)
+  const parsed = ratingFollowupSubmissionSchema.safeParse(input);
   if (!parsed.success || (parsed.data.website ?? "") !== "") return genericOk();
 
   const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
@@ -57,38 +56,39 @@ export async function POST(request: NextRequest) {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = createSupabaseAnonymousClient() as any;
-  const { data, error } = await supabase.rpc("record_rating", {
+  const { data, error } = await supabase.rpc("submit_rating_followup", {
     p_public_token: parsed.data.token,
-    p_rating: parsed.data.rating,
-    p_nonce: parsed.data.nonce,
+    p_continuation_token: parsed.data.continuationToken,
+    p_rating: parsed.data.rating ?? null,
+    p_customer_name: parsed.data.customerName ?? null,
+    p_customer_email: parsed.data.customerEmail ?? null,
+    p_comment: parsed.data.comment ?? null,
+    p_contact_requested: parsed.data.contactRequested ?? false,
+    p_skip: parsed.data.skip ?? false,
     p_fingerprint_hash: fingerprint,
     p_user_agent: request.headers.get("user-agent")?.slice(0, 200) ?? null,
   });
 
   if (error) {
     const err = error as { code?: string; message?: string };
-    if (err.code === "P0001") {
-      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    if (err.code === "22023") {
+      return NextResponse.json({ ok: false, error: "Please add an email address if you want us to contact you." }, { status: 422 });
     }
-    // Database/RPC failure: return non-success without exposing internals
-    return NextResponse.json(
-      { ok: false, error: "Unable to record feedback" },
-      { status: 503 }
-    );
+    if (err.code === "P0001") {
+      return NextResponse.json({ ok: false, error: "Too many requests" }, { status: 429 });
+    }
+    return NextResponse.json({ ok: false, error: "Unable to update feedback" }, { status: 503 });
   }
 
-  // Verify actual persistence occurred
-  if (data?.recorded !== true) {
-    // RPC succeeded but rating was not persisted (invalid/consumed nonce, expired token, etc.)
-    return NextResponse.json(
-      { ok: false, error: "Unable to record feedback" },
-      { status: 409 }
-    );
+  if (data?.ok !== true) {
+    return NextResponse.json({ ok: false, error: "Unable to update feedback" }, { status: 409 });
   }
 
   return NextResponse.json({
     ok: true,
-    continuationToken: data.continuation_token,
+    followUpStatus: data.follow_up_status,
+    contactStatus: data.contact_status,
+    identityStatus: data.identity_status,
     ratingValue: data.rating_value,
     ratingLabel: data.rating_label,
     ratingEmoji: data.rating_emoji,
@@ -96,8 +96,5 @@ export async function POST(request: NextRequest) {
 }
 
 function genericOk() {
-  // Return ok: false with HTTP 200 to prevent information leakage
-  // while ensuring the client does not show a false Thank You screen.
-  // Attackers cannot distinguish between success and security rejections.
   return NextResponse.json({ ok: false });
 }

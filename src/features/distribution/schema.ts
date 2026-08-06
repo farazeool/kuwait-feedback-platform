@@ -51,6 +51,18 @@ export const ratingSubmissionSchema = z.object({
   website: z.string().max(0).optional(),
 });
 
+export const ratingFollowupSubmissionSchema = z.object({
+  token: z.string().regex(TOKEN_REGEX),
+  continuationToken: z.string().regex(TOKEN_REGEX),
+  rating: z.number().int().min(1).max(5).optional(),
+  customerName: z.string().trim().max(120).optional(),
+  customerEmail: z.string().trim().email().max(320).optional(),
+  comment: z.string().trim().max(2000).optional(),
+  contactRequested: z.boolean().optional().default(false),
+  skip: z.boolean().optional().default(false),
+  website: z.string().max(0).optional(),
+});
+
 export const emailRenderConfigSchema = z.object({
   ratingStyle: z.enum(["emoji", "star", "three_option", "yes_no"]).default("emoji"),
   headingEn: z.string().max(200).default("How was your experience?"),

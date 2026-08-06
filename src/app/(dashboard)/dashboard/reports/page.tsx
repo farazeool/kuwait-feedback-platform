@@ -159,6 +159,28 @@ type ReportData = {
       count: number;
     }>;
   } | null;
+  signatureSentiment: {
+    total_responses: number;
+    average_rating: number | null;
+    rating_counts: {
+      bad: number;
+      poor: number;
+      average: number;
+      good: number;
+      excellent: number;
+    };
+    identity_counts: {
+      anonymous: number;
+      self_reported: number;
+    };
+    comment_rate: number | null;
+    contact_requested_count: number;
+    unresolved_contact_requests: number;
+    follow_up_completion_rate: number | null;
+    by_location: Array<{ location_id: string | null; location_name_en: string | null; location_name_ar: string | null; count: number }>;
+    by_employee: Array<{ employee_id: string | null; employee_name: string | null; count: number }>;
+    by_channel: Array<{ channel: string | null; count: number }>;
+  } | null;
   prevKpi: {
     prev_satisfaction_pct?: number | null;
     prev_negative_feedback_pct?: number | null;
@@ -326,6 +348,46 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
                 />
               </div>
             )}
+
+            {reportData.signatureSentiment && reportData.signatureSentiment.total_responses > 0 ? (
+              <section className="mb-8 grid gap-4 print:break-inside-avoid">
+                <h3 className="text-lg font-semibold">Signature follow-up sentiment</h3>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <MetricCard label="Signature responses" value={reportData.signatureSentiment.total_responses.toLocaleString()} />
+                  <MetricCard label="Average signature rating" value={reportData.signatureSentiment.average_rating != null ? reportData.signatureSentiment.average_rating.toFixed(1) : "—"} />
+                  <MetricCard label="Contact requests" value={reportData.signatureSentiment.contact_requested_count.toLocaleString()} detail={reportData.signatureSentiment.unresolved_contact_requests > 0 ? `${reportData.signatureSentiment.unresolved_contact_requests} unresolved` : "All contact requests handled"} />
+                  <MetricCard label="Follow-up completion" value={reportData.signatureSentiment.follow_up_completion_rate != null ? `${reportData.signatureSentiment.follow_up_completion_rate}%` : "—"} detail={reportData.signatureSentiment.comment_rate != null ? `Comment rate: ${reportData.signatureSentiment.comment_rate}%` : undefined} />
+                </div>
+                <div className="overflow-x-auto rounded-xl border border-border bg-white">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border bg-slate-50">
+                        <th className="p-3 text-left font-semibold text-muted">Rating</th>
+                        <th className="p-3 text-right font-semibold text-muted">Count</th>
+                        <th className="p-3 text-right font-semibold text-muted">Identity</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        ["😡 Bad", reportData.signatureSentiment.rating_counts.bad],
+                        ["😞 Poor", reportData.signatureSentiment.rating_counts.poor],
+                        ["😐 Average", reportData.signatureSentiment.rating_counts.average],
+                        ["🙂 Good", reportData.signatureSentiment.rating_counts.good],
+                        ["😊 Excellent", reportData.signatureSentiment.rating_counts.excellent],
+                      ].map(([label, count]) => (
+                        <tr key={label} className="border-b border-border/50 last:border-0">
+                          <td className="p-3 font-medium">{label}</td>
+                          <td className="p-3 text-right">{count}</td>
+                          <td className="p-3 text-right text-muted">
+                            {reportData.signatureSentiment ? `${reportData.signatureSentiment.identity_counts.self_reported} self-reported / ${reportData.signatureSentiment.identity_counts.anonymous} anonymous` : "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            ) : null}
 
             {/* Concern Trend Table */}
             {reportData.concernTrend.length > 0 && (

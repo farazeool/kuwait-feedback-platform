@@ -29,7 +29,9 @@ export default async function FeedbackLandingPage({
   });
 
   const nonce = (data as Record<string, unknown> | null)?.nonce as string | undefined;
-  const ratingStyle = (data as Record<string, unknown> | null)?.rating_style as string | undefined;
+  const organizationNameEn = (data as Record<string, unknown> | null)?.organization_name_en as string | undefined;
+  const employeeNameEn = (data as Record<string, unknown> | null)?.employee_name_en as string | undefined;
+  const locationNameEn = (data as Record<string, unknown> | null)?.location_name_en as string | undefined;
 
   if (!nonce) {
     return <InactivePage />;
@@ -46,8 +48,17 @@ export default async function FeedbackLandingPage({
       <div className="w-full max-w-sm rounded-2xl border border-border bg-white p-8 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-wide text-brand">Feedback</p>
         <h1 className="mt-3 text-xl font-bold text-foreground">How was your experience?</h1>
-        <p className="mt-1 text-sm text-muted">Your response is anonymous and takes one tap.</p>
-        <RatingForm token={token} nonce={nonce} ratingStyle={ratingStyle ?? "emoji"} initialRating={ratingParam} />
+        <p className="mt-1 text-sm text-muted">
+          {employeeNameEn ? `For ${employeeNameEn}${locationNameEn ? ` at ${locationNameEn}` : ""}.` : "Your response is anonymous and takes one tap."}
+        </p>
+        <RatingForm
+          token={token}
+          nonce={nonce}
+          initialRating={ratingParam}
+          organizationName={organizationNameEn}
+          employeeName={employeeNameEn}
+          locationName={locationNameEn}
+        />
       </div>
     </main>
   );
