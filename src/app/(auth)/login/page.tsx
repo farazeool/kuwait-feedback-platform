@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 import { AuthCard } from "@/components/auth/auth-card";
 import { Field, PasswordField } from "@/components/forms/field";
@@ -18,14 +19,8 @@ export default async function LoginPage({
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-[#f0f5ef] via-white to-white px-4">
       {/* Brand */}
-      <Link href="/" className="mb-8 flex items-center gap-3">
-        <div className="grid size-10 place-items-center rounded-xl bg-brand">
-          <svg viewBox="0 0 24 24" fill="none" className="size-6 text-white">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
-            <path d="M8 12.5l3 3 7-7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </div>
-        <span className="text-xl font-bold text-foreground">{messages["app.name"]}</span>
+      <Link href="/" className="mb-8 rounded-xl bg-white p-2 shadow-sm ring-1 ring-border">
+        <Image src="/brand/instaview-logo-official.png" alt="InstaView by Review & More" width={270} height={80} priority className="h-auto w-56" />
       </Link>
 
       <AuthCard
@@ -104,7 +99,7 @@ export default async function LoginPage({
       </AuthCard>
 
       <p className="mt-8 text-xs text-muted/60">
-        &copy; {new Date().getFullYear()} Kuwait Feedback Platform
+        &copy; {new Date().getFullYear()} InstaView by Review & More
       </p>
     </div>
   );

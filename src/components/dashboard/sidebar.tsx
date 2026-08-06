@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 
 import { navigationForRole } from "@/features/dashboard/navigation";
@@ -28,7 +29,7 @@ function NavItem({
       className={`group relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-150 ${
         isActive
           ? "bg-white/15 text-white shadow-sm"
-          : "text-emerald-100/70 hover:bg-white/10 hover:text-white"
+          : "text-blue-100/75 hover:bg-white/10 hover:text-white"
       }`}
     >
       {/* Active indicator */}
@@ -70,22 +71,14 @@ export function DashboardSidebar({ role, locale }: { role: AppRole; locale: Loca
 
   return (
     <aside
-      className="fixed inset-y-0 start-0 z-30 flex w-64 flex-col border-e border-emerald-950/10 bg-brand print:hidden"
+      className="fixed inset-y-0 start-0 z-30 flex w-64 flex-col border-e border-blue-950/20 bg-brand print:hidden"
       aria-label={isArabic ? "القائمة الرئيسية" : "Dashboard navigation"}
     >
       {/* Brand header */}
-      <div className="flex h-20 items-center gap-3 border-b border-white/10 px-6">
-        <div className="grid size-10 place-items-center rounded-xl bg-white/15">
-          <svg viewBox="0 0 24 24" fill="none" className="size-6 text-white">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
-            <path d="M8 12.5l3 3 7-7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </div>
+      <div className="flex h-20 items-center gap-3 border-b border-white/10 px-5">
+        <Image src="/brand/instaview-logo-official.png" alt="InstaView by Review & More" width={186} height={55} priority className="h-auto w-[172px] rounded bg-white px-2 py-1" />
         <div className="min-w-0">
-          <p className="truncate text-base font-bold text-white">{messages["app.name"]}</p>
-          <p className="truncate text-xs text-emerald-200/70">
-            {isArabic ? "منصة آراء العملاء" : "Customer Feedback Platform"}
-          </p>
+          <p className="sr-only">{messages["app.name"]}</p>
         </div>
       </div>
 
@@ -112,11 +105,11 @@ export function DashboardSidebar({ role, locale }: { role: AppRole; locale: Loca
       <div className="border-t border-white/10 px-4 py-4">
         <div className="flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2.5">
           <div className="grid size-8 place-items-center rounded-lg bg-white/10">
-            <svg viewBox="0 0 24 24" fill="none" className="size-4 text-emerald-200">
+            <svg viewBox="0 0 24 24" fill="none" className="size-4 text-blue-200">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
-          <span className="text-xs font-medium text-emerald-200/70">
+          <span className="text-xs font-medium text-blue-200/80">
             {isArabic ? "جميع البيانات محمية" : "All data protected"}
           </span>
         </div>

@@ -1,16 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f0f2ef;
-  --foreground: #1a2332;
+  --background: #f5f7fb;
+  --foreground: #0b2148;
   --surface: #ffffff;
-  --surface-muted: #f6f8f5;
-  --muted: #5f6b7a;
-  --brand: #0f6b4d;
-  --brand-dark: #0a5a40;
-  --brand-light: #e8f5e9;
-  --border: #d8e0dc;
-  --border-strong: #b8c4bc;
+  --surface-muted: #f1f5fb;
+  --muted: #52647f;
+  --brand: #0b2d62;
+  --brand-dark: #071e43;
+  --brand-light: #e8eff9;
+  --border: #d8e1ef;
+  --border-strong: #b9c8dc;
   --ring: color-mix(in srgb, var(--brand) 30%, transparent);
   --success: #16a34a;
   --warning: #d97706;
@@ -20,11 +20,11 @@
 
   /* Kiosk-specific tokens */
   --kiosk-bg: #ffffff;
-  --kiosk-surface: #f8faf8;
-  --kiosk-primary: #0f6b4d;
-  --kiosk-primary-light: #e8f5e9;
-  --kiosk-text: #1a2332;
-  --kiosk-text-muted: #5f6b7a;
+  --kiosk-surface: #f4f7fc;
+  --kiosk-primary: #0b2d62;
+  --kiosk-primary-light: #e8eff9;
+  --kiosk-text: #0b2148;
+  --kiosk-text-muted: #52647f;
   --kiosk-radius: 1rem;
   --kiosk-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
 }
@@ -50,8 +50,8 @@
 /* ==========================================================================
    Review & More — public marketing brand
    --------------------------------------------------------------------------
-   The operational workspace (InstaView) keeps its established green `--brand`
-   palette; these `--rm-*` tokens are namespaced so the public brand can be
+   The operational workspace (InstaView) uses its official navy/red `--brand`
+   direction; these `--rm-*` tokens are namespaced so the public brand can be
    deep maroon without repainting dashboard or kiosk surfaces. One scale, one
    set of radii and shadows, reused by every marketing section.
    ========================================================================== */
