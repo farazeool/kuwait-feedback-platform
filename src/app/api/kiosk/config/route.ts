@@ -1,6 +1,6 @@
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/service-role";
 import { NextRequest, NextResponse } from "next/server";
-import { KioskConfiguration, KioskConfigurationStatus } from "@/features/kiosk/types";
+import { KioskConfiguration, KioskConfigurationStatus, KioskMode } from "@/features/kiosk/types";
 import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
@@ -16,8 +16,9 @@ function determineConfigurationStatus(
   return "current";
 }
 
-export async function GET(_request: NextRequest) {
-  const credential = cookies().get("kiosk_credential")?.value;
+export async function GET(request: NextRequest) {
+  const cookieStore = await cookies();
+  const credential = cookieStore.get("kiosk_credential")?.value;
 
   if (!credential) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -40,8 +41,8 @@ export async function GET(_request: NextRequest) {
     appliedConfigVersion: config.applied_config_version,
     desiredSurveyId: config.desired_survey_id,
     appliedSurveyId: config.applied_survey_id,
-    desiredMode: config.desired_mode,
-    appliedMode: config.applied_mode,
+    desiredMode: config.desired_mode as KioskMode,
+    appliedMode: config.applied_mode as KioskMode,
     configurationStatus: determineConfigurationStatus(
       config.desired_config_version,
       config.applied_config_version,

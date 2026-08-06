@@ -1,4 +1,4 @@
-import { test, expect, describe, vi, beforeEach } from "vitest";
+import { test, expect, describe, vi, beforeEach, Mock } from "vitest";
 import { GET } from "./route";
 import { getKioskFromCredential } from "@/features/kiosk/enrollment-http";
 import { createServiceRoleSupabaseClient } from "@/lib/supabase/server";
@@ -19,7 +19,7 @@ const mockSupabase = {
 describe("API GET /api/kiosk/config", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    (createServiceRoleSupabaseClient as vi.Mock).mockReturnValue(mockSupabase);
+    (createServiceRoleSupabaseClient as Mock).mockReturnValue(mockSupabase);
   });
 
   const mockRequest = (cookie: string = "") =>
@@ -29,7 +29,7 @@ describe("API GET /api/kiosk/config", () => {
 
   test("should return 401 if no credential is provided", async () => {
     const req = mockRequest();
-    (getKioskFromCredential as vi.Mock).mockResolvedValueOnce(null);
+    (getKioskFromCredential as Mock).mockResolvedValueOnce(null);
     const response = await GET(req);
     expect(response.status).toBe(401);
     const body = await response.json();
@@ -38,7 +38,7 @@ describe("API GET /api/kiosk/config", () => {
 
   test("should return 401 if credential is for a revoked device", async () => {
     const req = mockRequest("kiosk-credential=revoked-credential");
-    (getKioskFromCredential as vi.Mock).mockResolvedValueOnce({
+    (getKioskFromCredential as Mock).mockResolvedValueOnce({
       id: "kiosk-id",
       status: "revoked",
     });
@@ -50,7 +50,7 @@ describe("API GET /api/kiosk/config", () => {
 
   test("should return 500 if database RPC fails", async () => {
     const req = mockRequest("kiosk-credential=valid-credential");
-    (getKioskFromCredential as vi.Mock).mockResolvedValueOnce({
+    (getKioskFromCredential as Mock).mockResolvedValueOnce({
       id: "kiosk-id",
       status: "active",
       organization_id: "org-id",
@@ -67,7 +67,7 @@ describe("API GET /api/kiosk/config", () => {
 
   test("should return 404 if RPC returns no data", async () => {
     const req = mockRequest("kiosk-credential=valid-credential");
-    (getKioskFromCredential as vi.Mock).mockResolvedValueOnce({
+    (getKioskFromCredential as Mock).mockResolvedValueOnce({
       id: "kiosk-id",
       status: "active",
       organization_id: "org-id",
@@ -81,7 +81,7 @@ describe("API GET /api/kiosk/config", () => {
 
   test("should return allowlisted config fields on success", async () => {
     const req = mockRequest("kiosk-credential=valid-credential");
-    (getKioskFromCredential as vi.Mock).mockResolvedValueOnce({
+    (getKioskFromCredential as Mock).mockResolvedValueOnce({
       id: "kiosk-id",
       status: "active",
       organization_id: "org-id",

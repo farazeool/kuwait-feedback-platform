@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
 
   const { configVersion } = parsed.data;
 
-  const supabase = createSupabaseServiceRoleClient() as any;
+  const supabase = createSupabaseServiceRoleClient();
   const { data, error } = await supabase.rpc("acknowledge_kiosk_configuration", {
     p_raw_credential: credential,
     p_config_version: configVersion,

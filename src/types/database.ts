@@ -1667,6 +1667,54 @@ export type Database = {
           },
         ]
       }
+      kiosk_activity_history: {
+        Row: {
+          actor_type: string
+          actor_user_id: string | null
+          event_type: string
+          id: string
+          kiosk_device_id: string | null
+          metadata: Json | null
+          occurred_at: string
+          organization_id: string
+        }
+        Insert: {
+          actor_type: string
+          actor_user_id?: string | null
+          event_type: string
+          id?: string
+          kiosk_device_id?: string | null
+          metadata?: Json | null
+          occurred_at?: string
+          organization_id: string
+        }
+        Update: {
+          actor_type?: string
+          actor_user_id?: string | null
+          event_type?: string
+          id?: string
+          kiosk_device_id?: string | null
+          metadata?: Json | null
+          occurred_at?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kiosk_activity_history_kiosk_device_id_fkey"
+            columns: ["kiosk_device_id"]
+            isOneToOne: false
+            referencedRelation: "kiosk_devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kiosk_activity_history_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kiosk_config_history: {
         Row: {
           change_reason: string | null
@@ -1980,6 +2028,81 @@ export type Database = {
           },
           {
             foreignKeyName: "kiosk_enrollment_sessions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kiosk_remote_commands: {
+        Row: {
+          acknowledged_at: string | null
+          command_payload: Json | null
+          command_type: string
+          created_at: string | null
+          delivered_at: string | null
+          desired_config_version: number
+          expires_at: string
+          failed_at: string | null
+          failure_reason: string | null
+          id: string
+          idempotency_key: string
+          issued_at: string
+          issued_by: string
+          kiosk_device_id: string
+          organization_id: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          command_payload?: Json | null
+          command_type: string
+          created_at?: string | null
+          delivered_at?: string | null
+          desired_config_version: number
+          expires_at: string
+          failed_at?: string | null
+          failure_reason?: string | null
+          id?: string
+          idempotency_key: string
+          issued_at?: string
+          issued_by: string
+          kiosk_device_id: string
+          organization_id: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          acknowledged_at?: string | null
+          command_payload?: Json | null
+          command_type?: string
+          created_at?: string | null
+          delivered_at?: string | null
+          desired_config_version?: number
+          expires_at?: string
+          failed_at?: string | null
+          failure_reason?: string | null
+          id?: string
+          idempotency_key?: string
+          issued_at?: string
+          issued_by?: string
+          kiosk_device_id?: string
+          organization_id?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kiosk_remote_commands_kiosk_device_id_fkey"
+            columns: ["kiosk_device_id"]
+            isOneToOne: false
+            referencedRelation: "kiosk_devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kiosk_remote_commands_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"

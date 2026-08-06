@@ -29,12 +29,11 @@ export async function POST(request: NextRequest) {
 
   const { configVersion, errorCode, errorMessage } = parsed.data;
 
-  const supabase = createSupabaseServiceRoleClient() as any;
+  const supabase = createSupabaseServiceRoleClient();
   const { data, error } = await supabase.rpc("report_kiosk_configuration_failure", {
     p_raw_credential: credential,
     p_config_version: configVersion,
-    p_error_code: errorCode,
-    p_error_message: errorMessage,
+    p_error: `${errorCode}: ${errorMessage}`,
   });
 
   if (error) {
