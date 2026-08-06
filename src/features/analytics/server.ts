@@ -8,20 +8,18 @@ import { requireAppAccessContext } from "@/lib/auth/context";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function getAnalyticsDashboard(rawFilters: Record<string, string | undefined>) {
-  const context = await requireAppAccessContext();
+  const [context, supabase] = await Promise.all([requireAppAccessContext(), createSupabaseServerClient()]);
   const filters = analyticsFiltersSchema.parse(rawFilters);
   const range = resolveAnalyticsRange(filters);
-  const supabase = await createSupabaseServerClient();
   const { data: organizations } = await supabase.from("organizations").select("id, name_en, name_ar").eq("status", "active").order("name_en");
   const organizationId = organizations?.some((row) => row.id === filters.organization)
     ? filters.organization!
     : context.organization?.id ?? organizations?.[0]?.id;
   if (!organizationId) return { context, filters, range, organizations: [], locations: [], surveys: [], overview: null, canCompareLocations: false };
 
-  const [{ data: locations }, { data: surveys }, { data: membership }] = await Promise.all([
+  const [{ data: locations }, { data: surveys }] = await Promise.all([
     supabase.from("locations").select("id, name_en, name_ar").eq("organization_id", organizationId).eq("status", "active").order("name_en"),
     supabase.from("surveys").select("id, title_en, title_ar, status, location_id").eq("organization_id", organizationId).order("title_en"),
-    supabase.from("organization_memberships").select("role, scope").eq("organization_id", organizationId).eq("user_id", context.user.id).eq("status", "active").maybeSingle(),
   ]);
   const locationId = locations?.some((row) => row.id === filters.location) ? filters.location : undefined;
   const surveyId = surveys?.some((row) => row.id === filters.survey) ? filters.survey : undefined;
@@ -62,7 +60,7 @@ export async function getAnalyticsDashboard(rawFilters: Record<string, string | 
     locations: locations ?? [],
     surveys: surveys ?? [],
     overview: analyticsOverviewSchema.parse(data),
-    canCompareLocations: context.profile.platformRole === "platform_admin" || membership?.role !== "location_manager",
+    canCompareLocations: context.profile.platformRole === "platform_admin" || context.membership?.role !== "location_manager",
   };
 }
 
