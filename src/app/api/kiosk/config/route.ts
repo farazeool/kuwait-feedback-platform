@@ -1,80 +1,56 @@
-import { createSupabaseAnonymousClient } from "@/lib/supabase/anonymous";
+import { createSupabaseServiceRoleClient } from "@/lib/supabase/service-role";
 import { NextRequest, NextResponse } from "next/server";
+import { KioskConfiguration, KioskConfigurationStatus } from "@/features/kiosk/types";
+import { cookies } from "next/headers";
 
-/**
- * This endpoint must never be cached or statically rendered: a kiosk polls it
- * to discover remote configuration changes, and a cached response would let a
- * paused or revoked device keep serving the old survey indefinitely.
- */
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
 
-const NO_STORE_HEADERS = {
-  "Cache-Control": "no-store, no-cache, must-revalidate",
-} as const;
-
-/**
- * GET /api/kiosk/config?token=<access_token>
- * Get kiosk configuration for polling
- * Used by kiosk devices to check for remote configuration updates
- */
-export async function GET(request: NextRequest) {
-  try {
-    const searchParams = request.nextUrl.searchParams;
-    const accessToken = searchParams.get("token");
-
-    if (!accessToken) {
-      return NextResponse.json(
-        { error: "Access token is required" },
-        { status: 400, headers: NO_STORE_HEADERS }
-      );
-    }
-
-    const supabase = createSupabaseAnonymousClient();
-
-    // Call the RPC function to get config and update last_seen
-    const { data, error } = await supabase.rpc("get_kiosk_config", {
-      p_access_token: accessToken,
-    });
-
-    if (error) {
-      // Do not leak the token or the underlying database message to the device.
-      console.error("Error getting kiosk config:", error.message);
-      return NextResponse.json(
-        { error: "Invalid access token or device not found" },
-        { status: 404, headers: NO_STORE_HEADERS }
-      );
-    }
-
-    if (!data || data.length === 0) {
-      return NextResponse.json(
-        { error: "Device configuration not found" },
-        { status: 404, headers: NO_STORE_HEADERS }
-      );
-    }
-
-    const config = data[0];
-
-    return NextResponse.json(
-      {
-        deviceId: config.device_id,
-        deviceName: config.device_name,
-        // Null unless the device is active. The kiosk must treat a null slug as
-        // "do not render a survey" rather than falling back to a previous one.
-        surveyPublicSlug: config.survey_public_slug,
-        status: config.status,
-        defaultLanguage: config.default_language,
-        branding: config.branding ?? {},
-        idleTimeoutSeconds: config.idle_timeout_seconds,
-        lastConfigChange: config.last_config_change,
-      },
-      { headers: NO_STORE_HEADERS }
-    );
-  } catch (error) {
-    console.error("Unexpected error in GET /api/kiosk/config:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500, headers: NO_STORE_HEADERS }
-    );
+function determineConfigurationStatus(
+  desiredVersion: number,
+  appliedVersion: number,
+  lastError: string | null
+): KioskConfigurationStatus {
+  if (appliedVersion < desiredVersion) {
+    return lastError ? "failed" : "pending";
   }
+  return "current";
+}
+
+export async function GET(_request: NextRequest) {
+  const credential = cookies().get("kiosk_credential")?.value;
+
+  if (!credential) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const supabase = createSupabaseServiceRoleClient();
+  const { data, error } = await supabase.rpc("get_kiosk_desired_configuration", {
+    p_raw_credential: credential,
+  });
+
+  if (error) {
+    console.error("Error fetching kiosk configuration:", error);
+    return NextResponse.json({ error: "Invalid credential or device not found" }, { status: 404 });
+  }
+
+  const config = data[0];
+
+  const response: KioskConfiguration = {
+    desiredConfigVersion: config.desired_config_version,
+    appliedConfigVersion: config.applied_config_version,
+    desiredSurveyId: config.desired_survey_id,
+    appliedSurveyId: config.applied_survey_id,
+    desiredMode: config.desired_mode,
+    appliedMode: config.applied_mode,
+    configurationStatus: determineConfigurationStatus(
+      config.desired_config_version,
+      config.applied_config_version,
+      config.configuration_error
+    ),
+    configurationUpdatedAt: config.configuration_updated_at,
+    configurationAppliedAt: config.configuration_applied_at,
+    configurationError: config.configuration_error,
+  };
+
+  return NextResponse.json(response);
 }

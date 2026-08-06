@@ -1743,21 +1743,31 @@ export type Database = {
           activation_code_expires_at: string | null
           activation_code_hash: string | null
           app_version: string | null
+          applied_config_version: number
+          applied_mode: string
+          applied_survey_id: string | null
           branding: Json
           channel: Database["public"]["Enums"]["kiosk_channel"]
           config_version: number | null
+          configuration_applied_at: string | null
+          configuration_error: string | null
+          configuration_updated_at: string | null
           created_at: string
           created_by: string | null
           credential_issued_at: string | null
           credential_revoked_at: string | null
           credential_version: number
           default_language: string
+          desired_config_version: number
+          desired_mode: string
+          desired_survey_id: string | null
           device_credential_hash: string | null
           device_identifier: string | null
           device_model: string | null
           device_name: string
           id: string
           idle_timeout_seconds: number
+          last_heartbeat_at: string | null
           last_response_at: string | null
           last_seen_at: string | null
           location_id: string
@@ -1776,21 +1786,31 @@ export type Database = {
           activation_code_expires_at?: string | null
           activation_code_hash?: string | null
           app_version?: string | null
+          applied_config_version?: number
+          applied_mode?: string
+          applied_survey_id?: string | null
           branding?: Json
           channel?: Database["public"]["Enums"]["kiosk_channel"]
           config_version?: number | null
+          configuration_applied_at?: string | null
+          configuration_error?: string | null
+          configuration_updated_at?: string | null
           created_at?: string
           created_by?: string | null
           credential_issued_at?: string | null
           credential_revoked_at?: string | null
           credential_version?: number
           default_language?: string
+          desired_config_version?: number
+          desired_mode?: string
+          desired_survey_id?: string | null
           device_credential_hash?: string | null
           device_identifier?: string | null
           device_model?: string | null
           device_name: string
           id?: string
           idle_timeout_seconds?: number
+          last_heartbeat_at?: string | null
           last_response_at?: string | null
           last_seen_at?: string | null
           location_id: string
@@ -1809,21 +1829,31 @@ export type Database = {
           activation_code_expires_at?: string | null
           activation_code_hash?: string | null
           app_version?: string | null
+          applied_config_version?: number
+          applied_mode?: string
+          applied_survey_id?: string | null
           branding?: Json
           channel?: Database["public"]["Enums"]["kiosk_channel"]
           config_version?: number | null
+          configuration_applied_at?: string | null
+          configuration_error?: string | null
+          configuration_updated_at?: string | null
           created_at?: string
           created_by?: string | null
           credential_issued_at?: string | null
           credential_revoked_at?: string | null
           credential_version?: number
           default_language?: string
+          desired_config_version?: number
+          desired_mode?: string
+          desired_survey_id?: string | null
           device_credential_hash?: string | null
           device_identifier?: string | null
           device_model?: string | null
           device_name?: string
           id?: string
           idle_timeout_seconds?: number
+          last_heartbeat_at?: string | null
           last_response_at?: string | null
           last_seen_at?: string | null
           location_id?: string
@@ -1836,6 +1866,20 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "kiosk_devices_applied_survey_fk"
+            columns: ["applied_survey_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "surveys"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "kiosk_devices_desired_survey_fk"
+            columns: ["desired_survey_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "surveys"
+            referencedColumns: ["id", "organization_id"]
+          },
           {
             foreignKeyName: "kiosk_devices_location_fk"
             columns: ["location_id", "organization_id"]
@@ -1858,6 +1902,27 @@ export type Database = {
             referencedColumns: ["id", "organization_id"]
           },
         ]
+      }
+      kiosk_enrollment_rate_limits: {
+        Row: {
+          attempts: number
+          key_hash: string
+          scope: string
+          window_started_at: string
+        }
+        Insert: {
+          attempts: number
+          key_hash: string
+          scope: string
+          window_started_at: string
+        }
+        Update: {
+          attempts?: number
+          key_hash?: string
+          scope?: string
+          window_started_at?: string
+        }
+        Relationships: []
       }
       kiosk_enrollment_sessions: {
         Row: {
@@ -2456,6 +2521,141 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rating_followup_details: {
+        Row: {
+          comment: string | null
+          created_at: string
+          customer_email: string | null
+          customer_name: string | null
+          rating_session_id: string
+          updated_at: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          rating_session_id: string
+          updated_at?: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          rating_session_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rating_followup_details_rating_session_id_fkey"
+            columns: ["rating_session_id"]
+            isOneToOne: true
+            referencedRelation: "rating_followup_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rating_followup_sessions: {
+        Row: {
+          assignment_id: string
+          contact_notified_at: string | null
+          contact_requested: boolean
+          contact_requested_at: string | null
+          contact_status: string
+          continuation_token_consumed_at: string | null
+          continuation_token_expires_at: string
+          continuation_token_hash: string
+          created_at: string
+          current_rating: number
+          follow_up_status: string
+          follow_up_submitted_at: string | null
+          id: string
+          identity_status: string
+          notification_state: string
+          organization_id: string
+          original_emoji: string
+          original_label: string
+          original_rating: number
+          rating_emoji: string
+          rating_event_id: string
+          rating_label: string
+          updated_at: string
+        }
+        Insert: {
+          assignment_id: string
+          contact_notified_at?: string | null
+          contact_requested?: boolean
+          contact_requested_at?: string | null
+          contact_status?: string
+          continuation_token_consumed_at?: string | null
+          continuation_token_expires_at: string
+          continuation_token_hash: string
+          created_at?: string
+          current_rating: number
+          follow_up_status?: string
+          follow_up_submitted_at?: string | null
+          id?: string
+          identity_status?: string
+          notification_state?: string
+          organization_id: string
+          original_emoji: string
+          original_label: string
+          original_rating: number
+          rating_emoji: string
+          rating_event_id: string
+          rating_label: string
+          updated_at?: string
+        }
+        Update: {
+          assignment_id?: string
+          contact_notified_at?: string | null
+          contact_requested?: boolean
+          contact_requested_at?: string | null
+          contact_status?: string
+          continuation_token_consumed_at?: string | null
+          continuation_token_expires_at?: string
+          continuation_token_hash?: string
+          created_at?: string
+          current_rating?: number
+          follow_up_status?: string
+          follow_up_submitted_at?: string | null
+          id?: string
+          identity_status?: string
+          notification_state?: string
+          organization_id?: string
+          original_emoji?: string
+          original_label?: string
+          original_rating?: number
+          rating_emoji?: string
+          rating_event_id?: string
+          rating_label?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rating_followup_sessions_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "distribution_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rating_followup_sessions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rating_followup_sessions_rating_event_id_fkey"
+            columns: ["rating_event_id"]
+            isOneToOne: true
+            referencedRelation: "rating_events"
             referencedColumns: ["id"]
           },
         ]
@@ -3391,6 +3591,18 @@ export type Database = {
         Args: { p_token: string }
         Returns: string
       }
+      acknowledge_kiosk_configuration: {
+        Args: { p_config_version: number; p_raw_credential: string }
+        Returns: {
+          acknowledged: boolean
+          applied_config_version: number
+          applied_mode: string
+          applied_survey_id: string
+          configuration_applied_at: string
+          desired_config_version: number
+          kiosk_device_id: string
+        }[]
+      }
       activate_kiosk_device: {
         Args: {
           p_activation_code: string
@@ -3460,6 +3672,15 @@ export type Database = {
       consume_invitation_rate_limit: {
         Args: { p_action: string; p_email: string; p_organization_id: string }
         Returns: undefined
+      }
+      consume_kiosk_enrollment_rate_limit: {
+        Args: {
+          p_key_hash: string
+          p_limit: number
+          p_scope: string
+          p_window_seconds: number
+        }
+        Returns: boolean
       }
       consume_public_submission_rate_limit: {
         Args: {
@@ -3764,6 +3985,45 @@ export type Database = {
           survey_public_slug: string
         }[]
       }
+      get_kiosk_configuration_state: {
+        Args: { p_organization_id: string }
+        Returns: {
+          applied_config_version: number
+          applied_mode: string
+          applied_survey_id: string
+          configuration_applied_at: string
+          configuration_error: string
+          configuration_pending: boolean
+          configuration_updated_at: string
+          desired_config_version: number
+          desired_mode: string
+          desired_survey_id: string
+          device_name: string
+          kiosk_device_id: string
+          last_heartbeat_at: string
+          last_seen_at: string
+          status: string
+        }[]
+      }
+      get_kiosk_desired_configuration: {
+        Args: { p_raw_credential: string }
+        Returns: {
+          applied_config_version: number
+          applied_mode: string
+          applied_survey_id: string
+          branding: Json
+          configuration_applied_at: string
+          configuration_error: string
+          configuration_updated_at: string
+          default_language: string
+          desired_config_version: number
+          desired_mode: string
+          desired_survey_id: string
+          idle_timeout_seconds: number
+          kiosk_device_id: string
+          organization_id: string
+        }[]
+      }
       get_kiosk_enrollment_session_details: {
         Args: { p_kiosk_device_id: string }
         Returns: {
@@ -3809,6 +4069,10 @@ export type Database = {
         }
         Returns: Json
       }
+      get_rating_followup_context: {
+        Args: { p_continuation_token: string; p_public_token: string }
+        Returns: Json
+      }
       get_review_summary: {
         Args: {
           p_end_at: string
@@ -3819,6 +4083,20 @@ export type Database = {
         Returns: Json
       }
       get_signature_badge: { Args: { p_public_token: string }; Returns: Json }
+      get_signature_sentiment_report: {
+        Args: {
+          p_contact_requested?: boolean
+          p_employee_id?: string
+          p_end_at: string
+          p_follow_up_completed?: boolean
+          p_identity_status?: string
+          p_location_id?: string
+          p_organization_id: string
+          p_sentiment?: string
+          p_start_at: string
+        }
+        Returns: Json
+      }
       get_signature_subject_report: {
         Args: {
           p_end_at: string
@@ -3874,6 +4152,14 @@ export type Database = {
       }
       kiosk_generate_raw_token: { Args: never; Returns: string }
       kiosk_hash_token: { Args: { p_raw: string }; Returns: string }
+      kiosk_resolve_device_credential: {
+        Args: { p_raw_credential: string }
+        Returns: string
+      }
+      kiosk_sanitize_configuration_error: {
+        Args: { p_error: string }
+        Returns: string
+      }
       list_kiosk_devices: {
         Args: { p_organization_id: string }
         Returns: {
@@ -3950,6 +4236,8 @@ export type Database = {
           invitation_token: string
         }[]
       }
+      rating_emoji_from_value: { Args: { p_rating: number }; Returns: string }
+      rating_label_from_value: { Args: { p_rating: number }; Returns: string }
       record_data_export: {
         Args: {
           p_export_type: string
@@ -3982,6 +4270,16 @@ export type Database = {
           p_status: Database["public"]["Enums"]["invitation_delivery_status"]
         }
         Returns: undefined
+      }
+      record_kiosk_heartbeat: {
+        Args: { p_applied_mode?: string; p_raw_credential: string }
+        Returns: {
+          applied_mode: string
+          configuration_pending: boolean
+          kiosk_device_id: string
+          last_heartbeat_at: string
+          last_seen_at: string
+        }[]
       }
       record_kiosk_response: {
         Args: { p_access_token: string }
@@ -4018,6 +4316,19 @@ export type Database = {
       remove_organization_member: {
         Args: { p_membership_id: string }
         Returns: undefined
+      }
+      report_kiosk_configuration_failure: {
+        Args: {
+          p_config_version: number
+          p_error: string
+          p_raw_credential: string
+        }
+        Returns: {
+          applied_config_version: number
+          configuration_error: string
+          desired_config_version: number
+          kiosk_device_id: string
+        }[]
       }
       resend_organization_invitation: {
         Args: { p_invitation_id: string }
@@ -4124,6 +4435,21 @@ export type Database = {
           p_touchpoint_token?: string
         }
         Returns: string
+      }
+      submit_rating_followup: {
+        Args: {
+          p_comment?: string
+          p_contact_requested?: boolean
+          p_continuation_token: string
+          p_customer_email?: string
+          p_customer_name?: string
+          p_fingerprint_hash?: string
+          p_public_token: string
+          p_rating?: number
+          p_skip?: boolean
+          p_user_agent?: string
+        }
+        Returns: Json
       }
       transfer_organization_ownership: {
         Args: { p_organization_id: string; p_target_membership_id: string }

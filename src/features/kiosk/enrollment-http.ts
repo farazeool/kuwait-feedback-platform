@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createHash } from "node:crypto";
+import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/service-role";
 import { getServerEnv } from "@/lib/env/server";
@@ -66,4 +67,76 @@ export async function readSmallJson(request: NextRequest): Promise<unknown | nul
   } catch {
     return null;
   }
+}
+
+/**
+ * Resolves the HTTP-side kiosk device identity from the credential cookie.
+ *
+ * The credential cookie is HttpOnly and never reaches the browser, so reading
+ * it here is the only place a request can be bound to a device. The credential
+ * is validated through the committed RPC
+ * `validate_kiosk_device_credential` and the resulting device row is then
+ * fetched through the service-role client so the status check is read against
+ * the live database, not against whatever the RPC cached.
+ *
+ * The function returns only the fields the API layer needs to make an
+ * authorization decision. It never returns the raw credential, the credential
+ * hash, the access token, or any other secret material.
+ *
+ * @returns `{ id, status, organization_id }` for a valid, non-revoked device,
+ *          or `null` if no credential is present, the credential is invalid,
+ *          or the device has been revoked or archived.
+ */
+export interface KioskCredentialAuth {
+  id: string;
+  status: string;
+  organization_id: string;
+}
+
+export async function getKioskFromCredential(): Promise<KioskCredentialAuth | null> {
+  const cookieStore = await cookies();
+  const credential = cookieStore.get("kiosk_credential")?.value;
+  if (!credential) return null;
+
+  const client = createSupabaseServiceRoleClient() as unknown as {
+    rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
+  };
+
+  const { data, error } = await client.rpc("validate_kiosk_device_credential", {
+    p_raw_credential: credential,
+  });
+
+  if (error || !data) {
+    return null;
+  }
+
+  const row = Array.isArray(data)
+    ? (data[0] as { kiosk_device_id?: string; organization_id?: string } | undefined)
+    : (data as { kiosk_device_id?: string; organization_id?: string });
+  const deviceId = row?.kiosk_device_id;
+  const organizationId = row?.organization_id;
+  if (!deviceId || !organizationId) {
+    return null;
+  }
+
+  // The status check below uses the same validated device id. A revoked or
+  // archived device is rejected so the API layer never enriches a request
+  // from a credential that has been disabled.
+  const { data: row2, error: rowError } = await client.rpc("get_kiosk_device_status", {
+    p_kiosk_device_id: deviceId,
+  });
+
+  if (rowError || !row2) {
+    return null;
+  }
+
+  const statusRow = Array.isArray(row2)
+    ? (row2[0] as { status?: string } | undefined)
+    : (row2 as { status?: string });
+  const status = statusRow?.status;
+  if (!status || status === "revoked" || status === "archived") {
+    return null;
+  }
+
+  return { id: deviceId, status, organization_id: organizationId };
 }

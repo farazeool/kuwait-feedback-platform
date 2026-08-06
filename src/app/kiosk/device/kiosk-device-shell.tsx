@@ -3,12 +3,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PublicSurveyForm } from "@/components/feedback/public-survey-form";
 import type { KioskDeviceState } from "@/features/kiosk/device-server";
-import { KioskPausedScreen, KioskMaintenanceScreen } from "@/components/kiosk/kiosk-status-screens";
+import { KioskPausedScreen, KioskMaintenanceScreen, KioskRevokedScreen } from "@/components/kiosk/kiosk-status-screens";
 import type { PublicSurvey } from "@/features/public-feedback/schema";
+import { useKioskConfiguration, JourneyStatus } from "@/features/kiosk/polling";
+import { KioskConfiguration } from "@/features/kiosk/types";
+
+import { KioskStatus } from "@/lib/kiosk/status";
 
 interface KioskDeviceShellProps {
   state: KioskDeviceState;
-  mode: "active" | "paused" | "maintenance";
+  mode: KioskStatus;
 }
 
 const IDLE_TIMEOUT_MS = 45_000;
@@ -19,16 +23,38 @@ function generateIdempotencyKey(): string {
   return crypto.randomUUID();
 }
 
-export function KioskDeviceShell({ state, mode }: KioskDeviceShellProps) {
+export function KioskDeviceShell({ state: initialState, mode: initialMode }: KioskDeviceShellProps) {
+  const [state, setState] = useState(initialState);
   const { device, survey, organization, location } = state;
 
   // All hooks must be called before any early returns
   const [locale, setLocale] = useState<"en" | "ar">(() => survey?.default_locale || "en");
   const [phase, setPhase] = useState<"welcome" | "survey" | "thankyou">("welcome");
+  const journeyStatus: JourneyStatus = phase === "welcome" ? "idle" : "active";
+
+  const handleConfigUpdate = (newConfig: KioskConfiguration) => {
+    setState((prevState) => {
+      const newSurvey = newConfig.appliedSurveyId
+        ? { ...(prevState.survey ?? { id: newConfig.appliedSurveyId, questions: [] }), id: newConfig.appliedSurveyId }
+        : null;
+
+      return {
+        ...prevState,
+        device: {
+           ...prevState.device,
+           status: newConfig.appliedMode as KioskStatus,
+           survey_id: newConfig.appliedSurveyId,
+         },
+        survey: newSurvey as KioskDeviceState['survey'],
+      };
+    });
+  };
+
+  const config = useKioskConfiguration(journeyStatus, handleConfigUpdate);
   const [countdown, setCountdown] = useState(THANK_YOU_SECONDS);
   const [surveyKey, setSurveyKey] = useState(0);
   const [staffTestMode, setStaffTestMode] = useState(false);
-  const [currentStatus, setCurrentStatus] = useState(device.status);
+  const currentMode = config?.appliedMode ?? initialMode;
   const [sessionId, setSessionId] = useState(() => ({
     idempotencyKey: generateIdempotencyKey(),
     startedAt: Date.now(),
@@ -75,26 +101,14 @@ export function KioskDeviceShell({ state, mode }: KioskDeviceShellProps) {
     resetIdleTimer();
   }, [resetIdleTimer]);
 
-  // Heartbeat to update last_seen_at and check for status changes
+  // Heartbeat to update last_seen_at
   useEffect(() => {
     const sendHeartbeat = async () => {
       try {
-        const response = await fetch("/api/kiosk/heartbeat", {
+        await fetch("/api/kiosk/heartbeat", {
           method: "POST",
           credentials: "include",
         });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.status && data.status !== currentStatus) {
-            setCurrentStatus(data.status);
-            if (data.status === "revoked") {
-              window.location.reload();
-            }
-          }
-        } else if (response.status === 401) {
-          window.location.href = "/kiosk/activate";
-        }
       } catch (error) {
         console.error("Heartbeat error:", error);
       }
@@ -108,7 +122,7 @@ export function KioskDeviceShell({ state, mode }: KioskDeviceShellProps) {
         clearInterval(heartbeatRef.current);
       }
     };
-  }, [currentStatus]);
+  }, []);
 
   // Fullscreen on mount
   useEffect(() => {
@@ -167,8 +181,12 @@ export function KioskDeviceShell({ state, mode }: KioskDeviceShellProps) {
 
   // ========== RENDER BASED ON STATUS ==========
 
+  if (currentMode === "revoked" || currentMode === "re_enrollment_required") {
+    return <KioskRevokedScreen />;
+  }
+
   // Show paused screen based on current status
-  if (currentStatus === "paused" || mode === "paused") {
+  if (currentMode === "paused") {
     return (
       <KioskPausedScreen
         locale={locale}
@@ -179,7 +197,7 @@ export function KioskDeviceShell({ state, mode }: KioskDeviceShellProps) {
   }
 
   // Show maintenance screen
-  if (currentStatus === "maintenance" || mode === "maintenance") {
+  if (currentMode === "maintenance") {
     return (
       <KioskMaintenanceScreen
         locale={locale}
