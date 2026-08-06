@@ -34,6 +34,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Invalid credential or device not found" }, { status: 404 });
   }
 
+  // The RPC returns an empty row set for unknown or revoked credentials. We
+  // treat that the same as the error branch so the device never sees a
+  // partial payload.
+  if (!data || data.length === 0 || !data[0]) {
+    return NextResponse.json({ error: "Kiosk configuration not found." }, { status: 404 });
+  }
+
   const config = data[0];
 
   const response: KioskConfiguration = {
