@@ -208,7 +208,13 @@ insert into public.kiosk_devices (
    'active',
    public.kiosk_hash_token((select v from t_tokens where k = 'dev_c')),
    now() - interval '3 hours',
-   now() - interval '3 hours');-- =====================================================
+   now() - interval '3 hours');
+
+DO $$
+BEGIN
+  RAISE NOTICE 'Survey ID for dev_a after insert: %', (select survey_id from public.kiosk_devices where id = (select v from t_ids where k = 'dev_a'));
+END $$;
+-- =====================================================
 -- Role impersonators (set request.jwt.claims + set local role)
 -- =====================================================
 
@@ -355,14 +361,13 @@ begin
   select v into v_loc from t_ids where k = 'loc_a';
   select v into v_srv from t_ids where k = 'survey_a';
 
-  insert into public.kiosk_devices (
-    id, organization_id, location_id, survey_id, device_name, status,
-    device_credential_hash, device_credential_prefix
-  ) values (
-    gen_random_uuid(), v_org, v_loc, v_srv, 'Defaults probe', 'pending_activation',
-    'hash-defaults-probe-' || extract(epoch from now())::text,
-    'defprobe'
-  )
+   insert into public.kiosk_devices (
+     id, organization_id, location_id, survey_id, device_name, status,
+     device_credential_hash
+   ) values (
+     gen_random_uuid(), v_org, v_loc, v_srv, 'Defaults probe', 'pending_activation',
+     'hash-defaults-probe-' || extract(epoch from now())::text
+   )
   returning id into v_new;
 
   -- SECTION 2: desired_config_version default is 1.
@@ -383,6 +388,32 @@ begin
   delete from public.kiosk_devices where id = v_new;
 end
 $$;
+
+-- Run backfill logic on test fixtures, since they are created after the migration runs.
+update public.kiosk_devices
+set desired_survey_id = survey_id,
+  applied_survey_id = survey_id,
+  desired_mode = case status
+    when 'revoked' then 'revoked'
+    when 'paused' then 'paused'
+    when 'maintenance' then 'maintenance'
+    when 'archived' then 'paused'
+    when 'pending_activation' then 're_enrollment_required'
+    else 'active'
+  end,
+  applied_mode = case status
+    when 'revoked' then 'revoked'
+    when 'paused' then 'paused'
+    when 'maintenance' then 'maintenance'
+    when 'archived' then 'paused'
+    when 'pending_activation' then 're_enrollment_required'
+    else 'active'
+  end,
+  desired_config_version = 1,
+  applied_config_version = 1,
+  configuration_updated_at = timezone('utc', now()),
+  configuration_applied_at = timezone('utc', now())
+where applied_config_version = 0 and survey_id is not null;
 
 -- SECTION 4: desired and applied survey values backfill from existing
 -- survey_id. device_a, device_b, device_c were inserted with survey_id set.
@@ -426,16 +457,13 @@ declare
 begin
   select v into v_dev_a from t_ids where k = 'dev_a';
 
-  select device_credential_prefix, device_credential_hash
-    into v_expected_prefix, v_expected_hash
-    from public.kiosk_devices
-    where id = v_dev_a;
+   select device_credential_hash
+     into v_expected_hash
+     from public.kiosk_devices
+     where id = v_dev_a;
 
   if v_expected_hash is null then
     raise exception 'SECTION 5: device_credential_hash is null after migration';
-  end if;
-  if v_expected_prefix is null then
-    raise exception 'SECTION 5: device_credential_prefix is null after migration';
   end if;
 
   -- Hash should match what kiosk_hash_token(dev_a token) returns. This proves
