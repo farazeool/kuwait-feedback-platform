@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireOrganizationManagementContext } from "@/lib/auth/context";
 import { getServerEnv } from "@/lib/env/server";
-import { listTemplates, listAssignments } from "@/features/distribution/templates";
+import { listTemplates, listAssignments, resolveSubjectLabel } from "@/features/distribution/templates";
 import { renderEmailSignatureHtml } from "@/features/distribution/renderers/email";
 import { archiveTemplate, revokeAssignment } from "@/features/distribution/actions";
 import { CopyLinkButton } from "@/components/surveys/copy-link-button";
@@ -10,6 +10,7 @@ import { ViewHtmlCode } from "@/components/distribution/view-html-code";
 import { InstallSignatureDialog } from "@/components/distribution/install-signature-dialog";
 import { CreateAssignmentButton } from "@/components/distribution/create-assignment-button";
 import { AssignmentResponsesTrigger } from "@/components/distribution/assignment-responses-trigger";
+import { ClientResponseList, type AssignmentOption } from "@/components/distribution/client-response-list";
 import { getSignatureSubjectReport } from "@/features/distribution/report";
 import { getEmailSignatureSentimentReport } from "@/features/distribution/sentiment-report.server";
 import { resolveAnalyticsRange } from "@/features/analytics/dates";
@@ -66,6 +67,17 @@ export default async function EmailSignaturesPage({
   const orgName = (ctx.organization as any)?.name_en ?? (ctx.organization?.nameEn ?? "Organization");
   const appUrl = env.NEXT_PUBLIC_APP_URL;
 
+  // Small, already-resolved projection for the Individual Responses drill-down.
+  // Only active assignments for the selected template are offered, and only the
+  // opaque id + display label cross the server/client boundary — the full
+  // assignment record (open index signature, internal FKs) stays server-side.
+  const responseAssignmentOptions: AssignmentOption[] =
+    tab === "reports" && notice.templateId
+      ? assignmentsResult.assignments
+          .filter((a) => a.status === "active" && a.template_id === notice.templateId)
+          .map((a) => ({ id: a.id, subjectLabel: resolveSubjectLabel(a) }))
+      : [];
+
   return (
     <div className="grid gap-6">
       {notice.created ? <p className="rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800">Template created successfully.</p> : null}
@@ -120,7 +132,7 @@ export default async function EmailSignaturesPage({
                     <h3 className="font-semibold text-foreground">{tpl.template_name}</h3>
                     <p className="text-xs text-muted">Email channel</p>
                   </div>
-                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${tpl.is_active ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>
+                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${tpl.is_active ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-700"}`}>
                     {tpl.is_active ? "Active" : "Inactive"}
                   </span>
                 </div>
@@ -179,7 +191,7 @@ export default async function EmailSignaturesPage({
                         {String(employee?.display_name ?? (a.assigned_location_id ? "Location" : "Unknown"))}
                       </h3>
                       <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${a.status === "active" ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500"}`}
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${a.status === "active" ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-700"}`}
                       >
                         {a.status as string}
                       </span>
@@ -430,6 +442,10 @@ export default async function EmailSignaturesPage({
                   </section>
                 </div>
               ) : null}
+
+              {/* Individual responses — detailed per-submission drill-down that
+                  complements (does not replace) the aggregate analytics above. */}
+              <ClientResponseList assignments={responseAssignmentOptions} />
             </>
           )}
         </div>
