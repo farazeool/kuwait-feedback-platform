@@ -9,7 +9,9 @@ import { CopySignatureButton } from "@/components/distribution/copy-signature-bu
 import { ViewHtmlCode } from "@/components/distribution/view-html-code";
 import { InstallSignatureDialog } from "@/components/distribution/install-signature-dialog";
 import { CreateAssignmentButton } from "@/components/distribution/create-assignment-button";
+import { AssignmentResponsesTrigger } from "@/components/distribution/assignment-responses-trigger";
 import { getSignatureSubjectReport } from "@/features/distribution/report";
+import { getEmailSignatureSentimentReport } from "@/features/distribution/sentiment-report.server";
 import { resolveAnalyticsRange } from "@/features/analytics/dates";
 import { MetricCard } from "@/components/analytics/metric-card";
 import { AccessibleBarChart } from "@/components/analytics/bar-chart";
@@ -35,6 +37,7 @@ export default async function EmailSignaturesPage({
   // with different rating scales (yes_no / three_option / full 5-point) into a
   // single average is intentionally unsupported for pilot — see report.ts and
   // migration 20260727000002.
+  let sentimentReport = null;
   if (tab === "reports" && notice.templateId) {
     const range = resolveAnalyticsRange({ preset: notice.preset ?? "30d", from: notice.from, to: notice.to });
     try {
@@ -48,6 +51,15 @@ export default async function EmailSignaturesPage({
       });
     } catch {
       reportData = { subjects: [], totals: { count: 0, avg_rating: null } };
+    }
+    try {
+      sentimentReport = await getEmailSignatureSentimentReport({
+        organizationId: ctx.organization!.id,
+        startAt: range.start,
+        endAt: range.end,
+      });
+    } catch {
+      sentimentReport = null;
     }
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -179,15 +191,22 @@ export default async function EmailSignaturesPage({
                     </p>
                   </div>
                   {a.status === "active" && (
-                    <form action={revokeAssignment}>
-                      <input type="hidden" name="assignmentId" value={a.id as string} />
-                      <button
-                        type="submit"
-                        className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-700 hover:border-red-400"
-                      >
-                        Revoke
-                      </button>
-                    </form>
+                    <div className="flex items-center gap-2">
+                      <AssignmentResponsesTrigger
+                        assignmentId={a.id as string}
+                        subjectLabel={String(employee?.display_name ?? (a.assigned_location_id ? "Location" : "Unknown"))}
+                        responseCount={a.response_count as number}
+                      />
+                      <form action={revokeAssignment}>
+                        <input type="hidden" name="assignmentId" value={a.id as string} />
+                        <button
+                          type="submit"
+                          className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-700 hover:border-red-400"
+                        >
+                          Revoke
+                        </button>
+                      </form>
+                    </div>
                   )}
                 </div>
 
@@ -296,6 +315,7 @@ export default async function EmailSignaturesPage({
               </div>
 
               {/* Per-subject bar chart */}
+              {/* Per-subject bar chart */}
               {reportData && reportData.subjects.length > 0 ? (
                 <div className="rounded-xl border border-border bg-white p-6">
                   <h2 className="mb-4 text-base font-semibold text-foreground">Ratings by subject</h2>
@@ -314,6 +334,102 @@ export default async function EmailSignaturesPage({
                   No rating data for this period.
                 </div>
               )}
+
+              {/* Per-employee performance + channel breakdown — built from the
+                  follow-up sentiment RPC, which has per-employee + per-channel
+                  aggregates and contact-request / comment-rate signals. */}
+              {sentimentReport ? (
+                <div className="grid gap-4 md:grid-cols-2">
+                  <section
+                    className="rounded-xl border border-border bg-white p-6"
+                    data-testid="employee-performance-panel"
+                  >
+                    <h2 className="mb-4 text-base font-semibold text-foreground">
+                      Team performance
+                    </h2>
+                    {sentimentReport.by_employee.length === 0 ? (
+                      <p className="text-sm text-muted">
+                        No employee ratings captured yet for this period.
+                      </p>
+                    ) : (
+                      <ul className="grid gap-2">
+                        {sentimentReport.by_employee.slice(0, 10).map((row) => (
+                          <li
+                            key={row.employee_id ?? "unknown"}
+                            className="flex items-center justify-between rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm"
+                          >
+                            <span className="truncate text-foreground">
+                              {row.employee_name ?? "Unknown employee"}
+                            </span>
+                            <span className="text-xs font-medium text-muted">
+                              {row.count} rating{row.count === 1 ? "" : "s"}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {sentimentReport.by_employee.length > 10 ? (
+                      <p className="mt-2 text-xs text-muted">
+                        Showing top 10 of {sentimentReport.by_employee.length} employees.
+                      </p>
+                    ) : null}
+                  </section>
+
+                  <section className="rounded-xl border border-border bg-white p-6">
+                    <h2 className="mb-4 text-base font-semibold text-foreground">
+                      Engagement signals
+                    </h2>
+                    <dl className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="rounded-lg border border-border p-3">
+                        <dt className="text-xs text-muted">Comment rate</dt>
+                        <dd className="mt-1 text-base font-semibold text-foreground">
+                          {sentimentReport.comment_rate != null
+                            ? `${sentimentReport.comment_rate}%`
+                            : "—"}
+                        </dd>
+                      </div>
+                      <div className="rounded-lg border border-border p-3">
+                        <dt className="text-xs text-muted">Follow-up completion</dt>
+                        <dd className="mt-1 text-base font-semibold text-foreground">
+                          {sentimentReport.follow_up_completion_rate != null
+                            ? `${sentimentReport.follow_up_completion_rate}%`
+                            : "—"}
+                        </dd>
+                      </div>
+                      <div className="rounded-lg border border-border p-3">
+                        <dt className="text-xs text-muted">Contact requested</dt>
+                        <dd className="mt-1 text-base font-semibold text-foreground">
+                          {sentimentReport.contact_requested_count}
+                        </dd>
+                      </div>
+                      <div className="rounded-lg border border-border p-3">
+                        <dt className="text-xs text-muted">Unresolved contacts</dt>
+                        <dd className="mt-1 text-base font-semibold text-amber-700">
+                          {sentimentReport.unresolved_contact_requests}
+                        </dd>
+                      </div>
+                    </dl>
+                    {sentimentReport.by_channel.length > 0 ? (
+                      <div className="mt-4">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                          Channel breakdown
+                        </p>
+                        <ul className="mt-2 grid gap-1 text-xs">
+                          {sentimentReport.by_channel.map((row) => (
+                            <li
+                              key={row.channel}
+                              className="flex items-center justify-between"
+                            >
+                              <span className="text-foreground">{row.channel}</span>
+                              <span className="text-muted">{row.count}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                  </section>
+                </div>
+              ) : null}
             </>
           )}
         </div>

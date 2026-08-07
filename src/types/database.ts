@@ -4333,6 +4333,16 @@ export type Database = {
         Args: { p_error: string }
         Returns: string
       }
+      list_assignment_rating_events: {
+        Args: {
+          p_assignment_id: string
+          p_end_at?: string
+          p_limit?: number
+          p_offset?: number
+          p_start_at?: string
+        }
+        Returns: Json
+      }
       list_eligible_surveys_for_kiosk: {
         Args: { p_kiosk_device_id: string; p_organization_id: string }
         Returns: {

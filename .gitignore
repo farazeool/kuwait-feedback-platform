@@ -51,3 +51,10 @@ next-env.d.ts
 # unrelated
 /OmniRoute/
 /.OmniRoute-backup/
+
+# Local release / backup files
+.release-backups/
+.release-pg-service.conf
+.release-pgpass
+.release.env
+.impeccable/config.local.json
