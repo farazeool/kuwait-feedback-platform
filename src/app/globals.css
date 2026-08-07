@@ -1,32 +1,401 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f5f7f4;
-  --foreground: #17211b;
+  --background: #f5f7fb;
+  --foreground: #0b2148;
   --surface: #ffffff;
-  --muted: #66736b;
-  --brand: #0f6b4d;
-  --brand-dark: #084c37;
-  --border: #dce4df;
+  --surface-muted: #f1f5fb;
+  --muted: #52647f;
+  --brand: #0b2d62;
+  --brand-dark: #071e43;
+  --brand-light: #e8eff9;
+  --border: #d8e1ef;
+  --border-strong: #b9c8dc;
+  --ring: color-mix(in srgb, var(--brand) 30%, transparent);
+  --success: #16a34a;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --danger-light: #fef2f2;
+  --info: #2563eb;
+
+  /* Kiosk-specific tokens */
+  --kiosk-bg: #ffffff;
+  --kiosk-surface: #f4f7fc;
+  --kiosk-primary: #0b2d62;
+  --kiosk-primary-light: #e8eff9;
+  --kiosk-text: #0b2148;
+  --kiosk-text-muted: #52647f;
+  --kiosk-radius: 1rem;
+  --kiosk-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
   --color-muted: var(--muted);
   --color-brand: var(--brand);
   --color-brand-dark: var(--brand-dark);
+  --color-brand-light: var(--brand-light);
   --color-border: var(--border);
-  --font-sans: Arial, "Noto Sans Arabic", sans-serif;
+  --color-border-strong: var(--border-strong);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+  --font-sans: var(--font-inter, Inter), var(--font-noto-arabic, "Noto Sans Arabic"), ui-sans-serif, system-ui, sans-serif;
 }
+
+/* ==========================================================================
+   Review & More — public marketing brand
+   --------------------------------------------------------------------------
+   The operational workspace (InstaView) uses its official navy/red `--brand`
+   direction; these `--rm-*` tokens are namespaced so the public brand can be
+   deep maroon without repainting dashboard or kiosk surfaces. One scale, one
+   set of radii and shadows, reused by every marketing section.
+   ========================================================================== */
+:root {
+  --rm-maroon: #6b2233;
+  --rm-maroon-deep: #4a1723;
+  --rm-maroon-soft: #f7edef;
+  --rm-charcoal: #241f22;
+  --rm-ink: #3d3438;
+  --rm-offwhite: #faf7f4;
+  --rm-paper: #ffffff;
+  --rm-stone: #e8e1da;
+  --rm-stone-deep: #8a7f77;
+  --rm-gold: #a87b3c;
+  --rm-gold-soft: #f5eddf;
+
+  --rm-radius: 0.875rem;
+  --rm-radius-lg: 1.25rem;
+  --rm-shadow-sm: 0 1px 2px rgba(36, 31, 34, 0.06), 0 1px 3px rgba(36, 31, 34, 0.04);
+  --rm-shadow: 0 4px 16px rgba(36, 31, 34, 0.07), 0 1px 3px rgba(36, 31, 34, 0.05);
+  --rm-shadow-lg: 0 18px 48px rgba(36, 31, 34, 0.1), 0 2px 8px rgba(36, 31, 34, 0.05);
+}
+
+@theme inline {
+  --color-rm-maroon: var(--rm-maroon);
+  --color-rm-maroon-deep: var(--rm-maroon-deep);
+  --color-rm-maroon-soft: var(--rm-maroon-soft);
+  --color-rm-charcoal: var(--rm-charcoal);
+  --color-rm-ink: var(--rm-ink);
+  --color-rm-offwhite: var(--rm-offwhite);
+  --color-rm-paper: var(--rm-paper);
+  --color-rm-stone: var(--rm-stone);
+  --color-rm-stone-deep: var(--rm-stone-deep);
+  --color-rm-gold: var(--rm-gold);
+  --color-rm-gold-soft: var(--rm-gold-soft);
+  --radius-rm: var(--rm-radius);
+  --radius-rm-lg: var(--rm-radius-lg);
+  --shadow-rm-sm: var(--rm-shadow-sm);
+  --shadow-rm: var(--rm-shadow);
+  --shadow-rm-lg: var(--rm-shadow-lg);
+}
+
+/* Marketing focus ring, so the maroon brand keeps a visible focus state. */
+.rm-scope *:focus-visible {
+  outline: 2px solid var(--rm-maroon);
+  outline-offset: 2px;
+}
+
+/* Scroll-reveal: content is visible by default and only animates when the
+   observer marks it, so text is never hidden if JavaScript fails to run. */
+@keyframes rm-reveal {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.rm-reveal[data-revealed="false"] {
+  opacity: 0;
+}
+
+.rm-reveal[data-revealed="true"] {
+  animation: rm-reveal 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes rm-status-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.85); }
+}
+
+.rm-status-pulse {
+  animation: rm-status-pulse 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rm-reveal[data-revealed="false"],
+  .rm-reveal[data-revealed="true"] {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .rm-status-pulse {
+    animation: none !important;
+  }
+
+  html {
+    scroll-behavior: auto !important;
+  }
+}
+
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, "Noto Sans Arabic", sans-serif;
+  font-family: var(--font-inter, Inter), var(--font-noto-arabic, "Noto Sans Arabic"), ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--brand) 22%, transparent);
+  background: color-mix(in srgb, var(--brand) 20%, transparent);
+}
+
+*:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Kiosk-specific base styles */
+.kiosk-mode {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  overscroll-behavior: contain;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Smooth fade-in animation for kiosk screens */
+@keyframes kiosk-fade-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes kiosk-fade-out {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.96); }
+}
+
+@keyframes kiosk-slide-up {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes kiosk-scale-in {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes kiosk-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes kiosk-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes kiosk-checkmark {
+  0% { stroke-dashoffset: 100; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes kiosk-progress {
+  from { width: 0%; }
+}
+
+@keyframes kiosk-bounce-in {
+  0% { opacity: 0; transform: scale(0.3); }
+  50% { transform: scale(1.05); }
+  70% { transform: scale(0.95); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.animate-kiosk-fade-in {
+  animation: kiosk-fade-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-kiosk-fade-out {
+  animation: kiosk-fade-out 0.3s ease-in forwards;
+}
+
+.animate-kiosk-slide-up {
+  animation: kiosk-slide-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-kiosk-scale-in {
+  animation: kiosk-scale-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-kiosk-bounce-in {
+  animation: kiosk-bounce-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-kiosk-float {
+  animation: kiosk-float 2s ease-in-out infinite;
+}
+
+.animate-kiosk-progress {
+  animation: kiosk-progress 0.5s ease-out forwards;
+}
+
+/* Staggered children animation */
+.stagger > * {
+  opacity: 0;
+  animation: kiosk-slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.stagger > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger > *:nth-child(2) { animation-delay: 0.1s; }
+.stagger > *:nth-child(3) { animation-delay: 0.15s; }
+.stagger > *:nth-child(4) { animation-delay: 0.2s; }
+.stagger > *:nth-child(5) { animation-delay: 0.25s; }
+.stagger > *:nth-child(6) { animation-delay: 0.3s; }
+.stagger > *:nth-child(7) { animation-delay: 0.35s; }
+.stagger > *:nth-child(8) { animation-delay: 0.4s; }
+
+/* Large touch target reset for kiosk */
+.kiosk-btn {
+  min-height: 52px;
+  min-width: 52px;
+  border-radius: 1rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.kiosk-btn:active {
+  transform: scale(0.97);
+}
+
+.kiosk-btn-primary {
+  min-height: 52px;
+  min-width: 52px;
+  border-radius: 1rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  background-color: var(--brand);
+  color: #fff;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(15, 107, 77, 0.25);
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.kiosk-btn-primary:hover {
+  background-color: var(--brand-dark);
+}
+.kiosk-btn-primary:active {
+  transform: scale(0.97);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+}
+
+.kiosk-btn-secondary {
+  min-height: 52px;
+  min-width: 52px;
+  border-radius: 1rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: 2px solid var(--border);
+  background-color: var(--surface);
+  color: var(--foreground);
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.kiosk-btn-secondary:hover {
+  border-color: color-mix(in srgb, var(--brand) 30%, transparent);
+  background-color: color-mix(in srgb, var(--brand) 15%, transparent);
+}
+.kiosk-btn-secondary:active {
+  transform: scale(0.97);
+}
+
+.kiosk-btn-ghost {
+  min-height: 52px;
+  min-width: 52px;
+  border-radius: 1rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--muted);
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.kiosk-btn-ghost:hover {
+  background-color: var(--surface-muted);
+}
+.kiosk-btn-ghost:active {
+  background-color: color-mix(in srgb, var(--border) 30%, transparent);
+  transform: scale(0.97);
+}
+
+/* Rating button styles */
+.kiosk-rating-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 1rem;
+  border: 2px solid var(--border);
+  background-color: var(--surface);
+  padding: 1rem;
+  transition: all 0.15s ease;
+  min-height: 72px;
+  min-width: 64px;
+}
+.kiosk-rating-btn:active {
+  transform: scale(0.95);
+  border-color: var(--brand);
+  background-color: color-mix(in srgb, var(--brand) 10%, transparent);
+}
+
+/* Prevent zoom on input focus for iOS kiosk */
+.kiosk-input {
+  width: 100%;
+  border-radius: 1rem;
+  border: 2px solid var(--border);
+  background-color: var(--surface);
+  padding: 1rem 1.25rem;
+  font-size: 16px !important;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.kiosk-input:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 10%, transparent);
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .animate-kiosk-fade-in,
+  .animate-kiosk-fade-out,
+  .animate-kiosk-slide-up,
+  .animate-kiosk-scale-in,
+  .animate-kiosk-bounce-in,
+  .animate-kiosk-float,
+  .stagger > * {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .kiosk-btn,
+  .kiosk-rating-btn {
+    transition: none !important;
+  }
+
+  /* Disable Tailwind's pulse/spin utilities (skeletons, loading spinners) */
+  .animate-pulse,
+  .animate-spin {
+    animation: none !important;
+  }
 }

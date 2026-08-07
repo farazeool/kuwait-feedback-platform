@@ -63,21 +63,33 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     userAgent: request.headers.get("user-agent") ?? "unknown",
     acceptLanguage: request.headers.get("accept-language") ?? "",
   });
-  const supabase = createSupabaseAnonymousClient();
+  const supabase = createSupabaseAnonymousClient() as never as { rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }> };
   const { data, error } = await supabase.rpc("submit_protected_survey_response", {
     p_public_slug: publicId,
     p_locale: parsed.data.locale,
     p_answers: toDatabaseAnswers(parsed.data),
     p_idempotency_key: parsed.data.idempotencyKey,
     p_fingerprint_hash: fingerprint,
+    p_channel: parsed.data.channel ?? "web",
+    p_touchpoint_token: parsed.data.touchpointToken ?? undefined,
+    p_feedback_mode: parsed.data.feedbackMode ?? "standard",
+    p_campaign_id: parsed.data.campaignId ?? undefined,
+    p_source_identifier: parsed.data.sourceIdentifier ?? undefined,
+    p_employee_reference: parsed.data.employeeReference ?? undefined,
+    p_interaction_reference: parsed.data.interactionReference ?? undefined,
+    p_distribution_public_token: parsed.data.distributionToken ?? undefined,
+    p_quick_rating: parsed.data.quickRating ?? undefined,
+    p_quick_categories: parsed.data.quickCategories ?? undefined,
   });
 
   if (error) {
-    logEvent("public_feedback_rejected", { publicId, reason: error.code === "P0001" ? "rate_limit" : "database_validation" });
-    return genericError(error.code === "P0001" ? 429 : 400);
+    const err = error as { code?: string };
+    logEvent("public_feedback_rejected", { publicId, reason: err.code === "P0001" ? "rate_limit" : "database_validation" });
+    return genericError(err.code === "P0001" ? 429 : 400);
   }
-  const result = data as { duplicate?: boolean } | null;
+  const result = data as { response_id?: string; duplicate?: boolean } | null;
   logEvent("public_feedback_accepted", { publicId, duplicate: Boolean(result?.duplicate) });
+
   return NextResponse.json({ ok: true, duplicate: Boolean(result?.duplicate) }, { status: result?.duplicate ? 200 : 201 });
 }
 

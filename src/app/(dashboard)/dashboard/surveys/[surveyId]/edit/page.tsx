@@ -8,5 +8,5 @@ export default async function EditSurveyPage({ params }: { params: Promise<{ sur
   const [{ surveyId }, context] = await Promise.all([params, requireOrganizationManagementContext()]);
   const survey = await getSurveyEditor(surveyId);
   if (survey.status !== "draft") redirect(`/dashboard/surveys/${surveyId}`);
-  return <div className="grid gap-7"><header><p className="text-sm font-bold text-brand">Draft editor</p><h1 className="mt-2 text-3xl font-bold">Edit survey</h1></header><SurveyBuilder initial={survey.draft} locations={context.locations} /></div>;
+  return <div className="grid gap-6"><header><p className="text-xs font-semibold uppercase tracking-wide text-brand">Draft editor</p><h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground">Edit survey</h1></header><SurveyBuilder initial={survey.draft} locations={context.locations} /></div>;
 }

@@ -93,7 +93,11 @@ export async function getSurveyEditor(surveyId: string): Promise<{
   const { data: survey } = await supabase.from("surveys").select("*").eq("id", surveyId).maybeSingle();
   if (!survey) notFound();
 
-  const [{ data: members }, { data: questions }, { count: responseCount }] = await Promise.all([
+  // Fetch the sibling surveys in this group and the current survey's questions
+  // in parallel, then reuse the group's survey IDs for the response count —
+  // avoids a duplicate `surveys`-by-group query that was previously nested
+  // inside the count subquery.
+  const [{ data: members }, { data: questions }] = await Promise.all([
     supabase
       .from("surveys")
       .select("id, location_id")
@@ -104,13 +108,13 @@ export async function getSurveyEditor(surveyId: string): Promise<{
       .select("*")
       .eq("survey_id", survey.id)
       .order("position"),
-    supabase
-      .from("survey_responses")
-      .select("id", { count: "exact", head: true })
-      .in("survey_id", (
-        await supabase.from("surveys").select("id").eq("survey_group_id", survey.survey_group_id)
-      ).data?.map((row) => row.id) ?? [survey.id]),
   ]);
+
+  const groupSurveyIds = (members ?? []).map((row) => row.id);
+  const { count: responseCount } = await supabase
+    .from("survey_responses")
+    .select("id", { count: "exact", head: true })
+    .in("survey_id", groupSurveyIds.length ? groupSurveyIds : [survey.id]);
 
   const questionIds = (questions ?? []).map((question) => question.id);
   const { data: options } = questionIds.length
@@ -125,6 +129,7 @@ export async function getSurveyEditor(surveyId: string): Promise<{
     question_id: string;
     label_en: string;
     label_ar: string;
+    concern_category_id: string | null;
   }>>();
   for (const option of options ?? []) {
     const rows = optionsByQuestion.get(option.question_id) ?? [];
@@ -142,7 +147,7 @@ export async function getSurveyEditor(surveyId: string): Promise<{
       required: question.is_required,
     };
     if (question.question_type === "rating") {
-      return { ...base, type: "rating" as const, ratingMin: question.rating_min ?? 1, ratingMax: question.rating_max ?? 5 };
+      return { ...base, type: "rating" as const, ratingMin: question.rating_min ?? 1, ratingMax: question.rating_max ?? 5, ratingScale: question.rating_scale ?? null };
     }
     if (question.question_type === "text") {
       return { ...base, type: "text" as const, textMaxLength: question.text_max_length ?? 1000 };
@@ -150,10 +155,12 @@ export async function getSurveyEditor(surveyId: string): Promise<{
     return {
       ...base,
       type: "multiple_choice" as const,
+      allowMultiple: question.allow_multiple ?? false,
       options: (optionsByQuestion.get(question.id) ?? []).map((option) => ({
         id: option.id,
         labelEn: option.label_en,
         labelAr: option.label_ar === option.label_en ? "" : option.label_ar,
+        concernCategoryId: option.concern_category_id ?? null,
       })),
     };
   });
@@ -161,6 +168,7 @@ export async function getSurveyEditor(surveyId: string): Promise<{
   return {
     draft: {
       surveyId: survey.id,
+      surveyType: survey.survey_type ?? "generic",
       titleEn: survey.title_en,
       titleAr: survey.title_ar === survey.title_en ? "" : survey.title_ar,
       descriptionEn: survey.description_en ?? "",
@@ -170,6 +178,11 @@ export async function getSurveyEditor(surveyId: string): Promise<{
       defaultLocale: survey.default_locale,
       locationIds: (members ?? []).map((member) => member.location_id),
       questions: builderQuestions,
+      quickFeedbackEnabled: false,
+      quickFeedbackRatingStyle: "emoji" as const,
+      quickFeedbackPositiveThreshold: 4,
+      quickFeedbackNegativeThreshold: 3,
+      quickFeedbackCategories: [],
     },
     status: survey.status,
     publicSlug: survey.public_slug,

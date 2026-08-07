@@ -9,15 +9,49 @@ export const DASHBOARD_NAVIGATION = [
   { href: "/dashboard/surveys", label: "nav.surveys", roles: "all" },
   { href: "/dashboard/responses", label: "nav.responses", roles: "all" },
   { href: "/dashboard/alerts", label: "nav.alerts", roles: "all" },
+  { href: "/dashboard/kpi", label: "nav.kpi", roles: "all" },
   {
     href: "/dashboard/team",
     label: "nav.team",
     roles: "all",
   },
   {
+    href: "/dashboard/reports",
+    label: "nav.reports",
+    roles: ["platform_admin", "organization_owner", "organization_admin", "quality_manager", "senior_management"],
+  },
+  {
+    href: "/dashboard/corrective-actions",
+    label: "nav.correctiveActions",
+    roles: ["platform_admin", "organization_owner", "organization_admin", "quality_manager"],
+  },
+  {
+    // Mirrors requireOrganizationManagementContext, which is the guard on
+    // /dashboard/kiosks. Keeping the two in sync avoids advertising a link that
+    // would only redirect back to /dashboard.
+    href: "/dashboard/kiosks",
+    label: "nav.kiosks",
+    roles: ["platform_admin", "organization_owner", "organization_admin", "quality_manager", "senior_management"],
+  },
+  {
+    href: "/dashboard/evidence",
+    label: "nav.evidence",
+    roles: ["platform_admin", "organization_owner", "organization_admin", "quality_manager", "location_manager"],
+  },
+  {
+    href: "/dashboard/investigations",
+    label: "nav.investigations",
+    roles: ["platform_admin", "organization_owner", "organization_admin", "quality_manager", "senior_management"],
+  },
+  {
     href: "/dashboard/settings",
     label: "nav.settings",
-    roles: ["platform_admin", "organization_owner", "organization_admin"],
+    roles: ["platform_admin", "organization_owner", "organization_admin", "quality_manager"],
+  },
+  {
+    href: "/dashboard/settings/channels",
+    label: "nav.channels",
+    roles: ["platform_admin", "organization_owner", "organization_admin", "quality_manager"],
   },
   { href: "/dashboard/account", label: "nav.account", roles: "all" },
   { href: "/platform", label: "nav.platform", roles: ["platform_admin"] },

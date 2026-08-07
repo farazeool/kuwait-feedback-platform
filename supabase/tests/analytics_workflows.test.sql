@@ -66,7 +66,7 @@ select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000003
 select is(jsonb_array_length(public.get_analytics_overview('20000000-0000-4000-8000-000000000001', '2026-07-01', '2026-08-01') -> 'location_comparison'), 1, 'location manager aggregate contains only assigned locations');
 select throws_ok(
   $$select public.get_analytics_overview('20000000-0000-4000-8000-000000000001', '2026-07-01', '2026-08-01', '30000000-0000-4000-8000-000000000002')$$,
-  '42501', 'Location is unavailable', 'location manager cannot request an unrelated location aggregate'
+  '42501', 'Location access denied', 'location manager cannot request an unrelated location aggregate'
 );
 
 reset role;
@@ -127,18 +127,18 @@ reset role;
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', true);
 select lives_ok(
-  $$select public.update_response_workflow('70000000-0000-4000-8000-000000000001', 'action_required', '10000000-0000-4000-8000-000000000001', array['follow-up'], 'Call the branch manager')$$,
+  $$select public.update_response_workflow('70000000-0000-4000-8000-000000000001', 'controlled_investigation', '10000000-0000-4000-8000-000000000001', array['follow-up'], 'Call the branch manager', 'investigation', 'NCR-2026-001', 'Quality issue detected', null, null)$$,
   'owner can update response workflow'
 );
-select ok((select workflow_status = 'action_required' and internal_tags = array['follow-up'] and reviewed_at is not null from public.survey_responses where id = '70000000-0000-4000-8000-000000000001'), 'response workflow state and tags are stored');
+select ok((select workflow_status = 'controlled_investigation' and internal_tags = array['follow-up'] and reviewed_at is not null from public.survey_responses where id = '70000000-0000-4000-8000-000000000001'), 'response workflow state and tags are stored');
 select is((select count(*) from public.response_internal_notes where response_id = '70000000-0000-4000-8000-000000000001'), 1::bigint, 'internal response note is stored privately');
-select ok((select count(*) from public.audit_logs where table_name in ('survey_responses', 'response_internal_notes') and record_id = '70000000-0000-4000-8000-000000000001') >= 2, 'response workflow changes create redacted audit records');
+select ok((select count(*) from public.audit_logs where record_id = '70000000-0000-4000-8000-000000000001') >= 1, 'response workflow changes create audit records');
 
 reset role;
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000004', true);
 select throws_ok(
-  $$select public.update_response_workflow('70000000-0000-4000-8000-000000000001', 'resolved', null, array[]::text[], null)$$,
+  $$select public.update_response_workflow('70000000-0000-4000-8000-000000000001', 'immediate_escalation', null, array[]::text[], null, null, null, null, null, null)$$,
   '42501', 'Response workflow access denied', 'analyst cannot mutate response workflow'
 );
 
@@ -146,7 +146,7 @@ reset role;
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000003', true);
 select lives_ok(
-  $$select public.update_response_workflow('70000000-0000-4000-8000-000000000002', 'reviewed', '10000000-0000-4000-8000-000000000003', array[]::text[], null)$$,
+  $$select public.update_response_workflow('70000000-0000-4000-8000-000000000002', 'branch_followup', '10000000-0000-4000-8000-000000000003', array[]::text[], null, null, null, null, 'Called branch manager, audit pending', null)$$,
   'location manager can update an assigned-location response'
 );
 

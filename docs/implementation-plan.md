@@ -105,12 +105,21 @@ Each milestone must end with linting, type checking, unit tests, and a productio
 
 ## Milestone 8 — CI, staging, and approved launch
 
+**Status:** Pilot-ready locally. Survey templates, pilot onboarding checklist, and pilot QR card are implemented, tested, and production-build verified. CI configuration is checked in. Staging configuration, production secrets, and deployment remain pending explicit approval.
+
 - Add GitHub CI for lint, type checking, tests, migration checks, and build.
 - Configure isolated staging Supabase and Vercel projects after approval.
 - Validate preview/staging secrets and migration release procedure.
 - Run end-to-end smoke tests and production-readiness checklist.
 - Prepare rollback and data-recovery steps.
 - Deploy to production only after explicit user approval.
+
+**Pilot readiness deliverables (complete):**
+
+- Bilingual survey template gallery (cafe/restaurant, retail, service center, general, blank)
+- State-derived pilot onboarding checklist (4 steps, manager-visible, auto-hiding)
+- Reusable bilingual pilot QR card with print/download/copy actions
+- Local seed authentication fix (non-NULL GoTrue token columns + demo passwords)
 
 **Exit criteria:** protected CI is green, staging acceptance passes, and production launch has explicit authorization.
 

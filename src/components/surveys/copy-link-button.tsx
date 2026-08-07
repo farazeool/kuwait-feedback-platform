@@ -2,19 +2,34 @@
 
 import { useState } from "react";
 
-export function CopyLinkButton({ value }: { value: string }) {
+type CopyLinkButtonProps = {
+  value: string;
+  labelEn: string;
+  labelAr?: string;
+  copiedLabelEn: string;
+  copiedLabelAr?: string;
+};
+
+export function CopyLinkButton({ value, labelEn, labelAr, copiedLabelEn, copiedLabelAr }: CopyLinkButtonProps) {
   const [copied, setCopied] = useState(false);
+  const label = copied
+    ? copiedLabelAr
+      ? `${copiedLabelEn} · ${copiedLabelAr}`
+      : copiedLabelEn
+    : labelAr
+      ? `${labelEn} · ${labelAr}`
+      : labelEn;
   return (
     <button
       type="button"
-      className="rounded-xl border border-border px-3 py-2 text-sm font-semibold"
+      className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:border-brand"
       onClick={async () => {
         await navigator.clipboard.writeText(value);
         setCopied(true);
         window.setTimeout(() => setCopied(false), 1500);
       }}
     >
-      {copied ? "Copied" : "Copy link"}
+      {label}
     </button>
   );
 }

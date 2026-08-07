@@ -1,0 +1,91 @@
+import { z } from "zod";
+
+export const DISTRIBUTION_CHANNELS = [
+  "email", "qr", "walk_in", "kiosk", "website", "web",
+  "phone", "whatsapp", "tablet", "sms",
+] as const;
+export type DistributionChannel = (typeof DISTRIBUTION_CHANNELS)[number];
+
+export const ASSIGNMENT_TARGETS = ["employee", "location", "touchpoint"] as const;
+export type AssignmentTarget = (typeof ASSIGNMENT_TARGETS)[number];
+
+export const distributionTemplateSchema = z.object({
+  channel: z.enum(DISTRIBUTION_CHANNELS),
+  templateName: z.string().trim().min(1).max(200),
+  description: z.string().trim().max(500).optional().default(""),
+  isDefault: z.boolean().optional().default(false),
+  config: z.record(z.string(), z.unknown()).optional().default({}),
+  renderConfig: z.record(z.string(), z.unknown()).optional().default({}),
+});
+
+export type DistributionTemplateInput = z.infer<typeof distributionTemplateSchema>;
+
+const assignmentBase = z.object({
+  templateId: z.string().uuid(),
+  surveyId: z.string().uuid().nullable().optional(),
+  campaignId: z.string().uuid().nullable().optional(),
+  metadata: z.record(z.string(), z.unknown()).optional().default({}),
+  expiresAt: z.string().datetime().nullable().optional(),
+});
+
+export const distributionAssignmentSchema = z.discriminatedUnion("kind", [
+  assignmentBase.extend({
+    kind: z.literal("fk"),
+    targetType: z.enum(ASSIGNMENT_TARGETS),
+    targetId: z.string().uuid(),
+  }),
+  assignmentBase.extend({
+    kind: z.literal("generic"),
+    subjectType: z.string().min(1).max(64),
+    subjectId: z.string().min(1).max(200),
+  }),
+]);
+
+export type DistributionAssignmentInput = z.infer<typeof distributionAssignmentSchema>;
+
+const TOKEN_REGEX = /^[a-zA-Z0-9-]{24,128}$/;
+export const ratingSubmissionSchema = z.object({
+  token: z.string().regex(TOKEN_REGEX),
+  rating: z.number().int().min(1).max(5),
+  nonce: z.string().regex(/^[a-f0-9]{36}$/),
+  website: z.string().max(0).optional(),
+});
+
+export const ratingFollowupSubmissionSchema = z.object({
+  token: z.string().regex(TOKEN_REGEX),
+  continuationToken: z.string().regex(TOKEN_REGEX),
+  rating: z.number().int().min(1).max(5).optional(),
+  customerName: z.string().trim().max(120).optional(),
+  customerEmail: z.string().trim().email().max(320).optional(),
+  comment: z.string().trim().max(2000).optional(),
+  contactRequested: z.boolean().optional().default(false),
+  skip: z.boolean().optional().default(false),
+  website: z.string().max(0).optional(),
+});
+
+export const emailRenderConfigSchema = z.object({
+  ratingStyle: z.enum(["emoji", "star", "three_option", "yes_no"]).default("emoji"),
+  headingEn: z.string().max(200).default("How was your experience?"),
+  headingAr: z.string().max(200).default("كيف كانت تجربتك؟"),
+  descriptionEn: z.string().max(500).optional().default(""),
+  descriptionAr: z.string().max(500).optional().default(""),
+  brandColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default("#2563eb"),
+  iconSize: z.enum(["small", "medium", "large"]).default("medium"),
+  alignment: z.enum(["left", "center", "right"]).default("left"),
+  showBusinessName: z.boolean().default(true),
+  showPrivacyNotice: z.boolean().default(false),
+  privacyNoticeEn: z.string().max(300).optional().default(""),
+  privacyNoticeAr: z.string().max(300).optional().default(""),
+  layout: z.enum(["horizontal", "vertical", "minimal", "branded"]).default("horizontal"),
+});
+
+export type EmailRenderConfig = z.infer<typeof emailRenderConfigSchema>;
+
+export interface DistributionAnalytics {
+  total_assignments: number;
+  active_assignments: number;
+  total_clicks: number;
+  total_conversions: number;
+  click_to_conversion_rate: number | null;
+  by_channel: Array<{ channel: string; count: number; clicks: number; conversions: number }>;
+}

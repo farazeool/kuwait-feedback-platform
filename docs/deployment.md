@@ -1,6 +1,43 @@
 # Deployment preparation
 
-No Vercel or production Supabase project is configured by this repository. Deployments, DNS, SMTP setup, and production data changes require separate explicit approval.
+Deployments, DNS, SMTP setup, and production data changes require separate explicit approval.
+
+## Current deployment status (verified 2026-07-21)
+
+Milestone 7 production hardening is merged to `main` and deployed.
+
+| Item | Value |
+| --- | --- |
+| Production URL | https://kuwait-feedback-platform.vercel.app (default Vercel hostname; no custom domain) |
+| Live commit | `f7814dd` (merge of PR #1) — Vercel deployment `dpl_6HtWM…`, READY/PROMOTED |
+| Vercel project | `kuwait-feedback-platform` (Hobby), linked to `farazeool/kuwait-feedback-platform`, production branch `main`, framework Next.js |
+| Production Supabase | `kuwait-feedback-platform-prod` (ref `jpafmkmvxjonhaxgwmzw`), region `ap-south-1`, PostgreSQL 17, healthy |
+| Development Supabase | `kuwait-feedback-platform-dev` (ref `hcrsmzthltiaboukcxql`), region `ap-south-1`, PostgreSQL 17, healthy |
+| Migrations applied | 8 of 8 to both dev and prod; `seed.sql` NOT applied to any hosted project |
+| Production data | Empty — 0 rows across all public tables, 0 auth users; 1 private `organization-branding` Storage bucket, 0 objects |
+| Auth callback | Default Vercel production hostname |
+| Turnstile | `BOT_PROTECTION_PROVIDER=turnstile` set for production; site/secret/hostname values managed in Vercel (server-only); fails closed |
+| SMTP | `EMAIL_DELIVERY_MODE=smtp` set for production; credentials managed in Vercel (server-only); no email sent during deployment |
+
+### Production smoke tests (2026-07-21, verified against the live URL)
+
+- `/api/health/live` → 200 `{"status":"ok"}`; `/api/health/ready` → 200 `{"status":"ready"}` (env validation passes)
+- `/login`, `/forgot-password`, `/reset-password`, `/` → 200; `/dashboard` unauthenticated → 307 redirect to `/login`
+- English renders `lang="en" dir="ltr"`; Arabic renders `lang="ar" dir="rtl"` (RTL confirmed)
+- Security headers present: CSP, HSTS (production-only), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, referrer/permissions policies, COOP; no `X-Powered-By`; no wildcard CORS on health endpoints
+- Public unavailable-survey path renders safely; static assets load
+
+### Rollback
+
+Promote the prior healthy Vercel production deployment (the Milestone 6 build `dpl_CDkwXug…` at commit `16a1bb0` is retained as a rollback candidate) after confirming its env vars remain compatible with the current database schema. See [operations](operations.md).
+
+### Known limitations / remaining manual work
+
+- Backups follow the Supabase plan's capabilities; verify plan documentation before claiming any recovery objective.
+- No custom domain (intentional); the default Vercel hostname is authoritative.
+- No Vercel **Preview** environment is configured: all environment variables are scoped to Production only. Preview builds against the dev Supabase project require Preview-scoped variables to be added before use.
+- Repository is currently public.
+- Secret env var **values** in Vercel are provider-managed and were not verified by value; only names/scopes and runtime readiness were confirmed.
 
 ## Environment matrix
 

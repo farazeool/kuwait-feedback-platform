@@ -33,7 +33,12 @@ export const serverEnvSchema = publicEnvSchema.extend({
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
   DEPLOYMENT_VERSION: z.string().min(1).max(160).default("local"),
   VERCEL_ENV: z.enum(["development", "preview", "production"]).optional(),
-  VERCEL_GIT_COMMIT_SHA: z.string().regex(/^[a-f0-9]{7,64}$/i).optional(),
+  // Vercel injects this as an empty string on CLI deploys (no Git metadata).
+  // Treat empty/whitespace as absent; a provided value must still be a real SHA.
+  VERCEL_GIT_COMMIT_SHA: z.preprocess(
+    (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+    z.string().regex(/^[a-f0-9]{7,64}$/i).optional(),
+  ),
 });
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;

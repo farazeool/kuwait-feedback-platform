@@ -1,1 +1,12 @@
-export default function TeamLoading() { return <div aria-label="Loading team" className="grid animate-pulse gap-5"><div className="h-10 w-52 rounded bg-surface" /><div className="h-72 rounded-3xl bg-surface" /></div>; }
+import { SkeletonFilters, SkeletonHeader, SkeletonTable } from "@/components/ui/skeleton";
+
+export default function TeamLoading() {
+  return (
+    <div role="status" aria-label="Loading team" className="grid gap-6">
+      <SkeletonHeader withAction />
+      <SkeletonFilters fields={3} />
+      <SkeletonTable rows={6} cols={7} />
+      <span className="sr-only">Loading team members…</span>
+    </div>
+  );
+}

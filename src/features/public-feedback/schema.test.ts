@@ -26,15 +26,15 @@ const survey = publicSurveySchema.parse({
 
 describe("public feedback validation", () => {
   it("accepts a complete survey-specific answer set", () => {
-    const payload = submissionPayloadSchema.parse({ locale: "ar", idempotencyKey: "70000000-0000-4000-8000-000000000001", startedAt: 1, website: "", answers: [{ questionId: ratingId, rating: 5 }, { questionId: choiceId, optionIds: [optionId] }] });
+    const payload = submissionPayloadSchema.parse({ locale: "ar", idempotencyKey: "70000000-0000-4000-8000-000000000001", startedAt: 1, website: "", feedbackMode: "standard", answers: [{ questionId: ratingId, rating: 5 }, { questionId: choiceId, optionIds: [optionId] }] });
     expect(validateAnswersForSurvey(survey, payload)).toBe(true);
   });
 
   it("rejects invalid ratings, choices, missing answers, and honeypots", () => {
     const base = { locale: "en" as const, idempotencyKey: "70000000-0000-4000-8000-000000000001", startedAt: 1, website: "" };
-    expect(validateAnswersForSurvey(survey, { ...base, answers: [{ questionId: ratingId, rating: 9 }, { questionId: choiceId, optionIds: [optionId] }] })).toBe(false);
-    expect(validateAnswersForSurvey(survey, { ...base, answers: [{ questionId: ratingId, rating: 5 }, { questionId: choiceId, optionIds: [ratingId] }] })).toBe(false);
-    expect(validateAnswersForSurvey(survey, { ...base, answers: [{ questionId: ratingId, rating: 5 }] })).toBe(false);
-    expect(submissionPayloadSchema.safeParse({ ...base, website: "bot", answers: [] }).success).toBe(false);
+    expect(validateAnswersForSurvey(survey, { ...base, feedbackMode: "standard", answers: [{ questionId: ratingId, rating: 9 }, { questionId: choiceId, optionIds: [optionId] }] })).toBe(false);
+    expect(validateAnswersForSurvey(survey, { ...base, feedbackMode: "standard", answers: [{ questionId: ratingId, rating: 5 }, { questionId: choiceId, optionIds: [ratingId] }] })).toBe(false);
+    expect(validateAnswersForSurvey(survey, { ...base, feedbackMode: "standard", answers: [{ questionId: ratingId, rating: 5 }] })).toBe(false);
+    expect(submissionPayloadSchema.safeParse({ ...base, feedbackMode: "standard", website: "bot", answers: [] }).success).toBe(false);
   });
 });

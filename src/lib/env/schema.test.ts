@@ -61,6 +61,29 @@ describe("environment validation", () => {
     })).toThrow(/bypass/);
   });
 
+  it("accepts absent VERCEL_GIT_COMMIT_SHA (CLI deploy)", () => {
+    expect(parseServerEnv(validServerEnv).VERCEL_GIT_COMMIT_SHA).toBeUndefined();
+  });
+
+  it("accepts empty-string VERCEL_GIT_COMMIT_SHA (Vercel CLI deploy artifact)", () => {
+    expect(
+      parseServerEnv({ ...validServerEnv, VERCEL_GIT_COMMIT_SHA: "" }).VERCEL_GIT_COMMIT_SHA,
+    ).toBeUndefined();
+  });
+
+  it("accepts a valid full-length commit SHA", () => {
+    expect(
+      parseServerEnv({ ...validServerEnv, VERCEL_GIT_COMMIT_SHA: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2" })
+        .VERCEL_GIT_COMMIT_SHA,
+    ).toBe("a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2");
+  });
+
+  it("rejects a non-hex VERCEL_GIT_COMMIT_SHA", () => {
+    expect(() =>
+      parseServerEnv({ ...validServerEnv, VERCEL_GIT_COMMIT_SHA: "not-a-sha" }),
+    ).toThrow();
+  });
+
   it("requires isolated hosted project metadata and critical production services", () => {
     expect(() => parseServerEnv({
       ...validServerEnv,

@@ -16,7 +16,7 @@
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
     "db:lint": "supabase db lint --local --level warning",
-    "db:test": "supabase test db supabase/tests/database.test.sql supabase/tests/survey_management.test.sql supabase/tests/analytics_workflows.test.sql supabase/tests/team_settings_platform.test.sql",
+    "db:test": "supabase test db supabase/tests/database.test.sql supabase/tests/survey_management.test.sql supabase/tests/analytics_workflows.test.sql supabase/tests/team_settings_platform.test.sql supabase/tests/fresh_produce_qa.test.sql",
     "db:test:authorization": "psql postgresql://postgres:postgres@127.0.0.1:54322/postgres --set=ON_ERROR_STOP=1 --file=supabase/tests/rls_verification.sql",
     "db:test:performance": "psql postgresql://postgres:postgres@127.0.0.1:54322/postgres --file=supabase/tests/analytics_performance.sql",
     "db:types": "supabase gen types --lang typescript --local | sed '${/^$/d;}' > src/types/database.ts",
@@ -32,6 +32,7 @@
   "dependencies": {
     "@supabase/ssr": "^0.12.3",
     "@supabase/supabase-js": "^2.110.7",
+    "@vercel/og": "^0.11.1",
     "next": "16.2.10",
     "nodemailer": "^9.0.3",
     "qrcode": "^1.5.4",
@@ -43,6 +44,8 @@
   "devDependencies": {
     "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4",
+    "@testing-library/react": "16.3.0",
+    "@testing-library/user-event": "14.6.1",
     "@types/node": "^20",
     "@types/nodemailer": "^8.0.1",
     "@types/qrcode": "^1.5.6",
@@ -50,6 +53,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "jsdom": "27.0.0",
     "supabase": "^2.109.1",
     "tailwindcss": "^4",
     "typescript": "^5",

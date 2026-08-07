@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { redirect } from "next/navigation";
 
 import { resolveProtectedDestination } from "@/lib/auth/routing";
@@ -38,7 +39,7 @@ export type AppAccessContext = {
   }>;
 };
 
-export async function getAppAccessContext(): Promise<AppAccessContext | null> {
+export const getAppAccessContext = cache(async (): Promise<AppAccessContext | null> => {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -139,7 +140,7 @@ export async function getAppAccessContext(): Promise<AppAccessContext | null> {
     organization,
     locations,
   };
-}
+});
 
 export async function requireAppAccessContext() {
   const context = await getAppAccessContext();
@@ -165,7 +166,7 @@ export async function requireOnboardingUser() {
 export async function requireOrganizationManagementContext() {
   const context = await requireAppAccessContext();
   const role = context.profile.platformRole ?? context.membership?.role;
-  if (!role || !["platform_admin", "organization_owner", "organization_admin"].includes(role)) {
+  if (!role || !["platform_admin", "organization_owner", "organization_admin", "quality_manager", "senior_management"].includes(role)) {
     redirect("/dashboard");
   }
   return context;
