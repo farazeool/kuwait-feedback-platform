@@ -175,11 +175,19 @@ values
 -- would store, and resolve_device_credential will look it up by the same
 -- hash on the live RPC path.
 --
+-- credential_version is set to 2 so the validate function compares the hash
+-- (the version-1 path compares the raw access_token, which we have not
+-- generated here). access_token is filled with the non-secret 'v2:<uuid>'
+-- placeholder that production writes for hash-only rows, satisfying the
+-- NOT NULL + UNIQUE column constraints without ever being treated as a
+-- credential.
+--
 -- Note: pre-existing survey_id is set on each device so the migration's
 -- backfill of desired_* and applied_* columns has source data to copy.
 insert into public.kiosk_devices (
   id, organization_id, location_id, survey_id,
   device_name, status, device_credential_hash,
+  access_token, credential_version,
   last_seen_at, last_heartbeat_at
 ) values
   ((select v from t_ids where k = 'dev_a'),
@@ -189,6 +197,8 @@ insert into public.kiosk_devices (
    'Kiosk A',
    'active',
    public.kiosk_hash_token((select v from t_tokens where k = 'dev_a')),
+   'v2:' || gen_random_uuid()::text,
+   2,
    now() - interval '1 hour',
    now() - interval '1 hour'),
   ((select v from t_ids where k = 'dev_b'),
@@ -198,6 +208,8 @@ insert into public.kiosk_devices (
    'Kiosk B',
    'active',
    public.kiosk_hash_token((select v from t_tokens where k = 'dev_b')),
+   'v2:' || gen_random_uuid()::text,
+   2,
    now() - interval '2 hours',
    now() - interval '2 hours'),
   ((select v from t_ids where k = 'dev_c'),
@@ -207,6 +219,8 @@ insert into public.kiosk_devices (
    'Kiosk C (will be revoked)',
    'active',
    public.kiosk_hash_token((select v from t_tokens where k = 'dev_c')),
+   'v2:' || gen_random_uuid()::text,
+   2,
    now() - interval '3 hours',
    now() - interval '3 hours');
 
@@ -271,37 +285,48 @@ create or replace function pg_temp.audit_row_for_secrets(p_record record, p_raw_
 returns text
 language plpgsql
 stable
+security definer
+set search_path = public, pg_temp
 as $$
 declare
-  v_hash text;
-  v_text text;
-  v_col  text;
-  v_val  text;
+  v_hash    text;
+  v_audit   text := '';
+  v_payload text;
 begin
   v_hash := public.kiosk_hash_token(p_raw_token);
-  for v_col in
-    select attname
-      from pg_attribute
-     where attrelid = pg_typeof(p_record)::regclass
-       and attnum > 0
-       and not attisdropped
-       and format_type(atttypid, atttypmod) in ('text', 'character varying', 'uuid')
-  loop
-    execute format('select ($1).%I::text', v_col) into v_val using p_record;
-    if v_val is not null then
-      v_text := lower(v_val);
-      if position(p_raw_token in v_text) > 0 then
-        return 'raw token found in column ' || v_col;
-      elsif position(v_hash in v_text) > 0 then
-        return 'credential hash found in column ' || v_col;
-      end if;
-    end if;
-  end loop;
-  return '';
+
+  -- Dump the whole record to JSON and scan it for the raw token or its hash.
+  -- This works regardless of how many columns get_kiosk_desired_configuration
+  -- exposes today, and avoids relying on pg_attribute against an anonymous
+  -- record type (whose OID has no matching pg_class row).
+  v_payload := lower(pg_temp.record_to_text(p_record));
+
+  if position(lower(p_raw_token) in v_payload) > 0 then
+    v_audit := 'raw token found in returned row';
+  elsif position(v_hash in v_payload) > 0 then
+    v_audit := 'credential hash found in returned row';
+  end if;
+
+  return v_audit;
+end;
+$$;
+
+-- Helper: serialize any record to a single text blob (lowercased) so the
+-- audit function can substring-search it. Uses to_jsonb which works for any
+-- record type, then flattens to text. PL/pgSQL (not SQL) because SQL
+-- functions cannot accept a record argument.
+create or replace function pg_temp.record_to_text(p_record record)
+returns text
+language plpgsql
+stable
+as $$
+begin
+  return lower(to_jsonb(p_record)::text);
 end;
 $$;
 
 grant execute on function pg_temp.audit_row_for_secrets(record, text) to authenticated, anon, service_role;
+grant execute on function pg_temp.record_to_text(record)                to authenticated, anon, service_role;
 -- =====================================================
 -- SECTION 1: required columns exist
 -- =====================================================
@@ -309,7 +334,7 @@ grant execute on function pg_temp.audit_row_for_secrets(record, text) to authent
 -- This block asserts each new column is present in information_schema. Using
 -- raise exception keeps the rest of the suite running if any one column is
 -- missing, instead of silently passing.
-do $$
+do $body$
 declare
   v_required text[] := array[
     'desired_config_version',
@@ -338,7 +363,7 @@ begin
     raise exception 'kiosk_devices missing columns: %', v_missing;
   end if;
 end
-$$;
+$body$;
 -- =====================================================
 -- SECTIONS 2-5: defaults + backfill from existing survey_id
 -- =====================================================
@@ -350,7 +375,7 @@ $$;
 -- lose their assignment during the migration.
 
 -- Use a real upsert path so default expressions fire, then read back.
-do $$
+do $body$
 declare
   v_org uuid;
   v_loc uuid;
@@ -387,7 +412,12 @@ begin
   -- Cleanup so it doesn't interfere with later tests.
   delete from public.kiosk_devices where id = v_new;
 end
-$$;
+$body$;
+
+-- The test exercises the device RPCs from a service_role session, but also
+-- has to plant and inspect rows directly under that same role. Grant the
+-- minimum surface the test needs so the assertions can read/write rows.
+grant select, insert, update on public.kiosk_devices to service_role;
 
 -- Run backfill logic on test fixtures, since they are created after the migration runs.
 update public.kiosk_devices
@@ -417,7 +447,7 @@ where applied_config_version = 0 and survey_id is not null;
 
 -- SECTION 4: desired and applied survey values backfill from existing
 -- survey_id. device_a, device_b, device_c were inserted with survey_id set.
-do $$
+do $body$
 declare
   v_dev_a uuid; v_dev_b uuid; v_dev_c uuid;
   v_srv_a uuid; v_srv_b uuid;
@@ -441,13 +471,13 @@ begin
     raise exception 'SECTION 4: dev_c applied_survey_id did not backfill from survey_id';
   end if;
 end
-$$;
+$body$;
 -- =====================================================
 -- SECTION 5: existing kiosk credential data remains intact
 -- =====================================================
 -- The migration must not overwrite device_credential_hash, prefix,
 -- last_seen_at, or last_heartbeat_at on rows that already exist.
-do $$
+do $body$
 declare
   v_dev_a uuid;
   v_expected_prefix text;
@@ -473,7 +503,7 @@ begin
     raise exception 'SECTION 5: device_credential_hash was rewritten (got %, want %)', v_expected_hash, v_actual_hash;
   end if;
 end
-$$;
+$body$;
 
 -- =====================================================
 -- Helper: canonical allowlist for CHECK-constrained text columns
@@ -510,7 +540,7 @@ grant execute on function pg_temp.allowed_text_values(text) to authenticated, an
 -- All updates run as the postgres superuser (the migration installed the
 -- CHECKs as VALID, so direct UPDATE bypasses grants but still trips the
 -- CHECKs; that is the whole point of this block).
-do $$
+do $body$
 declare
   v_dev_a uuid;
   v_desired text[];
@@ -560,13 +590,13 @@ begin
          applied_mode = 'active'
    where id = v_dev_a;
 end
-$$;
+$body$;
 
 -- SECTION 10: applied_config_version greater than desired_config_version
 -- is rejected. Both RPCs that write applied_config_version must enforce
 -- this. We test the column-level invariant via UPDATE, which is what the
 -- migration's CHECK enforces directly.
-do $$
+do $body$
 declare
   v_dev_a uuid;
 begin
@@ -590,7 +620,7 @@ begin
      set applied_config_version = 5
    where id = v_dev_a;
 end
-$$;
+$body$;
 
 -- SECTION 11: configuration_error longer than 500 characters is rejected
 -- (or safely bounded, depending on how the migration wrote it). If the
@@ -598,7 +628,7 @@ $$;
 -- 500; if it chose to RAISE, the test asserts the raise. We test BOTH paths
 -- the same way: try to write 700 chars, and require that the result either
 -- raises or ends up at most 500 chars long.
-do $$
+do $body$
 declare
   v_dev_a uuid;
   v_text  text;
@@ -630,7 +660,7 @@ begin
      set configuration_error = null
    where id = v_dev_a;
 end
-$$;
+$body$;
 -- =====================================================
 -- SECTIONS 12-16: device fetch + credential isolation
 -- =====================================================
@@ -642,7 +672,7 @@ $$;
 -- Section 12 + 13: a valid kiosk credential fetches its own desired
 -- configuration and the result does NOT include the credential hash or the
 -- raw token.
-do $$
+do $body$
 declare
   v_token text;
   v_raw   record;
@@ -666,7 +696,7 @@ begin
     raise exception 'SECTION 13: get_kiosk_desired_configuration leaked %', v_audit;
   end if;
 end
-$$;
+$body$;
 
 -- Section 14: an invalid credential is rejected. The error message is the
 -- exact string raised by kiosk_resolve_device_credential.
@@ -676,9 +706,12 @@ select pg_temp.expect_err(
 );
 
 -- Section 15: a revoked credential is rejected. Dev_c is revoked by setting
--- status='revoked' on the row.
-do $$
+-- status='revoked' on the row. We must reset the role first because the
+-- service_role impersonation from section 12 set local role = service_role,
+-- which does not own kiosk_devices and cannot update it.
+do $body$
 begin
+  reset role;
   update public.kiosk_devices
      set status = 'revoked'
    where id = (select v from t_ids where k = 'dev_c');
@@ -691,14 +724,16 @@ begin
     'Device credential revoked'
   );
 end
-$$;
+$body$;
 
 -- Section 15b: revoked by credential_revoked_at alone (status still active)
 -- is also rejected.
-do $$
+do $body$
 begin
+  reset role;
   update public.kiosk_devices
-     set status = 'active'
+     set status = 'active',
+         credential_revoked_at = now()
    where id = (select v from t_ids where k = 'dev_c');
 
   perform pg_temp.expect_err(
@@ -715,14 +750,14 @@ begin
      set credential_revoked_at = null
    where id = (select v from t_ids where k = 'dev_c');
 end
-$$;
+$body$;
 
 -- Section 16: one kiosk cannot retrieve another kiosk's configuration.
 -- Dev_b (org_b) is alive. We call resolve_device_credential with dev_b's
 -- token via the wrappers and confirm it returns dev_b's row, not dev_a's
 -- or dev_c's. We use get_kiosk_desired_configuration and inspect the
 -- returned kiosk_device_id.
-do $$
+do $body$
 declare
   v_token text;
   v_dev_id uuid;
@@ -743,7 +778,7 @@ begin
     raise exception 'SECTION 16: dev_b token resolved to dev_c';
   end if;
 end
-$$;
+$body$;
 -- =====================================================
 -- SECTIONS 17-20: management state + organization isolation
 -- =====================================================
@@ -759,7 +794,7 @@ $$;
 
 -- SECTION 18: anonymous cannot enumerate kiosk configuration state. The
 -- migration REVOKEs from anon, so the call must raise insufficient_privilege.
-do $$
+do $body$
 declare
   v_org_a uuid;
 begin
@@ -771,15 +806,15 @@ begin
       $$ select * from public.get_kiosk_configuration_state(%L) $$,
       v_org_a
     ),
-    'Not authorized'
+    'permission denied'
   );
 end
-$$;
+$body$;
 
 -- SECTION 19: an authenticated user who is NOT an admin of the device's
 -- organization is rejected. "outsider" is an authenticated user with a
 -- membership in org_a as an analyst (not an admin).
-do $$
+do $body$
 declare
   v_org_a uuid;
 begin
@@ -794,11 +829,11 @@ begin
     'Not authorized'
   );
 end
-$$;
+$body$;
 
 -- SECTION 17: an admin of a DIFFERENT organization cannot read state for
 -- org_a. owner_b is the only admin of org_b.
-do $$
+do $body$
 declare
   v_org_a uuid;
 begin
@@ -813,12 +848,12 @@ begin
     'Not authorized'
   );
 end
-$$;
+$body$;
 
 -- SECTION 20: an authorized admin CAN read state. owner_a is admin of org_a.
 -- We expect at least one row, and that row must NOT contain the credential
 -- hash or raw token.
-do $$
+do $body$
 declare
   v_org_a uuid;
   v_dev_a uuid;
@@ -853,11 +888,11 @@ begin
     raise exception 'SECTION 20: dev_a was not present in org_a listing';
   end if;
 end
-$$;
+$body$;
 
 -- SECTION 20b: organization_admin role is also accepted by
 -- kiosk_admin_can_manage_org. admin_a is organization_admin of org_a.
-do $$
+do $body$
 declare
   v_org_a uuid;
   v_rows  int := 0;
@@ -871,7 +906,7 @@ begin
     raise exception 'SECTION 20b: organization_admin role rejected (rows=%)', v_rows;
   end if;
 end
-$$;
+$body$;
 -- =====================================================
 -- SECTIONS 21-25: acknowledgement updates applied columns
 -- =====================================================
@@ -887,7 +922,7 @@ $$;
 -- in the migration's contract must be set: applied_config_version,
 -- applied_survey_id, applied_mode, configuration_applied_at, and
 -- configuration_error must be cleared.
-do $$
+do $body$
 declare
   v_dev_a uuid;
   v_srv_a2 uuid;
@@ -895,13 +930,16 @@ declare
   v_ack record;
   v_before timestamp;
 begin
+  reset role;
   perform pg_temp.impersonate_service();
   select v into v_dev_a   from t_ids where k = 'dev_a';
   select v into v_srv_a2  from t_ids where k = 'survey_a2';
 
-  -- Set desired version and values to a known starting point.
+  -- Set desired version and values to a known starting point. We bump to 6
+  -- because section 10 left applied_config_version = 5; ack(6) is the first
+  -- version that actually advances the applied side of the contract.
   update public.kiosk_devices
-     set desired_config_version = 5,
+     set desired_config_version = 6,
          desired_survey_id      = v_srv_a2,
          desired_mode           = 'paused',
          configuration_error    = 'transient failure to clear'
@@ -913,7 +951,7 @@ begin
   select * into v_ack
     from public.acknowledge_kiosk_configuration(
       (select v from t_tokens where k = 'dev_a'),
-      5
+      6
     );
 
   if v_ack.kiosk_device_id <> v_dev_a then
@@ -921,8 +959,8 @@ begin
   end if;
 
   -- SECTION 21: applied_config_version was set.
-  if (select applied_config_version from public.kiosk_devices where id = v_dev_a) <> 5 then
-    raise exception 'SECTION 21: applied_config_version was not set to 5';
+  if (select applied_config_version from public.kiosk_devices where id = v_dev_a) <> 6 then
+    raise exception 'SECTION 21: applied_config_version was not set to 6';
   end if;
 
   -- SECTION 22: applied_survey_id was copied from desired_survey_id.
@@ -948,7 +986,7 @@ begin
     raise exception 'SECTION 25: configuration_error was not cleared by acknowledgement';
   end if;
 end
-$$;
+$body$;
 -- =====================================================
 -- SECTIONS 26-27: idempotency + future-version reject
 -- =====================================================
@@ -957,7 +995,7 @@ $$;
 -- Calling acknowledge_kiosk_configuration twice with the same version must
 -- leave the device in the same state, and the migration must report
 -- acknowledged = false on the second call (no state change).
-do $$
+do $body$
 declare
   v_dev_a uuid;
   v_first_ack record;
@@ -1005,11 +1043,11 @@ begin
     raise exception 'SECTION 26: duplicate ack returned acknowledged=% instead of false', v_second_ack.acknowledged;
   end if;
 end
-$$;
+$body$;
 
 -- SECTION 27: acknowledgement of a version that was never issued (greater
 -- than desired_config_version) is rejected.
-do $$
+do $body$
 declare
   v_dev_a uuid;
 begin
@@ -1024,7 +1062,7 @@ begin
     'never issued'
   );
 end
-$$;
+$body$;
 
 -- SECTION 27b: non-positive configuration version is rejected.
 select pg_temp.expect_err(
@@ -1036,7 +1074,7 @@ select pg_temp.expect_err(
 -- Failure reporting must NOT touch desired_* or applied_*. Only the error
 -- text and liveness should change. This guarantees a failing device can
 -- keep retrying and the operator view still shows what the fleet intended.
-do $$
+do $body$
 declare
   v_dev_a uuid;
   v_desired_before bigint;
@@ -1103,11 +1141,12 @@ begin
     raise exception 'SECTION 30: stored error did not retain sanitized prefix';
   end if;
 end
-$$;
+$body$;
 
--- SECTION 30b: empty / whitespace-only failure text becomes NULL per the
--- migration's sanitizer, not an empty string.
-do $$
+-- SECTION 30b: whitespace-only failure text is replaced with the migration's
+-- "unspecified configuration failure" placeholder rather than stored as a
+-- empty/whitespace string.
+do $body$
 declare
   v_dev_a uuid;
   v_result record;
@@ -1122,15 +1161,15 @@ begin
       '   '
     );
 
-  if v_result.configuration_error is not null then
+  if v_result.configuration_error is distinct from 'Kiosk reported an unspecified configuration failure' then
     raise exception 'SECTION 30b: whitespace-only failure text was stored as %', v_result.configuration_error;
   end if;
 end
-$$;
+$body$;
 
 -- SECTION 30c: failure with no error text yields the migration's default
 -- placeholder.
-do $$
+do $body$
 declare
   v_dev_a uuid;
   v_result record;
@@ -1151,10 +1190,10 @@ begin
       v_result.configuration_error;
   end if;
 end
-$$;
+$body$;
 
 -- SECTION 30d: failure reporting with a future version is rejected.
-do $$
+do $body$
 declare
   v_dev_a uuid;
 begin
@@ -1169,14 +1208,14 @@ begin
     'never issued'
   );
 end
-$$;
+$body$;
 -- =====================================================
 -- SECTIONS 31-35: heartbeat updates last_seen_at + last_heartbeat_at
 -- =====================================================
 
 -- SECTION 31 + 32: a heartbeat updates last_seen_at and last_heartbeat_at
 -- to a recent timestamp and leaves desired_* alone.
-do $$
+do $body$
 declare
   v_dev_a uuid;
   v_seen_before  timestamptz;
@@ -1218,12 +1257,12 @@ begin
     raise exception 'SECTION 31: applied_config_version changed by heartbeat';
   end if;
 end
-$$;
+$body$;
 
 -- SECTION 33: heartbeat accepts only the five allowlisted applied modes
 -- and rejects anything else. The migration raise string is
 -- 'Unsupported kiosk operating mode'.
-do $$
+do $body$
 declare
   v_dev_a uuid;
   v_mode  text;
@@ -1242,7 +1281,7 @@ begin
   -- view, so we normalize to 'active' for the rest of the suite.
   perform record_kiosk_heartbeat((select v from t_tokens where k = 'dev_a'), 'active');
 end
-$$;
+$body$;
 
 -- SECTION 33b: an unknown applied mode is rejected with the migration's
 -- exact error message.
@@ -1269,10 +1308,11 @@ select pg_temp.expect_err(
 -- SECTION 35: a revoked credential cannot heartbeat. Dev_c is still alive
 -- in the fixture -- the revocation in SECTION 15 was cleaned up -- so we
 -- revoke it again here.
-do $$
+do $body$
 declare
   v_dev_c uuid;
 begin
+  reset role;
   perform pg_temp.impersonate_service();
   select v into v_dev_c from t_ids where k = 'dev_c';
 
@@ -1293,14 +1333,15 @@ begin
      set status = 'active'
    where id = v_dev_c;
 end
-$$;
+$body$;
 
 -- SECTION 35b: status='archived' (without credential_revoked_at) is also
 -- a revocation signal and must reject heartbeat.
-do $$
+do $body$
 declare
   v_dev_c uuid;
 begin
+  reset role;
   perform pg_temp.impersonate_service();
   select v into v_dev_c from t_ids where k = 'dev_c';
 
@@ -1320,7 +1361,7 @@ begin
      set status = 'active'
    where id = v_dev_c;
 end
-$$;
+$body$;
 -- =====================================================
 -- SECTIONS 36-40: grants + RLS contract
 -- =====================================================
@@ -1371,7 +1412,7 @@ $$;
 
 grant execute on function pg_temp.specific_name_for(text) to authenticated, anon, service_role;
 
-do $$
+do $body$
 declare
   v_function text;
   v_device_fns text[] := array[
@@ -1389,6 +1430,13 @@ declare
   v_client_roles text[] := array['anon', 'authenticated'];
   v_spec text;
 begin
+  -- The grants inspection must run as a role that can SEE every function in
+  -- information_schema.routines. service_role is excluded from the public
+  -- management RPC by design, and several prior sections in this suite
+  -- impersonated service_role via set local request.jwt.claim.sub without
+  -- resetting, so we force a reset here before querying the catalog.
+  reset role;
+
   -- SECTION 36 / 37: anon has NO execute on any of the new functions.
   foreach v_function in array v_device_fns loop
     v_spec := pg_temp.specific_name_for(v_function);
@@ -1441,29 +1489,37 @@ begin
     end loop;
   end loop;
 end
-$$;
+$body$;
 
 -- SECTION 40: RLS remains effective on public.kiosk_devices for direct table
 -- access. The migration adds no RLS policy -- it relies on existing RLS --
 -- so direct access by anon and by an unrelated authenticated user must not
 -- see kiosk rows.
-do $$
+do $body$
 declare
   v_anon_rows    int := 0;
   v_auth_rows    int := 0;
 begin
   perform pg_temp.impersonate_anon();
-  select count(*) into v_anon_rows from public.kiosk_devices;
-  if v_anon_rows <> 0 then
-    raise exception 'SECTION 40: anon can read kiosk_devices directly (% rows)', v_anon_rows;
-  end if;
+  -- anon must not see any kiosk rows. RLS would yield 0 rows; insufficient
+  -- table privilege at all yields a permission-denied error. Both outcomes
+  -- satisfy the security property we're proving.
+  begin
+    select count(*) into v_anon_rows from public.kiosk_devices;
+    if v_anon_rows <> 0 then
+      raise exception 'SECTION 40: anon can read kiosk_devices directly (% rows)', v_anon_rows;
+    end if;
+  exception
+    when insufficient_privilege then
+      v_anon_rows := 0;
+  end;
 
   perform pg_temp.impersonate('outsider', 'authenticated');
   select count(*) into v_auth_rows from public.kiosk_devices;
   -- org isolation on the RLS layer may permit the analyst to see their own
   -- org's devices. We accept that. The hard rule is anon sees zero.
 end
-$$;
+$body$;
 -- =====================================================
 -- SECTION: KNOWN LIMITATIONS REQUIRING EXECUTION
 -- =====================================================
@@ -1483,9 +1539,6 @@ $$;
 -- This file ends with rollback;. All fixture rows are inside this single
 -- transaction, so the suite leaves no residue in the database.
 
-select 1 from jsonb_to_recordset((
-  select results from pg_plan_inspector.get_results()
-)) as (plan jsonb);
 rollback;
 
 -- =====================================================
