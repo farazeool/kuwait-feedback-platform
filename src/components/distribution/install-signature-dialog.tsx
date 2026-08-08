@@ -21,14 +21,19 @@ export function InstallSignatureDialog({ html, plainText, feedbackLink, employee
   const [isOpen, setIsOpen] = useState(false);
   const [showHtml, setShowHtml] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [linkCopying, setLinkCopying] = useState(false);
 
   const handleCopyLink = async () => {
+    if (linkCopying) return;
+    setLinkCopying(true);
     try {
       await navigator.clipboard.writeText(feedbackLink);
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 2000);
     } catch {
       console.error("Failed to copy link");
+    } finally {
+      setLinkCopying(false);
     }
   };
 
@@ -78,13 +83,15 @@ export function InstallSignatureDialog({ html, plainText, feedbackLink, employee
               <button
                 type="button"
                 onClick={handleCopyLink}
+                disabled={linkCopying}
+                aria-busy={linkCopying}
                 className={`rounded-lg border px-4 py-2 text-sm font-semibold transition-colors ${
                   linkCopied
                     ? "border-emerald-300 bg-emerald-50 text-emerald-700"
                     : "border-border bg-white text-foreground hover:bg-gray-50"
                 }`}
               >
-                {linkCopied ? "✓ Link Copied!" : "Copy Feedback Link"}
+                {linkCopying ? "Copying…" : linkCopied ? "✓ Link Copied!" : "Copy Feedback Link"}
               </button>
               <button
                 type="button"

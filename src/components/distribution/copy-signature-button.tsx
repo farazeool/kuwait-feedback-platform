@@ -56,9 +56,11 @@ export async function copyToClipboard(html: string, plainText: string): Promise<
  * Uses the copyToClipboard function internally.
  */
 export function CopySignatureButton({ html, plainText, label = "Copy signature" }: Props) {
-  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
+  const [state, setState] = useState<"idle" | "copying" | "copied" | "failed">("idle");
 
   const handleCopy = async () => {
+    if (state === "copying") return;
+    setState("copying");
     const result = await copyToClipboard(html, plainText);
     setState(result);
     setTimeout(() => setState("idle"), result === "copied" ? 2000 : 3000);
@@ -68,6 +70,8 @@ export function CopySignatureButton({ html, plainText, label = "Copy signature" 
     <button
       type="button"
       onClick={handleCopy}
+      disabled={state === "copying"}
+      aria-busy={state === "copying"}
       className={`rounded-lg border px-4 py-2 text-sm font-semibold transition-colors ${
         state === "copied"
           ? "border-emerald-300 bg-emerald-50 text-emerald-700"
@@ -76,7 +80,7 @@ export function CopySignatureButton({ html, plainText, label = "Copy signature" 
             : "border-brand bg-brand text-white hover:bg-brand/90"
       }`}
     >
-      {state === "copied" ? "✓ Copied!" : state === "failed" ? "Copy failed" : label}
+      {state === "copying" ? "Copying…" : state === "copied" ? "✓ Copied!" : state === "failed" ? "Copy failed" : label}
     </button>
   );
 }

@@ -14,8 +14,11 @@ type Props = {
 export function ViewHtmlCode({ html, title = "HTML Code" }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copying, setCopying] = useState(false);
 
   const handleCopy = async () => {
+    if (copying) return;
+    setCopying(true);
     try {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(html);
@@ -33,6 +36,8 @@ export function ViewHtmlCode({ html, title = "HTML Code" }: Props) {
       setTimeout(() => setCopied(false), 2000);
     } catch {
       // Silent fail
+    } finally {
+      setCopying(false);
     }
   };
 
@@ -56,9 +61,11 @@ export function ViewHtmlCode({ html, title = "HTML Code" }: Props) {
           <button
             type="button"
             onClick={handleCopy}
+            disabled={copying}
+            aria-busy={copying}
             className="rounded-lg border border-brand px-3 py-1 text-xs font-medium text-brand hover:bg-brand/5"
           >
-            {copied ? "✓ Copied" : "Copy code"}
+            {copying ? "Copying…" : copied ? "✓ Copied" : "Copy code"}
           </button>
           <button
             type="button"

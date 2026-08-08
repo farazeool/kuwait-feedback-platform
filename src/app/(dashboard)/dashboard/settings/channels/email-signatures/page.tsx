@@ -17,6 +17,8 @@ import { resolveAnalyticsRange } from "@/features/analytics/dates";
 import { MetricCard } from "@/components/analytics/metric-card";
 import { AccessibleBarChart } from "@/components/analytics/bar-chart";
 import { listTeam } from "@/features/team/server";
+import { EmailSignatureTabs } from "@/components/distribution/email-signature-tabs";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 export default async function EmailSignaturesPage({
   searchParams,
@@ -41,27 +43,23 @@ export default async function EmailSignaturesPage({
   let sentimentReport = null;
   if (tab === "reports" && notice.templateId) {
     const range = resolveAnalyticsRange({ preset: notice.preset ?? "30d", from: notice.from, to: notice.to });
-    try {
-      reportData = await getSignatureSubjectReport({
+    const [subjectResult, sentimentResult] = await Promise.all([
+      getSignatureSubjectReport({
         organizationId: ctx.organization!.id,
         startAt: range.start,
         endAt: range.end,
         subjectType: notice.subjectType,
         templateId: notice.templateId,
         locationId: notice.locationId,
-      });
-    } catch {
-      reportData = { subjects: [], totals: { count: 0, avg_rating: null } };
-    }
-    try {
-      sentimentReport = await getEmailSignatureSentimentReport({
+      }).catch(() => ({ subjects: [], totals: { count: 0, avg_rating: null } })),
+      getEmailSignatureSentimentReport({
         organizationId: ctx.organization!.id,
         startAt: range.start,
         endAt: range.end,
-      });
-    } catch {
-      sentimentReport = null;
-    }
+      }).catch(() => null),
+    ]);
+    reportData = subjectResult;
+    sentimentReport = sentimentResult;
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const orgName = (ctx.organization as any)?.name_en ?? (ctx.organization?.nameEn ?? "Organization");
@@ -98,27 +96,11 @@ export default async function EmailSignaturesPage({
         </Link>
       </header>
 
-      {/* Tabs */}
-      <div className="flex gap-1 rounded-xl bg-surface-muted p-1">
-        <Link href="/dashboard/settings/channels/email-signatures?tab=templates"
-          className={`rounded-lg px-4 py-2 text-sm font-semibold ${tab === "templates" ? "bg-white text-foreground shadow-sm" : "text-muted"}`}>
-          Templates ({templatesResult.templates.length})
-        </Link>
-        <Link href="/dashboard/settings/channels/email-signatures?tab=assignments"
-          className={`rounded-lg px-4 py-2 text-sm font-semibold ${tab === "assignments" ? "bg-white text-foreground shadow-sm" : "text-muted"}`}>
-          Assignments ({assignmentsResult.assignments.length})
-        </Link>
-        <Link href="/dashboard/settings/channels/email-signatures?tab=reports"
-          className={`rounded-lg px-4 py-2 text-sm font-semibold ${tab === "reports" ? "bg-white text-foreground shadow-sm" : "text-muted"}`}>
-          Reports
-        </Link>
-        <Link href="/dashboard/settings/channels/email-signatures?tab=setup"
-          className={`rounded-lg px-4 py-2 text-sm font-semibold ${tab === "setup" ? "bg-white text-foreground shadow-sm" : "text-muted"}`}>
-          Installation guide
-        </Link>
-      </div>
-
-      {tab === "templates" && (
+      <EmailSignatureTabs
+        initialTab={tab === "assignments" || tab === "reports" || tab === "setup" ? tab : "templates"}
+        templateCount={templatesResult.templates.length}
+        assignmentCount={assignmentsResult.assignments.length}
+        templates={(
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {templatesResult.templates.map((tpl: { id: string; template_name: string; is_active: boolean }) => {
             const html = renderEmailSignatureHtml(
@@ -142,7 +124,7 @@ export default async function EmailSignaturesPage({
                   {tpl.is_active && (
                     <form action={archiveTemplate} className="inline">
                       <input type="hidden" name="templateId" value={tpl.id} />
-                      <button className="rounded-lg border border-amber-200 px-2.5 py-1 text-xs font-medium text-amber-700 hover:border-amber-400">Archive</button>
+                      <SubmitButton pendingLabel="Archiving…" className="rounded-lg border border-amber-200 px-2.5 py-1 text-xs font-medium text-amber-700 hover:border-amber-400 disabled:opacity-60">Archive</SubmitButton>
                     </form>
                   )}
                 </div>
@@ -156,9 +138,9 @@ export default async function EmailSignaturesPage({
             </div>
           )}
         </div>
-      )}
+        )}
 
-      {tab === "assignments" && (
+      assignments={(
         <>
           {assignmentsResult.assignments.length > 0 && (
             <div className="flex justify-end">
@@ -211,12 +193,9 @@ export default async function EmailSignaturesPage({
                       />
                       <form action={revokeAssignment}>
                         <input type="hidden" name="assignmentId" value={a.id as string} />
-                        <button
-                          type="submit"
-                          className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-700 hover:border-red-400"
-                        >
-                          Revoke
-                        </button>
+                          <SubmitButton pendingLabel="Revoking…"
+                            className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-700 hover:border-red-400 disabled:opacity-60"
+                          >Revoke</SubmitButton>
                       </form>
                     </div>
                   )}
@@ -269,7 +248,7 @@ export default async function EmailSignaturesPage({
         </>
       )}
 
-      {tab === "reports" && (
+      reports={(
         <div className="grid gap-6">
           {/* Filters: template selector (required) + date preset */}
           <div className="grid gap-3">
@@ -451,7 +430,7 @@ export default async function EmailSignaturesPage({
         </div>
       )}
 
-      {tab === "setup" && (
+      setup={(
         <div className="grid gap-6 rounded-xl border border-border bg-white p-6">
           <h2 className="text-lg font-bold text-foreground">Installation Guide</h2>
           <p className="text-sm text-muted">Follow the instructions to add your email signature feedback block.</p>
@@ -478,6 +457,7 @@ export default async function EmailSignaturesPage({
           </section>
         </div>
       )}
+      />
     </div>
   );
 }
