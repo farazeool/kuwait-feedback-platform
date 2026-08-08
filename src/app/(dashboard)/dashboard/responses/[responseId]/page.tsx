@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { SubmitButton } from "@/components/ui/submit-button";
 import { updateResponseWorkflow } from "@/features/responses/actions";
 import { getResponseDetail } from "@/features/responses/server";
@@ -16,6 +18,7 @@ export default async function ResponseDetailPage({ params, searchParams }: { par
   return (
     <div className="grid gap-6">
       <header>
+        <Link href="/dashboard/responses" prefetch scroll={false} className="text-sm font-semibold text-brand hover:underline">← Back to responses</Link>
         <p className="text-xs font-semibold uppercase tracking-wide text-brand">Anonymous response</p>
         <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground">{detail.survey?.title_en}</h1>
         <p className="mt-2 text-muted">{detail.organization?.name_en} · {detail.location?.name_en} · {formatKuwaitDateTime(detail.response.submitted_at)}</p>

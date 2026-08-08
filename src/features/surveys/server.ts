@@ -31,16 +31,18 @@ export async function listSurveyGroups(filters: {
   if (error) throw new Error("Unable to load surveys");
 
   const surveyIds = (surveys ?? []).map((survey) => survey.id);
+  const locationIds = [...new Set((surveys ?? []).map((survey) => survey.location_id))];
+  const organizationIds = [...new Set((surveys ?? []).map((survey) => survey.organization_id))];
   const [{ data: locations }, { data: questions }, { data: responses }, { data: organizations }] =
     await Promise.all([
-      supabase.from("locations").select("id, name_en, name_ar"),
+      locationIds.length ? supabase.from("locations").select("id, name_en, name_ar").in("id", locationIds) : Promise.resolve({ data: [] }),
       surveyIds.length
         ? supabase.from("survey_questions").select("survey_id").in("survey_id", surveyIds)
         : Promise.resolve({ data: [] }),
       surveyIds.length
         ? supabase.from("survey_responses").select("survey_id").in("survey_id", surveyIds)
         : Promise.resolve({ data: [] }),
-      supabase.from("organizations").select("id, name_en, name_ar"),
+      organizationIds.length ? supabase.from("organizations").select("id, name_en, name_ar").in("id", organizationIds) : Promise.resolve({ data: [] }),
     ]);
 
   const locationById = new Map((locations ?? []).map((row) => [row.id, row]));
@@ -110,20 +112,19 @@ export async function getSurveyEditor(surveyId: string): Promise<{
       .order("position"),
   ]);
 
-  const groupSurveyIds = (members ?? []).map((row) => row.id);
-  const { count: responseCount } = await supabase
-    .from("survey_responses")
-    .select("id", { count: "exact", head: true })
-    .in("survey_id", groupSurveyIds.length ? groupSurveyIds : [survey.id]);
-
   const questionIds = (questions ?? []).map((question) => question.id);
-  const { data: options } = questionIds.length
-    ? await supabase
-        .from("survey_question_options")
-        .select("*")
-        .in("question_id", questionIds)
-        .order("position")
-    : { data: [] };
+  const groupSurveyIds = (members ?? []).map((row) => row.id);
+  const [responseResult, optionsResult] = await Promise.all([
+    supabase
+      .from("survey_responses")
+      .select("id", { count: "exact", head: true })
+      .in("survey_id", groupSurveyIds.length ? groupSurveyIds : [survey.id]),
+    questionIds.length
+      ? supabase.from("survey_question_options").select("*").in("question_id", questionIds).order("position")
+      : Promise.resolve({ data: [] }),
+  ]);
+  const responseCount = responseResult.count;
+  const options = optionsResult.data;
   const optionsByQuestion = new Map<string, Array<{
     id: string;
     question_id: string;

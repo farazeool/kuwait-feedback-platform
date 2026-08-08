@@ -96,87 +96,41 @@ export async function generateMonthlyReport(filters: ReportFilters) {
   const alertSeverityBreakdown = extract<any>(rpcCalls[7]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const triggerBreakdown = extract<any>(rpcCalls[8]);
-
-  // Management decisions from investigations
-  const { data: managementDecisions } = await (supabase.rpc as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: Json[] | null }>)("get_management_decisions", {
-    p_organization_id: orgId,
-    p_start_at: base.p_start_at,
-    p_end_at: base.p_end_at,
-    ...(filters.locationId ? { p_location_id: filters.locationId } : {}),
-  });
-
-  // Follow-up records from review audit
-  const { data: followupRecords } = await (supabase.rpc as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: Json[] | null }>)("get_followup_records", {
-    p_organization_id: orgId,
-    p_start_at: base.p_start_at,
-    p_end_at: base.p_end_at,
-    ...(filters.locationId ? { p_location_id: filters.locationId } : {}),
-  });
-
-  // Corrective action verification status
-  const { data: correctiveActionVerification } = await (supabase.rpc as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: Json | null }>)("get_corrective_action_verification", {
-    p_organization_id: orgId,
-    p_start_at: base.p_start_at,
-    p_end_at: base.p_end_at,
-    ...(filters.locationId ? { p_location_id: filters.locationId } : {}),
-  });
-
-  // Corrective action effectiveness review
-  const { data: correctiveActionEffectiveness } = await (supabase.rpc as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: Json | null }>)("get_corrective_action_effectiveness", {
-    p_organization_id: orgId,
-    p_start_at: base.p_start_at,
-    p_end_at: base.p_end_at,
-    ...(filters.locationId ? { p_location_id: filters.locationId } : {}),
-  });
-
-  // Signature feedback follow-up sentiment
-  const { data: signatureSentiment } = await (supabase.rpc as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: Json | null }>)("get_signature_sentiment_report", {
-    p_organization_id: orgId,
-    p_start_at: base.p_start_at,
-    p_end_at: base.p_end_at,
-    ...(filters.locationId ? { p_location_id: filters.locationId } : {}),
-    p_employee_id: null,
-    p_sentiment: null,
-    p_identity_status: null,
-    p_contact_requested: null,
-    p_follow_up_completed: null,
-  });
-
-  // Controlled record references from survey responses
-  const { data: controlledRecordRefs } = await (supabase.rpc as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: Json[] | null }>)("get_controlled_record_references", {
-    p_organization_id: orgId,
-    p_start_at: base.p_start_at,
-    p_end_at: base.p_end_at,
-    ...(filters.locationId ? { p_location_id: filters.locationId } : {}),
-  });
-
-  // Target status (pass/warning/fail)
-  const { data: targetStatus } = await (supabase.rpc as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: Json | null }>)("get_target_status", {
-    p_organization_id: orgId,
-    p_start_at: base.p_start_at,
-    p_end_at: base.p_end_at,
-    ...(filters.locationId ? { p_location_id: filters.locationId } : {}),
-  });
-
-  // Concern and response trends for charts
-  const { data: trendCharts } = await (supabase.rpc as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: Json | null }>)("get_concern_response_trends", {
-    p_organization_id: orgId,
-    p_start_at: base.p_start_at,
-    p_end_at: base.p_end_at,
-    ...(filters.locationId ? { p_location_id: filters.locationId } : {}),
-    p_bucket: "week",
-  });
-
-  // Previous period for comparison
+  const rpc = (name: string, args: Record<string, unknown>) =>
+    (supabase.rpc as unknown as (rpcName: string, rpcArgs: Record<string, unknown>) => Promise<{ data: Json | Json[] | null }>)(name, args);
+  const scopedArgs = { p_organization_id: orgId, p_start_at: base.p_start_at, p_end_at: base.p_end_at, ...(filters.locationId ? { p_location_id: filters.locationId } : {}) };
   const prevStart = new Date(new Date(startAt).getTime() - (new Date(endAt).getTime() - new Date(startAt).getTime())).toISOString();
   const prevEnd = startAt;
-  const { data: prevKpiData } = await supabase.rpc("get_kpi_dashboard", {
+  const previousKpiPromise = supabase.rpc("get_kpi_dashboard", {
     p_organization_id: orgId,
     p_start_at: prevStart,
     p_end_at: prevEnd,
     ...(filters.locationId ? { p_location_id: filters.locationId } : {}),
     ...(filters.surveyId ? { p_survey_id: filters.surveyId } : {}),
   });
+
+  // These report sections are independent reads. Keep them together so a slow
+  // drill-down section cannot delay every section behind it.
+  const [management, followup, verification, effectiveness, sentiment, controlled, target, trends] = await Promise.all([
+    rpc("get_management_decisions", scopedArgs),
+    rpc("get_followup_records", scopedArgs),
+    rpc("get_corrective_action_verification", scopedArgs),
+    rpc("get_corrective_action_effectiveness", scopedArgs),
+    rpc("get_signature_sentiment_report", { ...scopedArgs, p_employee_id: null, p_sentiment: null, p_identity_status: null, p_contact_requested: null, p_follow_up_completed: null }),
+    rpc("get_controlled_record_references", scopedArgs),
+    rpc("get_target_status", scopedArgs),
+    rpc("get_concern_response_trends", { ...scopedArgs, p_bucket: "week" }),
+  ]);
+  const managementDecisions = management.data as Json[] | null;
+  const followupRecords = followup.data as Json[] | null;
+  const correctiveActionVerification = verification.data as Json | null;
+  const correctiveActionEffectiveness = effectiveness.data as Json | null;
+  const signatureSentiment = sentiment.data as Json | null;
+  const controlledRecordRefs = controlled.data as Json[] | null;
+  const targetStatus = target.data as Json | null;
+  const trendCharts = trends.data as Json | null;
+
+  const { data: prevKpiData } = await previousKpiPromise;
 
   return {
     context,

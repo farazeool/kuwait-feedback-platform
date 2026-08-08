@@ -15,15 +15,17 @@ import { useFormStatus } from "react-dom";
 export function SubmitButton({
   children,
   pendingLabel,
+  disabled = false,
   className = "rounded-lg bg-brand px-5 py-3 font-semibold text-white transition-colors hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-70",
 }: {
   children: React.ReactNode;
   pendingLabel?: string;
+  disabled?: boolean;
   className?: string;
 }) {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" disabled={pending} aria-busy={pending} className={className}>
+    <button type="submit" disabled={pending || disabled} aria-busy={pending} className={className}>
       {pending ? (
         <span className="flex items-center justify-center gap-2">
           <svg className="size-4 animate-spin motion-reduce:animate-none" viewBox="0 0 24 24" fill="none" aria-hidden="true">

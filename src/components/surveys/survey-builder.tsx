@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { SubmitButton } from "@/components/ui/submit-button";
 import { saveSurveyDraft } from "@/features/surveys/actions";
 import {
   surveyDraftSchema,
@@ -145,7 +146,7 @@ export function SurveyBuilder({
         ) : null}
         <div className="flex flex-wrap justify-end gap-3">
           <button type="button" onClick={() => setShowPreview((value) => !value)} className="rounded-lg border border-border bg-white px-4 py-2 text-sm font-medium transition-colors hover:border-brand">{showPreview ? "Hide preview" : "Preview"}</button>
-          <button disabled={!parsed.success} className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-50" type="submit">Save draft</button>
+          <SubmitButton pendingLabel="Saving…" disabled={!parsed.success} className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-50">Save draft</SubmitButton>
         </div>
       </form>
 
