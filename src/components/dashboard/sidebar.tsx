@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 
 import { navigationForRole } from "@/features/dashboard/navigation";
 import { getMessages, type Locale } from "@/lib/i18n/messages";
@@ -14,19 +15,28 @@ function NavItem({
   href,
   label,
   isActive,
+  isPending,
+  onNavigate,
   icon,
   isArabic,
 }: {
   href: string;
   label: string;
   isActive: boolean;
+  isPending: boolean;
+  onNavigate: () => void;
   icon: string;
   isArabic: boolean;
 }) {
   return (
     <Link
       href={href}
-      className={`group relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-150 ${
+      prefetch
+      scroll={false}
+      aria-current={isActive ? "page" : undefined}
+      aria-busy={isPending}
+      onClick={onNavigate}
+      className={`group relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-[background-color,color,box-shadow] duration-150 ${
         isActive
           ? "bg-white/15 text-white shadow-sm"
           : "text-blue-100/75 hover:bg-white/10 hover:text-white"
@@ -59,12 +69,19 @@ function NavItem({
         {icon === "channels" && <><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M22 6l-10 7L2 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></>}
       </svg>
       <span>{label}</span>
+      {isPending ? (
+        <span
+          className="ms-auto size-3 animate-pulse rounded-full bg-white/80"
+          aria-label={isArabic ? "جارٍ التحميل" : "Loading"}
+        />
+      ) : null}
     </Link>
   );
 }
 
 export function DashboardSidebar({ role, locale }: { role: AppRole; locale: Locale }) {
   const pathname = usePathname();
+  const [pendingNavigation, setPendingNavigation] = useState<{ href: string; fromPathname: string } | null>(null);
   const messages = getMessages(locale);
   const items = navigationForRole(role);
   const isArabic = locale === "ar";
@@ -87,12 +104,19 @@ export function DashboardSidebar({ role, locale }: { role: AppRole; locale: Loca
         <div className="grid gap-1">
           {items.map((item) => {
             const iconKey = item.label.replace("nav.", "");
+            const isCurrent = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href + "/"));
+            const hasUnresolvedPending = pendingNavigation?.fromPathname === pathname;
+            const isPending = hasUnresolvedPending && pendingNavigation.href === item.href;
             return (
               <NavItem
                 key={item.href}
                 href={item.href}
                 label={messages[item.label]}
-                isActive={pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href + "/"))}
+                isActive={hasUnresolvedPending ? isPending : isCurrent}
+                isPending={isPending}
+                onNavigate={() => {
+                  if (!isCurrent) setPendingNavigation({ href: item.href, fromPathname: pathname });
+                }}
                 icon={iconKey}
                 isArabic={isArabic}
               />
